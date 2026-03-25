@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  # 1. Backend (Node.js + SQLite)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: manga_tracker_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - manga_net
+
+  # 2. Frontend (React/Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: manga_tracker_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - manga_net
+
+networks:
+  manga_net:
+    driver: bridge
