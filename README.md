@@ -1,35 +1,31 @@
-# 📚 本棚 (Hondana) - Manga Tracker
+# 📚 本棚 (Hondana) - Manga & Novel Tracker
 
-โปรเจกต์นี้คือเว็บแอปพลิเคชันสำหรับจัดการและติดตามการอ่าน/สะสมมังงะและไลท์โนเวลส่วนตัว ถูกออกแบบมาเพื่อแก้ปัญหา "คำสาปนักสะสม" (Collector's Curse) เช่น การซื้อหนังสือซ้ำ, การลืมว่าอ่านถึงเล่มไหน, หรือการจำไม่ได้ว่าขาดเล่มไหนไปบ้างบนชั้นหนังสือ
-
-> **Note:** โปรเจกต์นี้มาจากการพัฒนาและเขียนโค้ดร่วมกัน (Vide Code) โดยเน้นสถาปัตยกรรมที่ยืดหยุ่นและตอบโจทย์พฤติกรรมการสะสมหนังสือแบบแยกเวอร์ชัน (Edition-Based)
+โปรเจกต์นี้คือเว็บแอปพลิเคชันสำหรับจัดการและติดตามการอ่านและสะสมมังงะ/ไลท์โนเวลส่วนตัว ออกแบบมาเพื่อแก้ปัญหาของนักสะสม เช่น การซื้อหนังสือซ้ำ, การลืมว่าอ่านถึงเล่มไหน, หรือการติดตามเล่มที่ขาดหายไปบนชั้นหนังสือ
 
 ---
 
 ## ✨ Features (ฟีเจอร์เด่น)
 
-- **Edition-Based Tracking:** แยกระบบ "การอ่าน (อิงตามต้นฉบับ JP)" และ "การสะสม (อิงตามเล่มพิมพ์ไทย)" ออกจากกันอย่างเด็ดขาด เพื่อรองรับการเก็บมังงะแบบ Big Book, เล่มพิเศษ, หรือภาคแยก
-- **Segmented Gap Visualization:** ระบบ Progress Bar แบบแบ่งช่องอัจฉริยะ ช่วยให้มองเห็น "ช่องโหว่" หรือเล่มที่แหว่งไปจากการสะสมด้วยตาเปล่าทันที
-- **Advanced Filtering:** ระบบคัดกรองขั้นสูงที่สามารถหาหนังสือได้จากสถานะความคืบหน้า (เช่น สายดอง, สะสมครบ, ทันปัจจุบัน, ขาดเล่ม)
-- **View Toggle (Grid / List):** สลับมุมมองการแสดงผลได้ตามความถนัด
-  - *Grid View:* แสดงผลแบบการ์ดสวยงาม เหมาะสำหรับดูภาพรวม
-  - *List View:* แสดงผลแบบรายการกระชับ เน้นกวาดสายตาหา "เล่มที่ขาด" อย่างรวดเร็ว
-- **Muted Pastel Dark Theme:** ธีมสีมืดแบบพาสเทลตุ่นๆ ถนอมสายตา และช่วยให้ป้ายกำกับ (Badges) ต่างๆ โดดเด่นขึ้นมาโดยไม่แสบตา
+- **Edition-Based Tracking:** ระบบแยก "การอ่าน" (อิงตามต้นฉบับ/ญี่ปุ่น) และ "การสะสม" (อิงตามเล่มพิมพ์ไทย) ออกจากกันอย่างอิสระ รองรับการเก็บมังงะแบบ Big Book, เล่มพิเศษ, หรือ E-Book ในซีรีส์เดียวกัน
+- **Segmented Gap Visualization:** ระบบ Progress Bar แบบแบ่งช่อง ช่วยให้มองเห็น "ช่องโหว่" หรือเล่มที่ขาดไปจากการสะสมได้ทันทีด้วยตาเปล่า
+- **Advanced Filtering & Search:** ระบบค้นหาและคัดกรองตามสถานะ (เช่น กำลังสะสม, อ่านจบแล้ว, สายดอง) และประเภทของหนังสือ
+- **Hybrid Data Structure:** ใช้สถาปัตยกรรมแบบ Hybrid (SQL + JSON) บน SQLite เพื่อความยืดหยุ่นในการเก็บข้อมูล Log การอ่านที่ซับซ้อนโดยยังคงประสิทธิภาพการสืบค้น
+- **Muted Pastel Dark Theme:** ดีไซน์ Dark Mode ในโทนพาสเทลถนอมสายตา พร้อมระบบ Badges ที่ช่วยแยกแยะประเภทหนังสือได้อย่างรวดเร็ว
+- **Responsive View:** สลับมุมมองได้ทั้งแบบ Grid (เน้นภาพรวม) และ List (เน้นการตรวจสอบเล่มที่ขาด)
 
 ---
 
 ## 🛠️ Tech Stack (เทคโนโลยีที่ใช้)
 
 **Frontend:**
-- [React](https://reactjs.org/) (ผ่าน [Vite](https://vitejs.dev/))
+- [React](https://reactjs.org/) (Vite)
 - [Zustand](https://github.com/pmndrs/zustand) (State Management)
-- Custom CSS (No UI Framework)
+- Custom CSS (Modern CSS with Flexbox/Grid)
 - React-Hot-Toast (Notifications)
 
 **Backend:**
 - [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/)
-- [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3) (Database)
-- *Architecture Note:* ใช้โครงสร้าง Hybrid (SQL + JSON) ใน SQLite เพื่อความยืดหยุ่นในการเก็บข้อมูล Log การอ่านแบบ Array โดยไม่ต้องทำ Relational Database ให้ซับซ้อน
+- [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3) (High-performance SQLite wrapper)
 
 **Infrastructure:**
 - Docker & Docker Compose
@@ -38,50 +34,56 @@
 
 ## 🚀 Getting Started (วิธีติดตั้งและรันโปรเจกต์)
 
-เนื่องจากโปรเจกต์นี้ถูกตั้งค่าผ่าน Docker Compose ไว้เรียบร้อยแล้ว การรันระบบจึงทำได้ง่ายมาก
+### วิธีที่ 1: รันด้วย Docker (แนะนำ)
+1. โคลนโปรเจกต์
+   ```bash
+   git clone https://github.com/nex1a1/Book-Tracker.git
+   cd Book-Tracker
+   ```
+2. รันคำสั่ง Build และ Start คอนเทนเนอร์:
+   ```bash
+   docker compose up -d --build
+   ```
+3. เข้าใช้งานผ่าน Browser:
+   - **Frontend:** [http://localhost:5173](http://localhost:5173)
+   - **Backend API:** [http://localhost:3001/api](http://localhost:3001/api)
 
-### 1. โคลนโปรเจกต์
-```bash
-git clone <your-gitlab-repo-url>
-cd manga-tracker
-```
-### 2. ตั้งค่า Environment Variables
-ตรวจสอบไฟล์ .env ที่ root directory (ถ้าไม่มีให้สร้างขึ้นมา):
+### วิธีที่ 2: รันแบบ Manual (สำหรับ Development)
+**Backend:**
+1. `cd backend`
+2. `npm install`
+3. `npm run dev` (Backend จะรันที่พอร์ต 3001)
 
-```bash
-# Backend Config
-PORT=3001
-```
-### 3. รันโปรเจกต์ด้วย Docker
-รันคำสั่งด้านล่างเพื่อ Build และ Start คอนเทนเนอร์ทั้ง Frontend และ Backend:
+**Frontend:**
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev` (Frontend จะรันที่พอร์ต 5173)
 
-```Bash
-docker compose up -d --build
-```
-4. การเข้าใช้งาน
+---
 
-- Frontend (หน้าเว็บ): http://localhost:5173
-- Backend (API): http://localhost:3001
-
-    **ข้อควรระวังเกี่ยวกับการแก้ไข Database:** หากมีการปรับโครงสร้างตาราง (Schema) ใหม่ อย่าลืมปิดคอนเทนเนอร์ (docker compose down) และลบไฟล์ backend/data/manga.db เดิมทิ้งก่อนรันขึ้นมาใหม่ เพื่อให้ระบบสร้างฐานข้อมูลใหม่ที่ถูกต้อง
-
-📂 Project Structure (โครงสร้างไฟล์หลัก)
-```Bash
-manga-tracker/
+## 📂 Project Structure (โครงสร้างไฟล์)
+```text
+Book-Tracker/
 ├── backend/
-│   ├── data/               # โฟลเดอร์เก็บไฟล์ manga.db (ถูกสร้างอัตโนมัติ)
+│   ├── data/               # เก็บไฟล์ฐานข้อมูล manga.db
 │   ├── src/
-│   │   └── index.js        # โค้ดหลักของ Express API และ SQLite
-│   ├── Dockerfile
-│   └── package.json
+│   │   └── index.js        # Express API & SQLite Logic
+│   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx         # โค้ดหน้าจอ React ทั้งหมด (Components, Modal, Store)
-│   │   ├── index.css       # ธีม Dark Mode และ Stylesheet
-│   │   └── main.jsx
-│   ├── Dockerfile
-│   └── package.json
-├── docker-compose.yml      # ตั้งค่าการเชื่อมต่อ Frontend และ Backend
-└── README.md
+│   │   ├── App.jsx         # UI Components & Application Logic
+│   │   └── index.css       # Stylesheet (Pastel Dark Theme)
+│   ├── vite.config.js      # Proxy configuration สำหรับเชื่อมต่อ Backend
+│   └── Dockerfile
+└── docker-compose.yml      # การตั้งค่า Multi-container setup
 ```
-Developed with 💻 & ☕
+
+---
+
+## ⚠️ ข้อควรระวัง
+หากมีการปรับโครงสร้างตาราง (Schema) ในโค้ด และต้องการให้เห็นผลทันที:
+1. ปิดคอนเทนเนอร์ด้วย `docker compose down`
+2. ลบไฟล์ `backend/data/manga.db` เดิมทิ้ง
+3. รันขึ้นมาใหม่ด้วย `docker compose up -d` ระบบจะสร้าง Database ใหม่พร้อม Schema ล่าสุดให้โดยอัตโนมัติ
+
+Developed with 💻 & ☕ by NEx1A
