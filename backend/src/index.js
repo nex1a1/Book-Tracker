@@ -30,6 +30,7 @@ db.exec(`
     endYear INTEGER DEFAULT NULL,
     status TEXT CHECK(status IN ('ongoing', 'completed', 'hiatus', 'cancelled')) DEFAULT 'ongoing',
     isCollecting INTEGER DEFAULT 1,
+    rating REAL DEFAULT 0, -- ✅ เพิ่มโครงสร้าง rating แบบ REAL (ทศนิยม)
     
     -- โครงสร้างใหม่: เก็บ Array ของ Object เป็น JSON String
     readingLogsJSON TEXT DEFAULT '[]', 
@@ -44,7 +45,8 @@ db.exec(`
 // Migration System (เพิ่ม Column ใหม่ถ้ายังไม่มี)
 const migrations = [
   { column: 'readingLogsJSON', type: "TEXT DEFAULT '[]'" },
-  { column: 'collectionLogsJSON', type: "TEXT DEFAULT '[]'" }
+  { column: 'collectionLogsJSON', type: "TEXT DEFAULT '[]'" },
+  { column: 'rating', type: "REAL DEFAULT 0" } // ✅ ดักเผื่อ DB เดิมมีอยู่แล้ว จะได้สร้างคอลัมน์ rating ให้ทันที
 ];
 
 migrations.forEach(m => {
@@ -151,7 +153,7 @@ app.get('/api/series', (req, res) => {
     const limitNum = Number(limit);
     const offset = (Number(page) - 1) * limitNum;
     
-    const allowedSortFields = ['updatedAt', 'title', 'publishYear'];
+    const allowedSortFields = ['updatedAt', 'title', 'publishYear', 'rating']; // ✅ อนุญาตให้ Sort ด้วย rating ได้
     const finalSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'updatedAt';
     const finalSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
     
@@ -170,13 +172,14 @@ app.post('/api/series', (req, res) => {
     const info = db.prepare(`
       INSERT INTO series (
         title, author, publisher, type, publishYear, endYear, status, 
-        isCollecting, readingLogsJSON, collectionLogsJSON, notes
+        isCollecting, rating, readingLogsJSON, collectionLogsJSON, notes
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       b.title, b.author || '', b.publisher || '', b.type || 'manga', 
       b.publishYear || null, b.endYear || null, b.status || 'ongoing', 
       b.isCollecting ? 1 : 0, 
+      b.rating ? Number(b.rating) : 0, // ✅ บันทึก rating ตอนสร้างเรื่องใหม่
       JSON.stringify(b.readingLogs || []), 
       JSON.stringify(b.collectionLogs || []), 
       b.notes || ''
@@ -196,12 +199,13 @@ app.patch('/api/series/:id', (req, res) => {
     if (data.collectionLogs) { data.collectionLogsJSON = JSON.stringify(data.collectionLogs); delete data.collectionLogs; }
     
     if (data.isCollecting !== undefined) data.isCollecting = data.isCollecting ? 1 : 0;
+    if (data.rating !== undefined) data.rating = Number(data.rating); // ✅ แปลงคะแนนให้เป็นตัวเลขทศนิยมที่ถูกต้อง
     if (data.status === 'completed') data.endYear = (data.endYear && data.endYear !== "") ? Number(data.endYear) : null;
     else data.endYear = null;
 
     const fields = [];
     const params = [];
-    const allowedFields = ['title', 'author', 'publisher', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'readingLogsJSON', 'collectionLogsJSON', 'notes'];
+    const allowedFields = ['title', 'author', 'publisher', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'readingLogsJSON', 'collectionLogsJSON', 'notes']; // ✅ เพิ่ม 'rating' ในลิสต์ที่อนุญาตให้อัปเดต
     
     Object.keys(data).forEach(key => {
       if (allowedFields.includes(key)) {
