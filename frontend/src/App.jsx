@@ -42,6 +42,12 @@ const Icons = {
   X: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
   ChevronDown: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
   Sliders: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>,
+  CheckCircle: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+  BookOpen: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>,
+  Archive: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>,
+  Sparkles: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
+  Ban: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>,
+  Clock: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
 };
 
 // ==========================================
@@ -57,7 +63,7 @@ const seriesApi = {
 };
 
 const EMPTY_FILTER = {
-  search: '', type: '', status: '', publisher: '', readStatus: '', collectStatus: '',
+  search: '', type: [], status: [], publisher: '', readStatus: [], collectStatus: [],
   minRating: 0, maxRating: 0, yearFrom: '', yearTo: '',
   sortBy: 'updatedAt', sortOrder: 'DESC',
 };
@@ -562,15 +568,26 @@ function FilterSection({ title, children }) {
   );
 }
 
-function FilterChip({ label, active, onClick }) {
+function FilterChip({ label, active, onClick, icon }) {
   return (
-    <button className={`filter-chip ${active ? 'filter-chip--active' : ''}`} onClick={onClick}>
-      {label}
+    <button 
+      className={`filter-chip ${active ? 'filter-chip--active' : ''}`} 
+      onClick={onClick}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+    >
+      {icon} {label}
     </button>
   );
 }
 
 function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount }) {
+  // ฟังก์ชันช่วยเหลือสำหรับเลือกหลายอัน
+  const toggleArr = (key, val) => {
+    const arr = filter[key] || [];
+    if (arr.includes(val)) setFilter({ [key]: arr.filter(v => v !== val) });
+    else setFilter({ [key]: [...arr, val] });
+  };
+
   return (
     <aside className="filter-sidebar">
       <div className="filter-sidebar__header">
@@ -597,51 +614,49 @@ function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount
             onChange={e => setFilter({ search: e.target.value })}
           />
           {filter.search && (
-            <button className="filter-search-clear" onClick={() => setFilter({ search: '' })}>
-              <Icons.X />
-            </button>
+            <button className="filter-search-clear" onClick={() => setFilter({ search: '' })}><Icons.X /></button>
           )}
         </div>
 
         {/* ประเภท */}
         <FilterSection title="ประเภท">
           <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.type} onClick={() => setFilter({ type: '' })} />
-            <FilterChip label="Manga" active={filter.type === 'manga'} onClick={() => setFilter({ type: filter.type === 'manga' ? '' : 'manga' })} />
-            <FilterChip label="Novel" active={filter.type === 'novel'} onClick={() => setFilter({ type: filter.type === 'novel' ? '' : 'novel' })} />
-            <FilterChip label="Light Novel" active={filter.type === 'light_novel'} onClick={() => setFilter({ type: filter.type === 'light_novel' ? '' : 'light_novel' })} />
+            <FilterChip label="ทั้งหมด" active={filter.type.length === 0} onClick={() => setFilter({ type: [] })} />
+            <FilterChip label="Manga" active={filter.type.includes('manga')} onClick={() => toggleArr('type', 'manga')} />
+            <FilterChip label="Novel" active={filter.type.includes('novel')} onClick={() => toggleArr('type', 'novel')} />
+            <FilterChip label="Light Novel" active={filter.type.includes('light_novel')} onClick={() => toggleArr('type', 'light_novel')} />
           </div>
         </FilterSection>
 
         {/* สถานะ */}
         <FilterSection title="สถานะการตีพิมพ์">
           <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.status} onClick={() => setFilter({ status: '' })} />
-            <FilterChip label="ยังไม่จบ" active={filter.status === 'ongoing'} onClick={() => setFilter({ status: filter.status === 'ongoing' ? '' : 'ongoing' })} />
-            <FilterChip label="จบแล้ว" active={filter.status === 'completed'} onClick={() => setFilter({ status: filter.status === 'completed' ? '' : 'completed' })} />
-            <FilterChip label="หยุดชั่วคราว" active={filter.status === 'hiatus'} onClick={() => setFilter({ status: filter.status === 'hiatus' ? '' : 'hiatus' })} />
-            <FilterChip label="โดนตัดจบ" active={filter.status === 'cancelled'} onClick={() => setFilter({ status: filter.status === 'cancelled' ? '' : 'cancelled' })} />
+            <FilterChip label="ทั้งหมด" active={filter.status.length === 0} onClick={() => setFilter({ status: [] })} />
+            <FilterChip label="ยังไม่จบ" active={filter.status.includes('ongoing')} onClick={() => toggleArr('status', 'ongoing')} />
+            <FilterChip label="จบแล้ว" active={filter.status.includes('completed')} onClick={() => toggleArr('status', 'completed')} />
+            <FilterChip label="หยุดชั่วคราว" active={filter.status.includes('hiatus')} onClick={() => toggleArr('status', 'hiatus')} />
+            <FilterChip label="โดนตัดจบ" active={filter.status.includes('cancelled')} onClick={() => toggleArr('status', 'cancelled')} />
           </div>
         </FilterSection>
 
         {/* สถานะการอ่าน */}
         <FilterSection title="สถานะการอ่าน">
           <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.readStatus} onClick={() => setFilter({ readStatus: '' })} />
-            <FilterChip label="🟢 อ่านจบสมบูรณ์" active={filter.readStatus === 'finished'} onClick={() => setFilter({ readStatus: filter.readStatus === 'finished' ? '' : 'finished' })} />
-            <FilterChip label="🟡 ทันปัจจุบัน" active={filter.readStatus === 'caughtup'} onClick={() => setFilter({ readStatus: filter.readStatus === 'caughtup' ? '' : 'caughtup' })} />
-            <FilterChip label="📖 กำลังอ่าน" active={filter.readStatus === 'reading'} onClick={() => setFilter({ readStatus: filter.readStatus === 'reading' ? '' : 'reading' })} />
-            <FilterChip label="📦 สายดอง" active={filter.readStatus === 'unread'} onClick={() => setFilter({ readStatus: filter.readStatus === 'unread' ? '' : 'unread' })} />
+            <FilterChip label="ทั้งหมด" active={filter.readStatus.length === 0} onClick={() => setFilter({ readStatus: [] })} />
+            <FilterChip icon={<Icons.CheckCircle />} label="อ่านจบสมบูรณ์" active={filter.readStatus.includes('finished')} onClick={() => toggleArr('readStatus', 'finished')} />
+            <FilterChip icon={<Icons.Clock />} label="ทันปัจจุบัน" active={filter.readStatus.includes('caughtup')} onClick={() => toggleArr('readStatus', 'caughtup')} />
+            <FilterChip icon={<Icons.BookOpen />} label="กำลังอ่าน" active={filter.readStatus.includes('reading')} onClick={() => toggleArr('readStatus', 'reading')} />
+            <FilterChip icon={<Icons.Archive />} label="สายดอง" active={filter.readStatus.includes('unread')} onClick={() => toggleArr('readStatus', 'unread')} />
           </div>
         </FilterSection>
 
         {/* สถานะการสะสม */}
         <FilterSection title="สถานะการสะสม">
           <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.collectStatus} onClick={() => setFilter({ collectStatus: '' })} />
-            <FilterChip label="✨ ครบถ้วน" active={filter.collectStatus === 'complete'} onClick={() => setFilter({ collectStatus: filter.collectStatus === 'complete' ? '' : 'complete' })} />
-            <FilterChip label="🛒 ยังขาดอยู่" active={filter.collectStatus === 'missing'} onClick={() => setFilter({ collectStatus: filter.collectStatus === 'missing' ? '' : 'missing' })} />
-            <FilterChip label="🚫 ไม่สะสม" active={filter.collectStatus === 'not_collecting'} onClick={() => setFilter({ collectStatus: filter.collectStatus === 'not_collecting' ? '' : 'not_collecting' })} />
+            <FilterChip label="ทั้งหมด" active={filter.collectStatus.length === 0} onClick={() => setFilter({ collectStatus: [] })} />
+            <FilterChip icon={<Icons.Sparkles />} label="ครบถ้วน" active={filter.collectStatus.includes('complete')} onClick={() => toggleArr('collectStatus', 'complete')} />
+            <FilterChip icon={<Icons.Cart />} label="ยังขาดอยู่" active={filter.collectStatus.includes('missing')} onClick={() => toggleArr('collectStatus', 'missing')} />
+            <FilterChip icon={<Icons.Ban />} label="ไม่สะสม" active={filter.collectStatus.includes('not_collecting')} onClick={() => toggleArr('collectStatus', 'not_collecting')} />
           </div>
         </FilterSection>
 
@@ -650,27 +665,7 @@ function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount
           <div className="filter-chip-group">
             <FilterChip label="ทั้งหมด" active={!filter.minRating} onClick={() => setFilter({ minRating: 0 })} />
             {[1, 2, 3, 4, 5].map(r => (
-              <FilterChip
-                key={r}
-                label={'★'.repeat(r) + '☆'.repeat(5 - r)}
-                active={filter.minRating === r}
-                onClick={() => setFilter({ minRating: filter.minRating === r ? 0 : r })}
-              />
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* ยังไม่ได้ให้คะแนน */}
-        <FilterSection title="คะแนนสูงสุด">
-          <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.maxRating} onClick={() => setFilter({ maxRating: 0 })} />
-            {[1, 2, 3, 4, 5].map(r => (
-              <FilterChip
-                key={r}
-                label={'★'.repeat(r) + '☆'.repeat(5 - r)}
-                active={filter.maxRating === r}
-                onClick={() => setFilter({ maxRating: filter.maxRating === r ? 0 : r })}
-              />
+              <FilterChip key={r} label={'★'.repeat(r) + '☆'.repeat(5 - r)} active={filter.minRating === r} onClick={() => setFilter({ minRating: filter.minRating === r ? 0 : r })} />
             ))}
           </div>
         </FilterSection>
@@ -684,23 +679,6 @@ function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount
             </select>
           </FilterSection>
         )}
-
-        {/* ปีที่พิมพ์ */}
-        <FilterSection title="ช่วงปีที่พิมพ์">
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input
-              className="input" type="number" placeholder="จาก" style={{ flex: 1 }}
-              value={filter.yearFrom || ""}
-              onChange={e => setFilter({ yearFrom: e.target.value })}
-            />
-            <span style={{ color: 'var(--muted)', fontSize: '.75rem' }}>–</span>
-            <input
-              className="input" type="number" placeholder="ถึง" style={{ flex: 1 }}
-              value={filter.yearTo || ""}
-              onChange={e => setFilter({ yearTo: e.target.value })}
-            />
-          </div>
-        </FilterSection>
       </div>
     </aside>
   );
@@ -842,14 +820,14 @@ export default function App() {
     return [...new Set(list)].sort();
   }, [series]);
 
-  const activeFilterCount = useMemo(() => {
+const activeFilterCount = useMemo(() => {
     let c = 0;
     if (filter.search) c++;
-    if (filter.type) c++;
-    if (filter.status) c++;
+    if (filter.type.length > 0) c++;
+    if (filter.status.length > 0) c++;
     if (filter.publisher) c++;
-    if (filter.readStatus) c++;
-    if (filter.collectStatus) c++;
+    if (filter.readStatus.length > 0) c++;
+    if (filter.collectStatus.length > 0) c++;
     if (filter.minRating) c++;
     if (filter.maxRating) c++;
     if (filter.yearFrom) c++;
@@ -868,8 +846,10 @@ export default function App() {
         (s.publisher && s.publisher.toLowerCase().includes(q))
       );
     }
-    if (filter.type) filtered = filtered.filter(s => s.type === filter.type);
-    if (filter.status) filtered = filtered.filter(s => s.status === filter.status);
+    
+    // เปลี่ยนมาใช้ .includes() เพื่อรองรับการเลือกหลายอัน
+    if (filter.type.length > 0) filtered = filtered.filter(s => filter.type.includes(s.type));
+    if (filter.status.length > 0) filtered = filtered.filter(s => filter.status.includes(s.status));
     if (filter.publisher) filtered = filtered.filter(s => s.publisher === filter.publisher);
     if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear >= Number(filter.yearFrom));
     if (filter.yearTo) filtered = filtered.filter(s => s.publishYear <= Number(filter.yearTo));
@@ -877,15 +857,27 @@ export default function App() {
     if (filter.minRating) filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
     if (filter.maxRating) filtered = filtered.filter(s => (s.rating || 0) <= filter.maxRating && (s.rating || 0) > 0);
 
+    // แก้ไขการกรองสถานะการอ่านและการสะสม
     filtered = filtered.filter(s => {
       const st = getSeriesDerivedStats(s);
-      if (filter.readStatus === 'finished' && !st.isFinishedReading) return false;
-      if (filter.readStatus === 'caughtup' && !st.isCaughtUp) return false;
-      if (filter.readStatus === 'reading' && !st.isReading) return false;
-      if (filter.readStatus === 'unread' && !st.isUnread) return false;
-      if (filter.collectStatus === 'complete' && !st.isCollectComplete) return false;
-      if (filter.collectStatus === 'missing' && !st.isCollectMissing) return false;
-      if (filter.collectStatus === 'not_collecting' && !st.isNotCollecting) return false;
+      
+      if (filter.readStatus.length > 0) {
+        let matchRead = false;
+        if (filter.readStatus.includes('finished') && st.isFinishedReading) matchRead = true;
+        if (filter.readStatus.includes('caughtup') && st.isCaughtUp) matchRead = true;
+        if (filter.readStatus.includes('reading') && st.isReading) matchRead = true;
+        if (filter.readStatus.includes('unread') && st.isUnread) matchRead = true;
+        if (!matchRead) return false;
+      }
+
+      if (filter.collectStatus.length > 0) {
+        let matchCollect = false;
+        if (filter.collectStatus.includes('complete') && st.isCollectComplete) matchCollect = true;
+        if (filter.collectStatus.includes('missing') && st.isCollectMissing) matchCollect = true;
+        if (filter.collectStatus.includes('not_collecting') && st.isNotCollecting) matchCollect = true;
+        if (!matchCollect) return false;
+      }
+
       return true;
     });
 
