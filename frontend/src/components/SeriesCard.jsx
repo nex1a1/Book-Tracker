@@ -93,6 +93,14 @@ export function SeriesListItem({ series }) {
 
   return (
     <div className="list-row">
+      
+      {/* 🔴 เพิ่มส่วนรูปปกขนาดเล็กตรงนี้ */}
+      {stats.n.imageUrl ? (
+        <img src={stats.n.imageUrl} alt={stats.n.title} className="list-row__cover" />
+      ) : (
+        <div className="list-row__cover list-row__cover--empty">ไม่มีรูป</div>
+      )}
+
       <div className="list-row__info">
         <div className="list-row__title-wrap">
           <h3 className="list-row__title" title={stats.n.title}>{stats.n.title}</h3>

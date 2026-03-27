@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 🔑 เอา Client ID ของ MyAnimeList มาใส่ตรงนี้เลยครับ!
-const MAL_CLIENT_ID = 'ใส่_CLIENT_ID_ของคุณที่นี่'; 
+const MAL_CLIENT_ID = 'c46d973094ed01130b93efd3a0015ab4'; 
 
 const dataDir = path.resolve('data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
@@ -86,14 +86,26 @@ app.get('/api/mal/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.status(400).json({ error: 'กรุณาส่งคำค้นหามาด้วย (q)' });
     
-    // Backend ใช้ fetch ยิงไปหา MAL พร้อมแนบ Header
+    console.log(`[MAL API] 🔍 กำลังค้นหาเรื่อง: ${q}`);
+
+    // กลับมาใช้ fetch แบบคลีนๆ (เพราะ Node 20 ของคุณรองรับสบายมาก)
     const response = await fetch(`https://api.myanimelist.net/v2/manga?q=${encodeURIComponent(q)}&limit=5`, {
-      headers: { 'X-MAL-CLIENT-ID': MAL_CLIENT_ID }
+      headers: { 'X-MAL-CLIENT-ID': MAL_CLIENT_ID } // ตรงนี้ต้องไม่มีภาษาไทยแล้วนะ!
     });
     
     const data = await response.json();
+
+    // เช็กว่าถ้า MAL เตะกลับมา
+    if (!response.ok) {
+      console.error(`[MAL API] ❌ Error จาก MAL:`, data);
+      return res.status(response.status).json(data);
+    }
+
+    console.log(`[MAL API] ✅ ดึงข้อมูลสำเร็จ พบ ${data.data?.length || 0} เรื่อง`);
     res.json(data);
+
   } catch (error) {
+    console.error("[Backend Error] 💥 พังตอนดึงข้อมูล MAL:", error.message);
     res.status(500).json({ error: error.message });
   }
 });

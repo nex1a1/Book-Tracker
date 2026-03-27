@@ -272,29 +272,35 @@ export function MissingVolumesModal({ onClose }) {
           <h2 className="modal__title" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><Icons.Receipt /> เช็กลิสต์หนังสือที่ยังขาด</h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
-        <div className="modal__body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '20px' }}>
+        <div className="modal__body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '16px' }}>
           {missingList.length === 0 ? (
              <div className="empty-state"><div className="empty-state__icon">🎉</div><h3>สุดยอด!</h3><p>คุณตามเก็บหนังสือครบทุกเรื่องแล้ว ไม่มีอะไรค้าง!</p></div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {missingList.map((item, i) => (
-                <div key={i} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, color: 'var(--ink)' }}>{i + 1}. {item.title}</h4>
+                <div key={i} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
+                  {/* Row 1: ลำดับ + ชื่อ + badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--ink)', fontSize: '0.875rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {i + 1}. {item.title}
+                    </span>
                     <span className={`badge badge--${item.rawType}`}>{item.typeStr}</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {item.author && <span><strong>ผู้แต่ง:</strong> {item.author}</span>}
-                    {(item.author && item.publisher) && <span>|</span>}
-                    {item.publisher && <span><strong>สนพ:</strong> {item.publisher}</span>}
-                  </div>
-                  <div style={{ background: 'var(--paper)', borderRadius: '6px', padding: '8px 12px' }}>
-                    {item.formats.map((f, j) => (
-                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 0', borderTop: j > 0 ? '1px dashed var(--border)' : 'none' }}>
-                        <span style={{ color: 'var(--muted)' }}>ขาด ({f.title}):</span>
-                        <span style={{ color: 'var(--special-color)', fontWeight: 'bold' }}>เล่ม {f.missingText}</span>
-                      </div>
-                    ))}
+                  {/* Row 2: meta + missing volumes inline */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginTop: '5px' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--muted)', display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                      {item.author && <span>{item.author}</span>}
+                      {item.author && item.publisher && <span style={{ opacity: 0.4 }}>·</span>}
+                      {item.publisher && <span>{item.publisher}</span>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                      {item.formats.map((f, j) => (
+                        <div key={j} style={{ fontSize: '0.78rem', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--muted)' }}>{f.title}:</span>
+                          <span style={{ color: 'var(--special-color)', fontWeight: 700 }}>เล่ม {f.missingText}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
