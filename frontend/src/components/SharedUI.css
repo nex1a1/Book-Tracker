@@ -1,0 +1,47 @@
+/* ── Progress Bars ──────────────────────────────────────── */
+.volume-progress { display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,.02); padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); }
+.progress-item { display: flex; flex-direction: column; gap: 2px; }
+.progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; text-transform: uppercase; }
+.progress-label { font-size: .72rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.progress-percent { font-size: .68rem; font-weight: 800; color: var(--muted); }
+.progress-track { height: 6px; background: var(--cream); border-radius: 0px; overflow: hidden; }
+.progress-fill { height: 100%; transition: width 0.4s ease-out; }
+.vbar-mini-grid { display: flex; flex-wrap: wrap; gap: 1.5px; margin-top: 3px; }
+.vbar-mini-cell-wrap { width: 8px; height: 8px; }
+.vbar-mini-cell { width: 100%; height: 100%; background: var(--cell-empty); border-radius: 0px; transition: background 0.2s; }
+.vbar-mini-gap { width: 4px; height: 8px; flex-shrink: 0; position: relative; }
+.vbar-mini-gap::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border); opacity: 0.5; }
+
+.vbar-mini-grid .vbar-mini-cell.read { background: var(--read-color); }
+.vbar-mini-grid .vbar-mini-cell.bought { background: var(--buy-color); }
+.vbar-mini-grid .vbar-mini-cell.special { border: 1.5px solid var(--special-color); background: var(--cream); }
+.vbar-mini-grid .vbar-mini-cell.read.special { background: var(--special-color); border: none; }
+.vbar-mini-grid .vbar-mini-cell.bought.special { background: var(--special-color); border: none; }
+
+/* Mini Progress */
+.progress-item--mini { margin-top: 0 !important; padding-top: 0 !important; border-top: none !important; }
+.progress-item--mini .progress-label { font-size: .68rem; }
+.progress-item--mini .progress-track { height: 4px; }
+.progress-item--mini .vbar-mini-grid { margin-top: 2px; gap: 1px; }
+.progress-item--mini .vbar-mini-cell-wrap { width: 6px; height: 6px; }
+.progress-item--mini .vbar-mini-gap { width: 3px; height: 6px; }
+
+/* ── Star Rating ─────────────────────────────────────────── */
+.star-rating { display: flex; align-items: center; gap: 2px; }
+.star-rating--readonly { pointer-events: none; }
+.star-btn { background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; color: var(--border-hover); transition: color .1s, transform .1s; }
+.star-btn:hover { transform: scale(1.2); }
+.star-btn.filled { color: var(--star-color); }
+.star-rating--xs .star-btn { padding: 1px; }
+.star-rating--xs svg { width: 11px; height: 11px; }
+.star-rating--sm .star-btn { padding: 2px; }
+.star-rating--sm svg { width: 13px; height: 13px; }
+.star-rating--lg .star-btn { padding: 3px; }
+.star-rating--lg svg { width: 18px; height: 18px; }
+.star-label { font-size: .72rem; color: var(--muted); margin-left: 6px; }
+
+/* ── Range Editor ────────────────────────────────────────── */
+.range-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.range-tag { display: inline-flex; align-items: center; gap: 4px; margin: 2px; background: var(--paper); padding: 2px 4px; border-radius: 2px; border: 1px solid var(--border); color: var(--accent); }
+.range-tag .btn-icon { width: 16px; height: 16px; font-size: .55rem; }
+.range-row__sep { color: var(--muted); }
