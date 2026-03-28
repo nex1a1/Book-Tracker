@@ -88,14 +88,12 @@ app.get('/api/mal/search', async (req, res) => {
     
     console.log(`[MAL API] 🔍 กำลังค้นหาเรื่อง: ${q}`);
 
-    // กลับมาใช้ fetch แบบคลีนๆ (เพราะ Node 20 ของคุณรองรับสบายมาก)
-    const response = await fetch(`https://api.myanimelist.net/v2/manga?q=${encodeURIComponent(q)}&limit=5`, {
-      headers: { 'X-MAL-CLIENT-ID': MAL_CLIENT_ID } // ตรงนี้ต้องไม่มีภาษาไทยแล้วนะ!
+    const response = await fetch(`https://api.myanimelist.net/v2/manga?q=${encodeURIComponent(q)}&limit=5&fields=authors{first_name,last_name},num_volumes,start_date,end_date,status`, {
+      headers: { 'X-MAL-CLIENT-ID': MAL_CLIENT_ID }
     });
     
     const data = await response.json();
 
-    // เช็กว่าถ้า MAL เตะกลับมา
     if (!response.ok) {
       console.error(`[MAL API] ❌ Error จาก MAL:`, data);
       return res.status(response.status).json(data);

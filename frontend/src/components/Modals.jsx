@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import './Modals.css';
 import { Icons } from "./Icons";
+import './Modals.css';
 import { StarRating, RangeEditor } from "./SharedUI";
 import { useSeriesStore, seriesApi } from "../store";
 import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../utils";
@@ -11,7 +11,6 @@ export function SeriesInfoModal({ series, onClose }) {
   const isEdit = !!series;
   const normSeries = normalizeSeriesData(series);
   
-  // ✅ 1. เพิ่ม imageUrl เข้าไปใน State เริ่มต้น
   const initialState = {
     title: normSeries?.title || "", author: normSeries?.author || "", publisher: normSeries?.publisher || "",
     publishYear: normSeries?.publishYear || "", endYear: normSeries?.endYear || "",
@@ -24,46 +23,90 @@ export function SeriesInfoModal({ series, onClose }) {
   };
   
   const [form, setForm] = useState(initialState);
-  
-  // ✅ 2. สร้าง State สำหรับเก็บผลลัพธ์จาก MAL และสถานะตอนกำลังโหลด
   const [malResults, setMalResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  
   const { fetchSeries, fetchStats } = useSeriesStore();
 
-  // ✅ 3. ฟังก์ชันสำหรับยิง API ไปหา Backend ของเรา ให้ไปคุยกับ MAL ต่อ
   const searchMAL = async () => {
     if (!form.title || form.title.trim() === "") return toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
-    
     setIsSearching(true);
     try {
-      // เรียกใช้ API Route ที่เราเพิ่งสร้างใน Backend
       const res = await fetch(`/api/mal/search?q=${encodeURIComponent(form.title)}`);
       const data = await res.json();
-      
       if (data.data && data.data.length > 0) {
         setMalResults(data.data);
-        toast.success(`พบ ${data.data.length} เรื่อง! คลิกที่รูปเพื่อเลือกปกได้เลย`);
+        toast.success(`พบ ${data.data.length} เรื่อง! คลิกที่รูปเพื่อดึงข้อมูลเลย`);
       } else {
         toast.error("ไม่พบข้อมูลเรื่องนี้ในระบบ MAL");
         setMalResults([]);
       }
-    } catch (err) {
-      toast.error("เกิดข้อผิดพลาดในการดึงข้อมูล");
-    } finally {
-      setIsSearching(false);
+    } catch (err) { toast.error("เกิดข้อผิดพลาดในการดึงข้อมูล"); } 
+    finally { setIsSearching(false); }
+  };
+
+  const handleSelectMalItem = (m) => {
+    const node = m.node;
+    const coverUrl = node.main_picture?.large || node.main_picture?.medium || "";
+    
+    // 1. จัดการชื่อผู้แต่ง (กันกรณีที่ MAL ส่งมาแค่ชื่อ หรือแค่นามสกุล)
+    let authorStr = form.author;
+    if (node.authors && node.authors.length > 0) {
+      authorStr = node.authors.map(a => {
+        const fname = a.node.first_name || "";
+        const lname = a.node.last_name || "";
+        return `${fname} ${lname}`.trim();
+      }).filter(n => n !== "").join(", ");
     }
+
+    // 2. จัดการปีที่พิมพ์
+    let pYear = form.publishYear;
+    if (node.start_date) pYear = node.start_date.substring(0, 4);
+    
+    // 3. จัดการสถานะและปีที่จบ
+    let st = form.status;
+    let eYear = form.endYear;
+    if (node.status === "finished") {
+       st = "completed";
+       if (node.end_date) eYear = node.end_date.substring(0, 4);
+    } else if (node.status === "currently_publishing") st = "ongoing";
+    else if (node.status === "on_hiatus") st = "hiatus";
+    else if (node.status === "discontinued") st = "cancelled";
+
+    // 4. จัดการจำนวนเล่ม (อัปเดตให้ทั้งฝั่งอ่านและฝั่งสะสมพร้อมกัน!)
+    const newReadingLogs = [...form.readingLogs];
+    const newCollectionLogs = [...form.collectionLogs];
+    
+    // 💡 ระบบจะเติมเลขให้ก็ต่อเมื่อ MAL มีข้อมูล (คือเฉพาะเรื่องที่จบแล้วเท่านั้น)
+    if (node.num_volumes && node.num_volumes > 0) {
+      newReadingLogs[0] = { ...newReadingLogs[0], totalVolumes: node.num_volumes.toString() };
+      newCollectionLogs[0] = { ...newCollectionLogs[0], totalVolumes: node.num_volumes.toString() };
+    }
+
+    setForm({
+      ...form,
+      imageUrl: coverUrl,
+      author: authorStr || form.author,
+      publishYear: pYear || form.publishYear,
+      status: st,
+      endYear: eYear || form.endYear,
+      readingLogs: newReadingLogs,
+      collectionLogs: newCollectionLogs
+    });
+    
+    toast.success("ดึงข้อมูลอัตโนมัติเรียบร้อย! (ตรวจสอบและแก้ไขได้เลย)");
   };
 
   const updateLog = (key, idx, field, val) => {
     const newList = [...form[key]]; newList[idx][field] = val;
     setForm({ ...form, [key]: newList });
   };
+  
   const handleStatusChange = (e) => {
     const val = e.target.value;
     if (val === 'ongoing' || val === 'hiatus') setForm({ ...form, status: val, endYear: "" });
     else setForm({ ...form, status: val });
   };
+  
   const save = async () => {
     if (!form.title || form.title.toString().trim() === "") return toast.error("กรุณากรอกชื่อเรื่อง");
     if (!form.author || form.author.toString().trim() === "") return toast.error("กรุณากรอกผู้แต่ง");
@@ -96,38 +139,27 @@ export function SeriesInfoModal({ series, onClose }) {
           <div className="form-section">
             <h3 className="form-section__title"><Icons.Info /> ข้อมูลพื้นฐาน</h3>
             
-            {/* ✅ 4. เพิ่มปุ่มค้นหาปกไว้ข้างๆ ช่องชื่อเรื่อง */}
             <div className="field">
               <span>ชื่อเรื่อง <span className="danger">*</span></span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input className="input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-                <button 
-                  className="btn btn--primary" 
-                  onClick={searchMAL} 
-                  disabled={isSearching} 
-                  style={{ flexShrink: 0 }}
-                >
+                <button className="btn btn--primary" onClick={searchMAL} disabled={isSearching} style={{ flexShrink: 0 }}>
                   {isSearching ? "กำลังหา..." : "🔍 ค้นหาปกใน MAL"}
                 </button>
               </div>
             </div>
 
-            {/* ✅ 5. พื้นที่แสดงผลลัพธ์จาก MAL ให้ผู้ใช้คลิกเลือกรูป */}
             {malResults.length > 0 && (
               <div style={{ background: 'var(--paper)', padding: '12px', borderRadius: 'var(--radius)', border: '1px dashed var(--border)', display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '8px' }}>
                 {malResults.map(m => {
                   const coverUrl = m.node.main_picture?.large || m.node.main_picture?.medium || "";
                   const isSelected = form.imageUrl === coverUrl;
                   return (
+                    // 🔴 เปลี่ยนมาเรียกใช้ฟังก์ชัน handleSelectMalItem ตรงนี้
                     <div 
                       key={m.node.id} 
-                      onClick={() => setForm({ ...form, imageUrl: coverUrl })}
-                      style={{ 
-                        cursor: 'pointer', 
-                        border: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
-                        borderRadius: '4px', padding: '2px', minWidth: '80px', textAlign: 'center',
-                        transition: 'all 0.2s', opacity: isSelected ? 1 : 0.6
-                      }}
+                      onClick={() => handleSelectMalItem(m)}
+                      style={{ cursor: 'pointer', border: isSelected ? '2px solid var(--accent)' : '2px solid transparent', borderRadius: '4px', padding: '2px', minWidth: '80px', textAlign: 'center', transition: 'all 0.2s', opacity: isSelected ? 1 : 0.6 }}
                     >
                       <img src={m.node.main_picture?.medium} alt="" style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '2px' }} />
                       <div style={{ fontSize: '0.65rem', color: isSelected ? 'var(--accent)' : 'var(--muted)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '76px' }} title={m.node.title}>
@@ -140,7 +172,6 @@ export function SeriesInfoModal({ series, onClose }) {
               </div>
             )}
 
-            {/* ✅ 6. ช่องใส่ลิงก์รูป (เผื่ออยากแปะรูปไทยเอง) */}
             <div className="field">
               <span>ลิงก์รูปหน้าปก (เลือกจาก MAL หรือแปะลิงก์เอง)</span>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -272,35 +303,29 @@ export function MissingVolumesModal({ onClose }) {
           <h2 className="modal__title" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><Icons.Receipt /> เช็กลิสต์หนังสือที่ยังขาด</h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
-        <div className="modal__body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '16px' }}>
+        <div className="modal__body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '20px' }}>
           {missingList.length === 0 ? (
              <div className="empty-state"><div className="empty-state__icon">🎉</div><h3>สุดยอด!</h3><p>คุณตามเก็บหนังสือครบทุกเรื่องแล้ว ไม่มีอะไรค้าง!</p></div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {missingList.map((item, i) => (
-                <div key={i} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
-                  {/* Row 1: ลำดับ + ชื่อ + badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--ink)', fontSize: '0.875rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {i + 1}. {item.title}
-                    </span>
+                <div key={i} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                    <h4 style={{ margin: 0, color: 'var(--ink)' }}>{i + 1}. {item.title}</h4>
                     <span className={`badge badge--${item.rawType}`}>{item.typeStr}</span>
                   </div>
-                  {/* Row 2: meta + missing volumes inline */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginTop: '5px' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--muted)', display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-                      {item.author && <span>{item.author}</span>}
-                      {item.author && item.publisher && <span style={{ opacity: 0.4 }}>·</span>}
-                      {item.publisher && <span>{item.publisher}</span>}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
-                      {item.formats.map((f, j) => (
-                        <div key={j} style={{ fontSize: '0.78rem', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--muted)' }}>{f.title}:</span>
-                          <span style={{ color: 'var(--special-color)', fontWeight: 700 }}>เล่ม {f.missingText}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {item.author && <span><strong>ผู้แต่ง:</strong> {item.author}</span>}
+                    {(item.author && item.publisher) && <span>|</span>}
+                    {item.publisher && <span><strong>สนพ:</strong> {item.publisher}</span>}
+                  </div>
+                  <div style={{ background: 'var(--paper)', borderRadius: '6px', padding: '8px 12px' }}>
+                    {item.formats.map((f, j) => (
+                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 0', borderTop: j > 0 ? '1px dashed var(--border)' : 'none' }}>
+                        <span style={{ color: 'var(--muted)' }}>ขาด ({f.title}):</span>
+                        <span style={{ color: 'var(--special-color)', fontWeight: 'bold' }}>เล่ม {f.missingText}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
