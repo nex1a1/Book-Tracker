@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Icons } from "./Icons";
+import { Icons } from "../../components/Icons";
 import './Modals.css';
-import { StarRating, RangeEditor } from "./SharedUI";
-import { useSeriesStore, seriesApi } from "../store";
-import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../utils";
+import { StarRating, RangeEditor } from "../../components/SharedUI";
+import { useSeriesStore } from "../../store/useSeriesStore";
+import { seriesApi } from "../../api/seriesApi";
+import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../../utils";
 
 export function SeriesInfoModal({ series, onClose }) {
   const isEdit = !!series;
@@ -25,7 +26,10 @@ export function SeriesInfoModal({ series, onClose }) {
   const [form, setForm] = useState(initialState);
   const [malResults, setMalResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const { fetchSeries, fetchStats } = useSeriesStore();
+  const { fetchSeries, fetchStats, authors, publishers } = useSeriesStore();
+
+  const authorDatalistId = "author-list";
+  const publisherDatalistId = "publisher-list";
 
   const searchMAL = async () => {
     if (!form.title || form.title.trim() === "") return toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
@@ -123,7 +127,7 @@ export function SeriesInfoModal({ series, onClose }) {
       };
       if (isEdit && series) await seriesApi.update(series._id, payload);
       else await seriesApi.create(payload);
-      await Promise.all([fetchSeries(), fetchStats()]);
+      await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
       toast.success("บันทึกสำเร็จ"); onClose();
     } catch { toast.error("เกิดข้อผิดพลาด"); }
   };
@@ -185,8 +189,20 @@ export function SeriesInfoModal({ series, onClose }) {
             </div>
 
             <div className="field-row">
-              <div className="field"><span>ผู้แต่ง <span className="danger">*</span></span><input className="input" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} /></div>
-              <div className="field"><span>สำนักพิมพ์ <span className="danger">*</span></span><input className="input" value={form.publisher} onChange={e => setForm({ ...form, publisher: e.target.value })} /></div>
+              <div className="field">
+                <span>ผู้แต่ง <span className="danger">*</span></span>
+                <input className="input" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} list={authorDatalistId} />
+                <datalist id={authorDatalistId}>
+                  {authors.map(a => <option key={a.id} value={a.name} />)}
+                </datalist>
+              </div>
+              <div className="field">
+                <span>สำนักพิมพ์ <span className="danger">*</span></span>
+                <input className="input" value={form.publisher} onChange={e => setForm({ ...form, publisher: e.target.value })} list={publisherDatalistId} />
+                <datalist id={publisherDatalistId}>
+                  {publishers.map(p => <option key={p.id} value={p.name} />)}
+                </datalist>
+              </div>
             </div>
             <div className="field-row">
               <div className="field"><span>ปีที่พิมพ์ <span className="danger">*</span></span><input type="number" className="input" value={form.publishYear} onChange={e => setForm({ ...form, publishYear: e.target.value })} /></div>

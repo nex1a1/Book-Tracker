@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Icons } from "./Icons";
-import { StarRating, AggregatedVolumeBar } from "./SharedUI";
-import { SeriesInfoModal } from "./Modals";
-import { useSeriesStore } from "../store";
+import { Icons } from "../../components/Icons";
+import { StarRating, AggregatedVolumeBar } from "../../components/SharedUI";
+import { SeriesInfoModal } from "../modals/Modals";
+import { useSeriesStore } from "../../store/useSeriesStore";
 import './SeriesCard.css';
-import { getSeriesDerivedStats, getMissingVolumesText, TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../utils";
+import { getSeriesDerivedStats, getMissingVolumesText, TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../utils";
 
 export function SeriesCard({ series }) {
   const [showEdit, setShowEdit] = useState(false);
