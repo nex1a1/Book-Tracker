@@ -6,7 +6,7 @@ import './Modals.css';
 import { StarRating, RangeEditor } from "../../components/SharedUI";
 import { useSeriesStore } from "../../store/useSeriesStore";
 import { seriesApi } from "../../api/seriesApi";
-import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../../utils";
+import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../../utils";
 
 export function SeriesInfoModal({ series, onClose }) {
   const isEdit = !!series;
@@ -101,7 +101,16 @@ export function SeriesInfoModal({ series, onClose }) {
   };
 
   const updateLog = (key, idx, field, val) => {
-    const newList = [...form[key]]; newList[idx][field] = val;
+    const newList = [...form[key]];
+    const log = newList[idx];
+    if (key === 'collectionLogs' && field === 'format') {
+      const oldFormat = log.format || 'normal';
+      const oldFormatLabel = FORMAT_LABEL[oldFormat] || '';
+      if (!log.title || log.title.trim() === "" || log.title === oldFormatLabel || log.title === "เล่มปกติ") {
+        log.title = FORMAT_LABEL[val] || '';
+      }
+    }
+    log[field] = val;
     setForm({ ...form, [key]: newList });
   };
   
@@ -276,7 +285,14 @@ export function SeriesInfoModal({ series, onClose }) {
 
 export function MissingVolumesModal({ onClose }) {
   const { series } = useSeriesStore();
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPublisher, setSelectedPublisher] = useState("all");
+  const [viewMode, setViewMode] = useState("grouped"); // "grouped" | "list"
+  const [checkedItems, setCheckedItems] = useState(new Set());
+  const [collapsedPubs, setCollapsedPubs] = useState(new Set());
+  const [editingSeries, setEditingSeries] = useState(null);
+
+  // 1. Gather all series that have missing volumes
   const missingList = useMemo(() => {
     const list = [];
     series.forEach(s => {
@@ -286,21 +302,119 @@ export function MissingVolumesModal({ onClose }) {
         stats.n.collectionLogs.forEach(log => {
           const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
           if (missingText !== 'ครบถ้วน' && missingText !== '-') {
-            formats.push({ title: log.title || FORMAT_LABEL[log.format], missingText });
+            const boughtCount = getSetFromRanges(log.ranges).size;
+            const limit = Number(log.totalVolumes) || 0;
+            const count = Math.max(0, limit - boughtCount);
+
+            formats.push({ 
+              id: log.id,
+              format: log.format,
+              title: log.title || FORMAT_LABEL[log.format], 
+              missingText,
+              missingCount: count
+            });
           }
         });
         if (formats.length > 0) {
-          list.push({ title: s.title, author: s.author, publisher: s.publisher, typeStr: TYPE_LABEL[s.type] || s.type, rawType: s.type, formats });
+          list.push({ 
+            _id: s._id,
+            title: s.title, 
+            author: s.author, 
+            publisher: s.publisher || "ไม่ระบุสำนักพิมพ์", 
+            typeStr: TYPE_LABEL[s.type] || s.type, 
+            rawType: s.type, 
+            formats,
+            rawSeries: s 
+          });
         }
       }
     });
     return list;
   }, [series]);
 
+  // 2. Filter list based on search and selected publisher
+  const filteredList = useMemo(() => {
+    return missingList.filter(item => {
+      const matchSearch = 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.author && item.author.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.publisher && item.publisher.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchPublisher = selectedPublisher === "all" || item.publisher === selectedPublisher;
+      
+      return matchSearch && matchPublisher;
+    });
+  }, [missingList, searchQuery, selectedPublisher]);
+
+  // 3. Unique publisher options for filter dropdown
+  const publisherOptions = useMemo(() => {
+    const pubs = new Set();
+    missingList.forEach(item => {
+      if (item.publisher) pubs.add(item.publisher);
+    });
+    return Array.from(pubs).sort();
+  }, [missingList]);
+
+  // 4. Grouped missing items for Publisher view
+  const groupedByPublisher = useMemo(() => {
+    const groups = {};
+    filteredList.forEach(item => {
+      const pub = item.publisher || "ไม่ระบุสำนักพิมพ์";
+      if (!groups[pub]) groups[pub] = [];
+      groups[pub].push(item);
+    });
+    return groups;
+  }, [filteredList]);
+
+  // 5. Active dynamic statistics
+  const stats = useMemo(() => {
+    let totalSeries = filteredList.length;
+    let totalVolumes = 0;
+    let checkedVolumes = 0;
+    let checkedItemsCount = 0;
+
+    filteredList.forEach(item => {
+      item.formats.forEach(f => {
+        totalVolumes += f.missingCount;
+        const key = `${item._id}-${f.id}`;
+        if (checkedItems.has(key)) {
+          checkedVolumes += f.missingCount;
+          checkedItemsCount++;
+        }
+      });
+    });
+
+    return { totalSeries, totalVolumes, checkedVolumes, checkedItemsCount };
+  }, [filteredList, checkedItems]);
+
+  const toggleCheckItem = (key) => {
+    const next = new Set(checkedItems);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setCheckedItems(next);
+  };
+
+  const toggleCollapsePub = (pub) => {
+    const next = new Set(collapsedPubs);
+    if (next.has(pub)) next.delete(pub);
+    else next.add(pub);
+    setCollapsedPubs(next);
+  };
+
+  // Copy items to clipboard (excluding checked ones)
   const handleCopy = () => {
-    if (missingList.length === 0) return;
+    const itemsToCopy = filteredList.map(item => {
+      const remainingFormats = item.formats.filter(f => !checkedItems.has(`${item._id}-${f.id}`));
+      if (remainingFormats.length === 0) return null;
+      return { ...item, formats: remainingFormats };
+    }).filter(Boolean);
+
+    if (itemsToCopy.length === 0) {
+      return toast.error("ไม่มีรายการที่ยังไม่เช็กเหลืออยู่ให้คัดลอก");
+    }
+
     let textToCopy = "📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n";
-    missingList.forEach((item, index) => {
+    itemsToCopy.forEach((item, index) => {
       textToCopy += `${index + 1}. ${item.title}\n`;
       const details = [];
       if (item.author) details.push(`แต่ง: ${item.author}`);
@@ -309,50 +423,260 @@ export function MissingVolumesModal({ onClose }) {
       item.formats.forEach(f => { textToCopy += `   👉 ขาด (${f.title}): เล่ม ${f.missingText}\n`; });
       textToCopy += "\n";
     });
-    navigator.clipboard.writeText(textToCopy.trim()).then(() => toast.success("คัดลอกข้อความลงคลิปบอร์ดแล้ว!")).catch(() => toast.error("ไม่สามารถคัดลอกได้"));
+    
+    navigator.clipboard.writeText(textToCopy.trim())
+      .then(() => toast.success("คัดลอกรายการที่เหลือลงคลิปบอร์ดแล้ว!"))
+      .catch(() => toast.error("ไม่สามารถคัดลอกได้"));
+  };
+
+  const handleCopySingle = (item) => {
+    let textToCopy = `📚 ${item.title}\n`;
+    const details = [];
+    if (item.author) details.push(`แต่ง: ${item.author}`);
+    if (item.publisher) details.push(`สนพ: ${item.publisher}`);
+    if (details.length > 0) textToCopy += `(${details.join(' | ')})\n`;
+    item.formats.forEach(f => { textToCopy += `👉 ขาด (${f.title}): เล่ม ${f.missingText}\n`; });
+    
+    navigator.clipboard.writeText(textToCopy.trim())
+      .then(() => toast.success(`คัดลอก "${item.title}" แล้ว!`))
+      .catch(() => toast.error("ไม่สามารถคัดลอกได้"));
+  };
+
+  // Rendering a row
+  const renderItemRow = (item) => {
+    return item.formats.map((f) => {
+      const itemKey = `${item._id}-${f.id}`;
+      const isChecked = checkedItems.has(itemKey);
+
+      return (
+        <div key={itemKey} className={`checklist-item-row ${isChecked ? "is-checked" : ""}`}>
+          <div className="checklist-item-checkbox-wrapper">
+            <div 
+              className="checklist-custom-checkbox" 
+              onClick={() => toggleCheckItem(itemKey)}
+              title={isChecked ? "ยกเลิกการเลือก" : "ทำเครื่องหมายว่าหยิบแล้ว"}
+            >
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div className="checklist-item-title-col">
+            <h4 className="checklist-item-title" title={item.title}>{item.title}</h4>
+            <span className={`badge checklist-item-badge badge--${item.rawType}`}>{item.typeStr}</span>
+          </div>
+
+          <div className="checklist-item-author-col" title={item.author || "ไม่ระบุ"}>
+            {item.author || <span className="checklist-empty-field">-</span>}
+          </div>
+
+          <div className="checklist-item-publisher-col" title={item.publisher}>
+            {item.publisher && item.publisher !== "ไม่ระบุสำนักพิมพ์" ? (
+              item.publisher
+            ) : (
+              <span className="checklist-empty-field">-</span>
+            )}
+          </div>
+
+          <div className="checklist-item-missing-col">
+            {f.title && f.title !== "เล่มปกติ" && (
+              <span className="checklist-item-format">{f.title}</span>
+            )}
+            <span className="checklist-item-missing-volumes">เล่ม {f.missingText}</span>
+          </div>
+
+          <div className="checklist-item-actions">
+            <button 
+              className="checklist-row-btn checklist-row-btn--edit" 
+              onClick={() => setEditingSeries(item.rawSeries)}
+              title="แก้ไขรายละเอียดเรื่องนี้"
+            >
+              <Icons.Edit />
+            </button>
+            <button 
+              className="checklist-row-btn checklist-row-btn--copy" 
+              onClick={() => handleCopySingle(item)}
+              title="คัดลอกข้อมูลเรื่องนี้"
+            >
+              <Icons.Copy />
+            </button>
+          </div>
+        </div>
+      );
+    });
   };
 
   return createPortal(
     <div className="modal-overlay">
-      <div className="modal" style={{ maxWidth: '600px' }}>
+      <div className="modal" style={{ maxWidth: '1200px', width: '95vw', height: '85vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal__header">
           <h2 className="modal__title" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><Icons.Receipt /> เช็กลิสต์หนังสือที่ยังขาด</h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
-        <div className="modal__body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '20px' }}>
-          {missingList.length === 0 ? (
-             <div className="empty-state"><div className="empty-state__icon">🎉</div><h3>สุดยอด!</h3><p>คุณตามเก็บหนังสือครบทุกเรื่องแล้ว ไม่มีอะไรค้าง!</p></div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {missingList.map((item, i) => (
-                <div key={i} style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, color: 'var(--ink)' }}>{i + 1}. {item.title}</h4>
-                    <span className={`badge badge--${item.rawType}`}>{item.typeStr}</span>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {item.author && <span><strong>ผู้แต่ง:</strong> {item.author}</span>}
-                    {(item.author && item.publisher) && <span>|</span>}
-                    {item.publisher && <span><strong>สนพ:</strong> {item.publisher}</span>}
-                  </div>
-                  <div style={{ background: 'var(--paper)', borderRadius: '6px', padding: '8px 12px' }}>
-                    {item.formats.map((f, j) => (
-                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 0', borderTop: j > 0 ? '1px dashed var(--border)' : 'none' }}>
-                        <span style={{ color: 'var(--muted)' }}>ขาด ({f.title}):</span>
-                        <span style={{ color: 'var(--special-color)', fontWeight: 'bold' }}>เล่ม {f.missingText}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+
+        <div className="modal__body" style={{ padding: '16px 20px', gap: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
+          
+          {/* Header Controls Bar */}
+          <div className="checklist-header-bar">
+            {/* Stats Pill */}
+            <div className="checklist-stats-bar">
+              <div className="checklist-stats-bar__pills">
+                <span className="checklist-stats-pill">
+                  ขาดทั้งหมด {stats.totalSeries} เรื่อง ({stats.totalVolumes} เล่ม)
+                </span>
+                {stats.checkedVolumes > 0 && (
+                  <span className="checklist-stats-pill checklist-stats-pill--muted">
+                    หยิบแล้ว {stats.checkedVolumes} เล่ม ({stats.checkedItemsCount} รายการ)
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                * ติ๊กถูกวงกลมด้านซ้ายเพื่อตัดรายการออกชั่วคราวขณะเลือกซื้อ
+              </span>
             </div>
-          )}
+
+            {/* Filter controls */}
+            <div className="checklist-controls">
+              {/* Search Box */}
+              <div className="checklist-search-wrapper">
+                <span className="checklist-search-icon"><Icons.Search /></span>
+                <input 
+                  type="text" 
+                  className="input checklist-search-input" 
+                  placeholder="ค้นหาชื่อเรื่อง / ผู้แต่ง / สนพ..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Publisher Selector */}
+              <select 
+                className="checklist-select-filter"
+                value={selectedPublisher}
+                onChange={(e) => setSelectedPublisher(e.target.value)}
+              >
+                <option value="all">ทุกสำนักพิมพ์</option>
+                {publisherOptions.map((pub, i) => (
+                  <option key={i} value={pub}>{pub}</option>
+                ))}
+              </select>
+
+              {/* View Toggle */}
+              <div className="checklist-view-toggle">
+                <button 
+                  className={`checklist-view-btn ${viewMode === 'grouped' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grouped')}
+                  title="แยกกลุ่มตามสำนักพิมพ์"
+                >
+                  <Icons.Filter /> แยก สนพ.
+                </button>
+                <button 
+                  className={`checklist-view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewMode('list')}
+                  title="แสดงรายการยาวทั้งหมด"
+                >
+                  <Icons.List /> รายการยาว
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Checklist Main Body */}
+          <div className="checklist-body">
+            {filteredList.length === 0 ? (
+              <div className="empty-state" style={{ padding: '40px 20px' }}>
+                <div className="empty-state__icon">
+                  {missingList.length === 0 ? "🎉" : "🔍"}
+                </div>
+                <h3>{missingList.length === 0 ? "ครบถ้วนสมบูรณ์!" : "ไม่พบผลลัพธ์"}</h3>
+                <p>
+                  {missingList.length === 0 
+                    ? "คุณสะสมครบทุกเล่มทุกเรื่องแล้วครับ สุดยอดเลย!" 
+                    : "ไม่พบรายการหนังสือขาดที่ตรงกับเงื่อนไขการค้นหา/ตัวกรอง"}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Table Grid Headers */}
+                <div className="checklist-table-header">
+                  <div className="checklist-header-col"></div>
+                  <div className="checklist-header-col">ชื่อเรื่อง</div>
+                  <div className="checklist-header-col">ผู้แต่ง</div>
+                  <div className="checklist-header-col">สำนักพิมพ์</div>
+                  <div className="checklist-header-col" style={{ textAlign: 'right', paddingRight: '8px' }}>เล่มที่ขาด</div>
+                  <div className="checklist-header-col" style={{ textAlign: 'center' }}>จัดการ</div>
+                </div>
+
+                {viewMode === 'grouped' ? (
+                  // Grouped view
+                  Object.entries(groupedByPublisher).map(([pub, items]) => {
+                    const isCollapsed = collapsedPubs.has(pub);
+                    
+                    // Count remaining active volumes in this group
+                    const groupTotalVolumes = items.reduce((sum, item) => 
+                      sum + item.formats.reduce((s, f) => s + f.missingCount, 0), 0
+                    );
+                    
+                    return (
+                      <div key={pub} className="checklist-publisher-group">
+                        <div 
+                          className="checklist-publisher-header"
+                          onClick={() => toggleCollapsePub(pub)}
+                        >
+                          <div className="checklist-publisher-title">
+                            <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>
+                              ▼
+                            </span>
+                            {pub}
+                          </div>
+                          <span className="checklist-publisher-count">
+                            {items.length} เรื่อง ({groupTotalVolumes} เล่ม)
+                          </span>
+                        </div>
+
+                        {!isCollapsed && (
+                          <div className="checklist-publisher-content">
+                            {items.map(item => renderItemRow(item))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Flat List view
+                  <div className="checklist-publisher-group" style={{ background: 'transparent', border: '1px solid var(--border)' }}>
+                    <div className="checklist-publisher-content">
+                      {filteredList.map(item => renderItemRow(item))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
-        <div className="modal__footer" style={{ justifyContent: missingList.length > 0 ? 'space-between' : 'flex-end' }}>
-          {missingList.length > 0 && <button className="btn btn--ghost" onClick={handleCopy} style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}><Icons.Copy /> คัดลอกข้อความ</button>}
-          <button className="btn btn--primary" onClick={onClose}>ปิดหน้าต่าง</button>
+
+        <div className="modal__footer" style={{ justifyContent: 'space-between', padding: '12px 20px' }}>
+          {filteredList.length > 0 ? (
+            <button 
+              className="btn btn--ghost" 
+              onClick={handleCopy} 
+              style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}
+            >
+              <Icons.Copy /> คัดลอกข้อความ ({stats.totalVolumes - stats.checkedVolumes} เล่มที่เหลือ)
+            </button>
+          ) : <div />}
+          <button className="btn btn--primary" onClick={onClose}>ปิดเช็กลิสต์</button>
         </div>
       </div>
+
+      {/* Overlay Series Info Modal for Quick Editing */}
+      {editingSeries && (
+        <SeriesInfoModal 
+          series={editingSeries} 
+          onClose={() => setEditingSeries(null)} 
+        />
+      )}
     </div>, document.body
   );
 }

@@ -16,7 +16,11 @@ export function getSetFromRanges(ranges) {
 export function mergeRanges(ranges) {
   if (!ranges || ranges.length === 0) return [];
   const sorted = [...ranges]
-    .map(r => [Number(r[0]), Number(r[1])])
+    .map(r => {
+      const v1 = Number(r[0]);
+      const v2 = Number(r[1]);
+      return [Math.min(v1, v2), Math.max(v1, v2)];
+    })
     .sort((a, b) => a[0] - b[0]);
   
   const merged = [];

@@ -95,7 +95,7 @@ export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini
   );
 }
 
-export function RangeEditor({ ranges, onChange, label = "ช่วงเล่ม" }) {
+export function RangeEditor({ ranges = [], onChange, label = "ช่วงเล่ม" }) {
   const [s, setS] = useState(""), [e, setE] = useState("");
   const add = () => {
     if (s && e) {
