@@ -35,14 +35,39 @@ export default function App() {
 
       <header className="top-header">
         <div className="top-header__brand">
-          <h1><span style={{color: 'var(--accent)'}}>卍</span> Manga Tracker</h1>
+          <span className="brand-emblem">卍</span>
+          <span className="brand-title">Manga <span className="brand-title--highlight">Tracker</span></span>
+          <div className="status-indicator">
+            <span className="status-dot"></span>
+            <span className="status-text">Live DB</span>
+          </div>
         </div>
 
         {stats && (
           <div className="top-header__stats">
-            <div className="stat-pill"><strong>{stats.totals.totalSeries}</strong><span>เรื่องทั้งหมด</span></div>
-            <div className="stat-pill"><strong>{stats.totals.collecting}</strong><span>กำลังสะสม</span></div>
-            <div className="stat-pill"><strong>{stats.totals.totalRead}</strong><span>เล่มที่อ่านแล้ว</span></div>
+            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }}>
+              <div className="stat-card__icon"><Icons.Book /></div>
+              <div className="stat-card__info">
+                <span className="stat-card__label">เรื่องทั้งหมด</span>
+                <span className="stat-card__value">{stats.totals.totalSeries}</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }}>
+              <div className="stat-card__icon"><Icons.Archive /></div>
+              <div className="stat-card__info">
+                <span className="stat-card__label">กำลังสะสม</span>
+                <span className="stat-card__value">{stats.totals.collecting}</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }}>
+              <div className="stat-card__icon"><Icons.BookOpen /></div>
+              <div className="stat-card__info">
+                <span className="stat-card__label">เล่มที่อ่านแล้ว</span>
+                <span className="stat-card__value">{stats.totals.totalRead}</span>
+              </div>
+            </div>
           </div>
         )}
 
