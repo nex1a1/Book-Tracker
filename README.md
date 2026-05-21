@@ -103,11 +103,11 @@ erDiagram
 
     authors {
         int id PK
-        text name UNIQUE
+        text name "UNIQUE"
     }
     publishers {
         int id PK
-        text name UNIQUE
+        text name "UNIQUE"
     }
     series {
         int id PK
