@@ -2,10 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { Icons } from "./components/Icons";
 import { useSeriesStore } from "./store/useSeriesStore";
-import { useFilteredSeries } from "./hooks/useFilteredSeries";
 import { FilterSidebar } from "./features/filters/FilterSidebar";
-import { SeriesCard, SeriesListItem } from "./features/series/SeriesCard";
-import { SeriesInfoModal, MissingVolumesModal } from "./features/modals/Modals";
+import { 
+  SeriesCard, 
+  SeriesListItem, 
+  SeriesInfoModal, 
+  MissingVolumesModal, 
+  useFilteredSeries 
+} from "./features/series";
 
 export default function App() {
   const { 

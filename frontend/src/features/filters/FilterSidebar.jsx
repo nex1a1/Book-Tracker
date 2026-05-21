@@ -5,12 +5,14 @@ import './FilterSidebar.css';
 export function FilterSection({ title, children }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="filter-section">
+    <div className={`filter-section ${open ? 'is-open' : ''}`}>
       <button className="filter-section__header" onClick={() => setOpen(!open)}>
         <span>{title}</span>
-        <span style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'var(--muted)' }}><Icons.ChevronDown /></span>
+        <span className="filter-section__chevron"><Icons.ChevronDown /></span>
       </button>
-      {open && <div className="filter-section__body">{children}</div>}
+      <div className="filter-section__body-wrapper">
+        <div className="filter-section__body">{children}</div>
+      </div>
     </div>
   );
 }
@@ -20,9 +22,9 @@ export function FilterChip({ label, active, onClick, icon }) {
     <button 
       className={`filter-chip ${active ? 'filter-chip--active' : ''}`} 
       onClick={onClick}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
     >
-      {icon} {label}
+      {icon && <span className="filter-chip__icon">{icon}</span>}
+      <span className="filter-chip__label">{label}</span>
     </button>
   );
 }
@@ -105,7 +107,7 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
 
         {publishers.length > 0 && (
           <FilterSection title="สำนักพิมพ์">
-            <select className="input" style={{ width: '100%' }} value={filter.publisher || ""} onChange={e => setFilter({ publisher: e.target.value })}>
+            <select className="filter-select" value={filter.publisher || ""} onChange={e => setFilter({ publisher: e.target.value })}>
               <option value="">ทุกสำนักพิมพ์</option>
               {publishers.map(p => <option key={p} value={p}>{p}</option>)}
             </select>

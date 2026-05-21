@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Icons } from "../../components/Icons";
-import './Modals.css';
+import { Icons } from "../../../components/Icons";
+import '../Series.css';
 import { SeriesInfoModal } from "./SeriesInfoModal";
 
 // Sub-components & hooks
-import { useMissingVolumes } from "./hooks/useMissingVolumes";
-import { MissingVolumeRow } from "./components/MissingVolumeRow";
+import { useMissingVolumes } from "../hooks/useMissingVolumes";
+import { MissingVolumeRow } from "./MissingVolumeRow";
 
 export function MissingVolumesModal({ onClose }) {
   const [editingSeries, setEditingSeries] = useState(null);

@@ -1,7 +1,9 @@
 import React from "react";
 import { Icons } from "../../../components/Icons";
-import { StarRating, AggregatedVolumeBar } from "../../../components/SharedUI";
-import { getMissingVolumesText, FORMAT_LABEL, TYPE_LABEL, STATUS_LABEL } from "../../../utils";
+import { StarRating } from "../../../components/StarRating";
+import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
+import { getMissingVolumesText } from "../../../utils/helpers";
+import { FORMAT_LABEL, TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
 
 export function LiveCardPreview({ form, stats }) {
   return (

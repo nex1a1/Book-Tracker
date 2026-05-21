@@ -1,3 +1,142 @@
+/* ==========================================================================
+   ── volume-progress Progress Bar Styles (Extracted from SharedUI)
+   ========================================================================== */
+.volume-progress { display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,.02); padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); }
+.progress-item { display: flex; flex-direction: column; gap: 2px; }
+.progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; text-transform: uppercase; }
+.progress-label { font-size: .72rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.progress-percent { font-size: .68rem; font-weight: 800; color: var(--muted); }
+.progress-track { height: 6px; background: var(--cream); border-radius: 0px; overflow: hidden; }
+.progress-fill { height: 100%; transition: width 0.4s ease-out; }
+.vbar-mini-grid { display: flex; flex-wrap: wrap; gap: 1.5px; margin-top: 3px; }
+.vbar-mini-cell-wrap { width: 8px; height: 8px; }
+.vbar-mini-cell { width: 100%; height: 100%; background: var(--cell-empty); border-radius: 0px; transition: background 0.2s; }
+.vbar-mini-gap { width: 4px; height: 8px; flex-shrink: 0; position: relative; }
+.vbar-mini-gap::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border); opacity: 0.5; }
+
+.vbar-mini-grid .vbar-mini-cell.read { background: var(--read-color); }
+.vbar-mini-grid .vbar-mini-cell.bought { background: var(--buy-color); }
+.vbar-mini-grid .vbar-mini-cell.special { border: 1.5px solid var(--special-color); background: var(--cream); }
+.vbar-mini-grid .vbar-mini-cell.read.special { background: var(--special-color); border: none; }
+.vbar-mini-grid .vbar-mini-cell.bought.special { background: var(--special-color); border: none; }
+
+/* Mini Progress */
+.progress-item--mini { margin-top: 0 !important; padding-top: 0 !important; border-top: none !important; }
+.progress-item--mini .progress-label { font-size: .68rem; }
+.progress-item--mini .progress-track { height: 4px; }
+.progress-item--mini .vbar-mini-grid { margin-top: 2px; gap: 1px; }
+.progress-item--mini .vbar-mini-cell-wrap { width: 6px; height: 6px; }
+.progress-item--mini .vbar-mini-gap { width: 3px; height: 6px; }
+
+
+/* ==========================================================================
+   ── SeriesCard & SeriesListItem Layouts (Original SeriesCard.css)
+   ========================================================================== */
+/* ── Cards (Grid View) ──────────────────────────────────── */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 3px solid var(--border);
+}
+.card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: var(--border-hover); border-top-color: var(--accent); }
+
+/* โครงสร้างใหม่: แบ่งซ้าย(รูป) - ขวา(ข้อมูล) */
+.card__top { display: flex; gap: 14px; }
+
+.card__cover {
+  width: 90px;
+  height: 130px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--cream);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card__header { display: flex; justify-content: space-between; align-items: flex-start; }
+.card__badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.card__actions { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+.card:hover .card__actions { opacity: 1; }
+
+.card__title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card__author { font-size: .78rem; color: var(--muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card__timeline-label { font-size: .62rem; padding: 2px 6px; background: var(--cream); color: var(--muted); border: 1px solid var(--border); border-radius: 2px; white-space: nowrap; align-self: flex-start;}
+
+.card__summary { margin-top: 0; padding-top: 8px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 4px; font-size: .78rem; }
+.card__summary p { display: flex; align-items: center; gap: 8px; color: var(--ink); margin: 0; }
+
+/* ── List View ───────────────────────────────────────────── */
+.list-container { display: flex; flex-direction: column; gap: 8px; }
+.list-row { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 18px; gap: 16px; transition: all .2s; border-left: 4px solid var(--border); }
+.list-row:hover { border-color: var(--border); border-left-color: var(--accent); box-shadow: var(--shadow); transform: translateX(4px); }
+
+.list-row__info { flex: 4.8; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.list-row__title-wrap { display: flex; align-items: center; gap: 8px; }
+.list-row__title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.list-row__timeline { font-size: .6rem; padding: 1px 6px; background: var(--cream); color: var(--muted); border: 1px solid var(--border); border-radius: 2px; white-space: nowrap; flex-shrink: 0; }
+.list-row__author { font-size: .75rem; color: var(--muted); margin: 0; }
+
+.list-row__badges { flex: 1.2; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px; }
+.list-row__bars { flex: 3; display: flex; flex-direction: column; gap: 5px; }
+.list-row__missing { flex: 1.5; display: flex; flex-direction: column; gap: 2px; }
+.list-row__missing .label { font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.list-row__missing .value { font-size: .82rem; font-weight: 700; }
+.list-row__actions { flex: 0 0 auto; display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+.list-row:hover .list-row__actions { opacity: 1; }
+
+.list-row__cover {
+  width: 50px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+  display: block;
+}
+.list-row__cover--empty {
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+@media (max-width: 900px) {
+  .list-row { flex-wrap: wrap; padding: 12px; }
+  .list-row__info { flex: 1 1 100%; }
+  .list-row__badges { flex: 1 1 100%; }
+  .list-row__bars { flex: 1 1 100%; }
+  .list-row__missing { flex: 1 1 auto; }
+  .list-row__actions { opacity: 1; }
+  .card__actions { opacity: 1; }
+}
+
+@media (max-width: 600px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ==========================================================================
+   ── Modals & Checklist Styles (Original Modals.css)
+   ========================================================================== */
 /* ── Modal & Forms ──────────────────────────────────────── */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; overflow-y: auto; }
 .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 100%; max-width: 720px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); overflow: hidden; }
@@ -712,6 +851,16 @@
   gap: 10px;
   transition: all 0.2s;
   user-select: none;
+}
+
+.modal-checkbox-wrapper:hover {
+  border-color: var(--accent);
+  background: rgba(255, 123, 0, 0.05);
+}
+
+.modal-checkbox-wrapper:hover {
+  border-color: var(--accent);
+  background: rgba(255, 123, 0, 0.05);
 }
 
 .modal-checkbox-wrapper:hover {

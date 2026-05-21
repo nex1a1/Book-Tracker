@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Icons } from "../../components/Icons";
-import './Modals.css';
-import { StarRating } from "../../components/SharedUI";
-import { useSeriesStore } from "../../store/useSeriesStore";
-import { seriesApi } from "../../api/seriesApi";
-import { normalizeSeriesData, getSeriesDerivedStats, FORMAT_LABEL, RATING_LABEL } from "../../utils";
+import { Icons } from "../../../components/Icons";
+import '../Series.css';
+import { StarRating } from "../../../components/StarRating";
+import { useSeriesStore } from "../../../store/useSeriesStore";
+import { seriesApi } from "../../../api/seriesApi";
+import { normalizeSeriesData, getSeriesDerivedStats } from "../../../utils/helpers";
+import { FORMAT_LABEL, RATING_LABEL } from "../../../utils/constants";
 
 // Sub-components
-import { LiveCardPreview } from "./components/LiveCardPreview";
-import { MalSearchPanel } from "./components/MalSearchPanel";
-import { LogEditorBox } from "./components/LogEditorBox";
+import { LiveCardPreview } from "./LiveCardPreview";
+import { MalSearchPanel } from "./MalSearchPanel";
+import { LogEditorBox } from "./LogEditorBox";
 
 export function SeriesInfoModal({ series, onClose }) {
   const isEdit = !!series;

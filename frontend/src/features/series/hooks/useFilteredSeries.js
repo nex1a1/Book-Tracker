@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getSeriesDerivedStats } from "../utils";
+import { getSeriesDerivedStats } from "../../../utils/helpers";
 
 export function useFilteredSeries(series, filter) {
   const displaySeries = useMemo(() => {

@@ -1,0 +1,5 @@
+/* ── Range Editor ────────────────────────────────────────── */
+.range-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.range-tag { display: inline-flex; align-items: center; gap: 4px; margin: 2px; background: var(--paper); padding: 2px 4px; border-radius: 2px; border: 1px solid var(--border); color: var(--accent); }
+.range-tag .btn-icon { width: 16px; height: 16px; font-size: .55rem; }
+.range-row__sep { color: var(--muted); }

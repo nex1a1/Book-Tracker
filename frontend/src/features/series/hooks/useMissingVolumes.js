@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSeriesStore } from "../../../store/useSeriesStore";
-import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, FORMAT_LABEL, TYPE_LABEL } from "../../../utils";
+import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges } from "../../../utils/helpers";
+import { FORMAT_LABEL, TYPE_LABEL } from "../../../utils/constants";
 
 export function useMissingVolumes() {
   const { series } = useSeriesStore();

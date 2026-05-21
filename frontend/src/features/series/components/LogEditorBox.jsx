@@ -1,7 +1,7 @@
 import React from "react";
 import { Icons } from "../../../components/Icons";
-import { RangeEditor } from "../../../components/SharedUI";
-import { FORMAT_LABEL } from "../../../utils";
+import { RangeEditor } from "../../../components/RangeEditor";
+import { FORMAT_LABEL } from "../../../utils/constants";
 
 export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }) {
   const isReading = type === "reading";
