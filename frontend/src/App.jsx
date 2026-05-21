@@ -10,6 +10,7 @@ import {
   MissingVolumesModal, 
   useFilteredSeries 
 } from "./features/series";
+import { SortDropdown } from "./components/SortDropdown";
 
 export default function App() {
   const { 
@@ -81,22 +82,12 @@ export default function App() {
             <button className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="List View"><Icons.List /></button>
           </div>
 
-          <div className="sort-inline">
-            <select className="input input--sm" value={filter.sortBy} onChange={e => setFilter({ sortBy: e.target.value })}>
-              <option value="updatedAt">อัปเดตล่าสุด</option>
-              <option value="title">ชื่อเรื่อง A–Z</option>
-              <option value="publishYear">ปีที่พิมพ์</option>
-              <option value="rating">คะแนน</option>
-              <option value="createdAt">วันที่เพิ่ม</option>
-            </select>
-            <button
-              className="btn-icon sort-dir-btn"
-              title={filter.sortOrder === 'DESC' ? 'มากไปน้อย' : 'น้อยไปมาก'}
-              onClick={() => setFilter({ sortOrder: filter.sortOrder === 'DESC' ? 'ASC' : 'DESC' })}
-            >
-              {filter.sortOrder === 'DESC' ? <Icons.SortDesc /> : <Icons.SortAsc />}
-            </button>
-          </div>
+          <SortDropdown
+            sortBy={filter.sortBy}
+            sortOrder={filter.sortOrder}
+            onSortByChange={val => setFilter({ sortBy: val })}
+            onSortOrderToggle={() => setFilter({ sortOrder: filter.sortOrder === 'DESC' ? 'ASC' : 'DESC' })}
+          />
 
           <button className="btn btn--ghost" onClick={() => setShowMissing(true)}>
             <Icons.Receipt /> เช็กลิสต์ที่ขาด

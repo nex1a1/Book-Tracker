@@ -212,53 +212,7 @@ body {
   gap: 12px;
   flex-shrink: 0;
 }
-.sort-inline {
-  display: flex;
-  align-items: center;
-  background: rgba(38, 38, 38, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0px;
-  padding: 2px;
-  gap: 2px;
-  transition: border-color 0.2s;
-}
-.sort-inline:focus-within {
-  border-color: var(--accent);
-}
-.sort-inline select.input--sm {
-  border: none !important;
-  background: transparent !important;
-  height: 32px;
-  padding: 0 30px 0 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #f5f5f5;
-  cursor: pointer;
-  border-radius: 0px;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 10px center !important;
-}
-.sort-dir-btn {
-  height: 32px;
-  width: 32px;
-  border-radius: 0px;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.sort-dir-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--accent);
-}
+/* sort-inline and sort-dir-btn styles have been migrated to the premium custom .sort-widget inside SortDropdown.css */
 
 /* ── Main Layout ─────────────────────────────────────────── */
 .app-root { min-height: 100vh; display: flex; flex-direction: column; }
@@ -356,5 +310,5 @@ body {
 }
 
 @media (max-width: 600px) {
-  .sort-inline { display: none; }
+  .sort-widget { display: none; }
 }
