@@ -7,6 +7,7 @@ if (!fs.existsSync(config.DATA_DIR)) {
 }
 
 const db = new Database(config.DB_PATH);
+db.pragma('foreign_keys = ON');
 
 // 1. Initial Database Setup
 db.exec(`

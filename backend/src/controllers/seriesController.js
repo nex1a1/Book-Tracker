@@ -4,6 +4,12 @@ import { mapSeries, mergeRanges } from '../utils/mapper.js';
 export const getSeries = (req, res) => {
   try {
     const { page = 1, limit = 24, type, status, isCollecting, search, sortBy = 'updatedAt', sortOrder = 'DESC' } = req.query;
+    
+    // Robust parsing and sanitization of pagination params
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 24);
+    const offset = (pageNum - 1) * limitNum;
+
     let baseQuery = `
       FROM series s
       LEFT JOIN authors a ON s.author_id = a.id
@@ -14,15 +20,20 @@ export const getSeries = (req, res) => {
     
     if (type) { baseQuery += " AND s.type = ?"; params.push(type); }
     if (status) { baseQuery += " AND s.status = ?"; params.push(status); }
-    if (isCollecting !== undefined && isCollecting !== '') { baseQuery += " AND s.isCollecting = ?"; params.push(isCollecting === 'true' ? 1 : 0); }
-    if (search) { 
+    
+    if (isCollecting !== undefined && isCollecting !== '') {
+      baseQuery += " AND s.isCollecting = ?";
+      params.push((isCollecting === 'true' || isCollecting === true || isCollecting === '1' || isCollecting === 1) ? 1 : 0);
+    }
+    
+    const trimmedSearch = search ? search.trim() : '';
+    if (trimmedSearch) { 
       baseQuery += " AND (s.title LIKE ? OR a.name LIKE ? OR p.name LIKE ?)"; 
-      const s = `%${search}%`; params.push(s, s, s); 
+      const s = `%${trimmedSearch}%`; params.push(s, s, s); 
     }
     
     const totalResult = db.prepare(`SELECT COUNT(*) as count ${baseQuery}`).get(...params);
     const total = totalResult ? totalResult.count : 0;
-    const limitNum = Number(limit), offset = (Number(page) - 1) * limitNum;
     
     const allowedSortFields = {
       updatedAt: 's.updatedAt',
@@ -42,7 +53,7 @@ export const getSeries = (req, res) => {
 
     res.json({ 
       data: rows.map(mapSeries).filter(s => s !== null), 
-      pagination: { total, page: Number(page), pages: Math.ceil(total / limitNum) } 
+      pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) } 
     });
   } catch (error) { 
     console.error("[getSeries] Error:", error);
@@ -52,26 +63,41 @@ export const getSeries = (req, res) => {
 
 export const getStats = (req, res) => {
   try {
-    const allSeries = db.prepare(`SELECT type, status, isCollecting, id FROM series`).all();
-    let totalSeries = 0, collecting = 0, totalRead = 0;
-    const typeCount = {}, statusCount = {};
+    // 1. Optimize totals and collecting calculation
+    const totals = db.prepare(`
+      SELECT 
+        COUNT(*) as totalSeries, 
+        SUM(CASE WHEN isCollecting = 1 THEN 1 ELSE 0 END) as collecting 
+      FROM series
+    `).get();
+    
+    const totalSeries = totals?.totalSeries || 0;
+    const collecting = totals?.collecting || 0;
 
-    allSeries.forEach(s => {
-      totalSeries++;
-      if (s.isCollecting) collecting++;
-      typeCount[s.type] = (typeCount[s.type] || 0) + 1;
-      statusCount[s.status] = (statusCount[s.status] || 0) + 1;
-    });
+    // 2. Aggregate type count via SQL
+    const byTypeRows = db.prepare(`
+      SELECT type as _id, COUNT(*) as count 
+      FROM series 
+      GROUP BY type
+    `).all();
 
+    // 3. Aggregate status count via SQL
+    const byStatusRows = db.prepare(`
+      SELECT status as _id, COUNT(*) as count 
+      FROM series 
+      GROUP BY status
+    `).all();
+
+    // 4. Calculate total read volumes
     const readStats = db.prepare(`
       SELECT SUM(endVol - startVol + 1) as total 
       FROM reading_ranges
     `).get();
-    totalRead = readStats.total || 0;
+    const totalRead = readStats.total || 0;
 
     res.json({ 
-      byType: Object.entries(typeCount).map(([k, v]) => ({ _id: k, count: v })), 
-      byStatus: Object.entries(statusCount).map(([k, v]) => ({ _id: k, count: v })), 
+      byType: byTypeRows, 
+      byStatus: byStatusRows, 
       totals: { totalSeries, collecting, totalRead } 
     });
   } catch (error) { 

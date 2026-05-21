@@ -61,16 +61,16 @@ export const calculateReadCount = (ranges) => {
   return set.size;
 };
 
-/**
- * Merges overlapping or contiguous ranges and sorts them.
- * Example: [[6,12], [1,5], [13,15]] -> [[1,15]]
- */
 export const mergeRanges = (ranges) => {
   if (!ranges || ranges.length === 0) return [];
 
-  // Ensure all values are numbers and sort by start volume
+  // Ensure all values are numbers, auto-normalize start/end bounds, and sort by start volume
   const sorted = [...ranges]
-    .map(r => [Number(r[0]), Number(r[1])])
+    .map(r => {
+      const v1 = Number(r[0]);
+      const v2 = Number(r[1]);
+      return [Math.min(v1, v2), Math.max(v1, v2)];
+    })
     .sort((a, b) => a[0] - b[0]);
   
   const merged = [];
