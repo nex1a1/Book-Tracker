@@ -453,3 +453,268 @@
 .checklist-body::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
+
+/* ── Redesigned Add/Edit Large Dialog ────────────────────── */
+.modal--large {
+  max-width: 1100px !important;
+  width: 95vw !important;
+  height: 85vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal__grid-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+.modal__sidebar {
+  border-right: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.modal__sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.modal__sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal__sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.modal__form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--paper);
+}
+
+.modal__form-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal__form-content::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+.modal__form-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.modal__form-content::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Live Card Preview */
+.live-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 16px;
+}
+
+.live-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.live-preview-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 6px var(--accent);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.live-preview-card-wrap {
+  transform: scale(0.92);
+  transform-origin: top center;
+  margin: 0 -12px -18px -12px;
+  pointer-events: none; /* Make preview non-clickable to avoid active edits */
+}
+
+/* Sidebar MAL Search Panel */
+.sidebar-mal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 16px;
+}
+
+.sidebar-mal-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-mal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 4px;
+}
+
+.sidebar-mal-list::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-mal-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.sidebar-mal-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-mal-item:hover {
+  border-color: var(--accent);
+  background: rgba(255, 123, 0, 0.04);
+}
+
+.sidebar-mal-item.is-selected {
+  border-color: var(--accent);
+  background: rgba(255, 123, 0, 0.1);
+  box-shadow: 0 0 6px rgba(255, 123, 0, 0.15);
+}
+
+.sidebar-mal-thumb {
+  width: 32px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.sidebar-mal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-mal-item-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.sidebar-mal-item-sub {
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Redesigned Form Cards */
+.form-section-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.form-section-card:hover {
+  border-color: rgba(255, 123, 0, 0.12);
+}
+
+.form-section-card__title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin: 0 0 4px 0;
+}
+
+/* Beautiful Inputs & Textarea */
+.textarea {
+  font-family: var(--font-body);
+  font-size: .82rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+  min-height: 70px;
+  transition: border-color .15s;
+  width: 100%;
+}
+.textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(255, 123, 0, 0.15);
+}
+
+.modal-checkbox-wrapper {
+  background: rgba(255, 123, 0, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.modal-checkbox-wrapper:hover {
+  border-color: var(--accent);
+  background: rgba(255, 123, 0, 0.05);
+}

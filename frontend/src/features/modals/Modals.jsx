@@ -3,22 +3,27 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../components/Icons";
 import './Modals.css';
-import { StarRating, RangeEditor } from "../../components/SharedUI";
+import { StarRating, RangeEditor, AggregatedVolumeBar } from "../../components/SharedUI";
 import { useSeriesStore } from "../../store/useSeriesStore";
 import { seriesApi } from "../../api/seriesApi";
-import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, FORMAT_LABEL, TYPE_LABEL, RATING_LABEL } from "../../utils";
+import { normalizeSeriesData, getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, FORMAT_LABEL, TYPE_LABEL, STATUS_LABEL, RATING_LABEL } from "../../utils";
 
 export function SeriesInfoModal({ series, onClose }) {
   const isEdit = !!series;
   const normSeries = normalizeSeriesData(series);
   
   const initialState = {
-    title: normSeries?.title || "", author: normSeries?.author || "", publisher: normSeries?.publisher || "",
-    publishYear: normSeries?.publishYear || "", endYear: normSeries?.endYear || "",
-    type: normSeries?.type || "manga", status: normSeries?.status || "ongoing",
+    title: normSeries?.title || "", 
+    author: normSeries?.author || "", 
+    publisher: normSeries?.publisher || "",
+    publishYear: normSeries?.publishYear || "", 
+    endYear: normSeries?.endYear || "",
+    type: normSeries?.type || "manga", 
+    status: normSeries?.status || "ongoing",
     isCollecting: normSeries?.isCollecting ?? true,
     rating: normSeries?.rating || 0,
     imageUrl: normSeries?.imageUrl || "", 
+    notes: normSeries?.notes || "",
     readingLogs: normSeries?.readingLogs || [{ id: Date.now().toString(), title: "ภาคหลัก", totalVolumes: "", ranges: [] }],
     collectionLogs: normSeries?.collectionLogs || [{ id: Date.now().toString(), format: "normal", title: "เล่มปกติ", totalVolumes: "", ranges: [] }]
   };
@@ -26,10 +31,31 @@ export function SeriesInfoModal({ series, onClose }) {
   const [form, setForm] = useState(initialState);
   const [malResults, setMalResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const { fetchSeries, fetchStats, authors, publishers } = useSeriesStore();
+  const { fetchSeries, fetchStats, fetchMetadata, authors, publishers } = useSeriesStore();
 
   const authorDatalistId = "author-list";
   const publisherDatalistId = "publisher-list";
+
+  // Reactive Stats for Live Preview
+  const stats = useMemo(() => {
+    try {
+      return getSeriesDerivedStats(form);
+    } catch (e) {
+      return {
+        n: form,
+        totalReadJP: 0,
+        totalReadCount: 0,
+        isAllRead: false,
+        isFinishedReading: false,
+        isCaughtUp: false,
+        isReading: false,
+        isUnread: true,
+        isCollectMissing: false,
+        isCollectComplete: false,
+        isNotCollecting: !form.isCollecting
+      };
+    }
+  }, [form]);
 
   const searchMAL = async () => {
     if (!form.title || form.title.trim() === "") return toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
@@ -39,13 +65,16 @@ export function SeriesInfoModal({ series, onClose }) {
       const data = await res.json();
       if (data.data && data.data.length > 0) {
         setMalResults(data.data);
-        toast.success(`พบ ${data.data.length} เรื่อง! คลิกที่รูปเพื่อดึงข้อมูลเลย`);
+        toast.success(`พบข้อมูล ${data.data.length} เรื่องใน MAL!`);
       } else {
         toast.error("ไม่พบข้อมูลเรื่องนี้ในระบบ MAL");
         setMalResults([]);
       }
-    } catch (err) { toast.error("เกิดข้อผิดพลาดในการดึงข้อมูล"); } 
-    finally { setIsSearching(false); }
+    } catch (err) { 
+      toast.error("เกิดข้อผิดพลาดในการดึงข้อมูล"); 
+    } finally { 
+      setIsSearching(false); 
+    }
   };
 
   const handleSelectMalItem = (m) => {
@@ -137,146 +166,317 @@ export function SeriesInfoModal({ series, onClose }) {
       if (isEdit && series) await seriesApi.update(series._id, payload);
       else await seriesApi.create(payload);
       await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
-      toast.success("บันทึกสำเร็จ"); onClose();
-    } catch { toast.error("เกิดข้อผิดพลาด"); }
+      toast.success("บันทึกสำเร็จ"); 
+      onClose();
+    } catch { 
+      toast.error("เกิดข้อผิดพลาดในการบันทึก"); 
+    }
   };
 
   return createPortal(
     <div className="modal-overlay">
-      <div className={`modal ${isEdit ? "modal--edit" : "modal--add"}`}>
+      <div className={`modal modal--large ${isEdit ? "modal--edit" : "modal--add"}`}>
         <div className="modal__header">
-          <h2 className="modal__title">{isEdit ? "แก้ไขข้อมูล" : "เพิ่มเรื่องใหม่"}</h2>
+          <h2 className="modal__title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isEdit ? <Icons.Edit /> : <Icons.Plus />} 
+            {isEdit ? `แก้ไขข้อมูลเรื่อง: ${series.title}` : "เพิ่มเรื่องใหม่เข้าระบบ"}
+          </h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
-        <div className="modal__body">
-          <div className="form-section">
-            <h3 className="form-section__title"><Icons.Info /> ข้อมูลพื้นฐาน</h3>
+        
+        <div className="modal__grid-container">
+          
+          {/* ── Left Sidebar: Live Preview & MAL Suggestions ── */}
+          <div className="modal__sidebar">
             
-            <div className="field">
-              <span>ชื่อเรื่อง <span className="danger">*</span></span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input className="input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-                <button className="btn btn--primary" onClick={searchMAL} disabled={isSearching} style={{ flexShrink: 0 }}>
-                  {isSearching ? "กำลังหา..." : "🔍 ค้นหาปกใน MAL"}
-                </button>
+            {/* Live Preview Card */}
+            <div className="live-preview-section">
+              <div className="live-preview-header">
+                <h4 className="live-preview-title">
+                  <span className="pulse-dot"></span> Live Card Preview
+                </h4>
+                <span style={{ fontSize: '0.62rem', color: 'var(--muted)', fontWeight: 600 }}>ตัวอย่างแสดงผล</span>
               </div>
-            </div>
-
-            {malResults.length > 0 && (
-              <div style={{ background: 'var(--paper)', padding: '12px', borderRadius: 'var(--radius)', border: '1px dashed var(--border)', display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '8px' }}>
-                {malResults.map(m => {
-                  const coverUrl = m.node.main_picture?.large || m.node.main_picture?.medium || "";
-                  const isSelected = form.imageUrl === coverUrl;
-                  return (
-                    // 🔴 เปลี่ยนมาเรียกใช้ฟังก์ชัน handleSelectMalItem ตรงนี้
-                    <div 
-                      key={m.node.id} 
-                      onClick={() => handleSelectMalItem(m)}
-                      style={{ cursor: 'pointer', border: isSelected ? '2px solid var(--accent)' : '2px solid transparent', borderRadius: '4px', padding: '2px', minWidth: '80px', textAlign: 'center', transition: 'all 0.2s', opacity: isSelected ? 1 : 0.6 }}
-                    >
-                      <img src={m.node.main_picture?.medium} alt="" style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '2px' }} />
-                      <div style={{ fontSize: '0.65rem', color: isSelected ? 'var(--accent)' : 'var(--muted)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '76px' }} title={m.node.title}>
-                        {m.node.title}
+              
+              <div className="live-preview-card-wrap">
+                <div className="card" style={{ margin: 0, border: '1px solid rgba(255, 123, 0, 0.25)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+                  <div className="card__top">
+                    {form.imageUrl ? (
+                      <img src={form.imageUrl} alt={form.title} className="card__cover" />
+                    ) : (
+                      <div className="card__cover" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: '0.7rem', background: 'var(--cream)' }}>ไม่มีรูปปก</div>
+                    )}
+                    
+                    <div className="card__info">
+                      <div className="card__header">
+                        <div className="card__badges">
+                          <span className={`badge badge--${form.type}`}>{TYPE_LABEL[form.type]}</span>
+                          <span className={`badge badge--${form.status}`}>{STATUS_LABEL[form.status]}</span>
+                        </div>
+                      </div>
+                      
+                      <h3 className="card__title" title={form.title || "ชื่อเรื่อง"}>{form.title || "ชื่อเรื่องที่พิมพ์..."}</h3>
+                      <span className="card__timeline-label">
+                        {form.publishYear || "?"} – {(form.status === 'completed' || form.endYear) ? (form.endYear || "จบแล้ว") : "ปัจจุบัน"}
+                      </span>
+                      <p className="card__author" title={`${form.author || "?"} | ${form.publisher || ""}`}>
+                        {form.author || "ผู้แต่ง"} {form.publisher ? `| ${form.publisher}` : ""}
+                      </p>
+                      
+                      <div style={{ marginTop: 'auto' }}>
+                        <StarRating rating={form.rating || 0} size="sm" readOnly />
                       </div>
                     </div>
-                  );
-                })}
-                <button className="btn-icon" onClick={() => setMalResults([])} style={{ alignSelf: 'center', marginLeft: 'auto' }} title="ปิดหน้าต่างนี้"><Icons.X /></button>
-              </div>
-            )}
-
-            <div className="field">
-              <span>ลิงก์รูปหน้าปก (เลือกจาก MAL หรือแปะลิงก์เอง)</span>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                {form.imageUrl ? (
-                  <img src={form.imageUrl} alt="preview" style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius)', border: '1px solid var(--border)', flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: '40px', height: '60px', background: 'var(--cream)', borderRadius: 'var(--radius)', border: '1px dashed var(--border)', flexShrink: 0 }} />
-                )}
-                <input className="input" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
+                  </div>
+                  
+                  <div className="volume-progress" style={{ padding: '8px 12px 4px 12px', gap: '6px' }}>
+                    <AggregatedVolumeBar logs={form.readingLogs} type="read" icon={Icons.Book} titleLabel="การอ่าน" isMini />
+                    {form.isCollecting && <AggregatedVolumeBar logs={form.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="สะสม" isMini />}
+                  </div>
+                  
+                  <div className="card__summary" style={{ padding: '6px 12px 10px 12px', fontSize: '0.7rem', borderTop: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                      <Icons.Book /> 
+                      <strong>อ่านแล้ว:</strong> เล่ม {stats.totalReadCount}/{stats.totalReadJP || '?'}
+                    </p>
+                    {form.isCollecting ? (
+                      form.collectionLogs.map(log => {
+                        const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
+                        const isComplete = missingText === 'ครบถ้วน';
+                        return (
+                          <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                            <Icons.Cart /> 
+                            <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format]}):</strong>
+                            <span style={{ color: isComplete ? "var(--read-color)" : "var(--accent)", fontWeight: 'bold' }}>{missingText}</span>
+                          </p>
+                        );
+                      })
+                    ) : (
+                      <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                        <Icons.Cart /> 
+                        <strong>สถานะ:</strong> อ่านอย่างเดียว
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="field-row">
-              <div className="field">
-                <span>ผู้แต่ง <span className="danger">*</span></span>
-                <input className="input" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} list={authorDatalistId} />
-                <datalist id={authorDatalistId}>
-                  {authors.map(a => <option key={a.id} value={a.name} />)}
-                </datalist>
+            {/* MAL Automated Search Panel */}
+            <div className="sidebar-mal-panel">
+              <span className="sidebar-mal-title">ค้นปกและข้อมูลจาก MAL</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="btn btn--primary" onClick={searchMAL} disabled={isSearching} style={{ width: '100%', justifyContent: 'center', height: '32px', fontSize: '0.75rem' }}>
+                  {isSearching ? "กำลังดึงข้อมูล..." : "🔍 ดึงข้อมูลอัตโนมัติ"}
+                </button>
               </div>
-              <div className="field">
-                <span>สำนักพิมพ์ <span className="danger">*</span></span>
-                <input className="input" value={form.publisher} onChange={e => setForm({ ...form, publisher: e.target.value })} list={publisherDatalistId} />
-                <datalist id={publisherDatalistId}>
-                  {publishers.map(p => <option key={p.id} value={p.name} />)}
-                </datalist>
-              </div>
-            </div>
-            <div className="field-row">
-              <div className="field"><span>ปีที่พิมพ์ <span className="danger">*</span></span><input type="number" className="input" value={form.publishYear} onChange={e => setForm({ ...form, publishYear: e.target.value })} /></div>
-              {(form.status === 'completed' || form.status === 'cancelled') && (
-                <div className="field"><span>ปีที่จบ <span className="danger">*</span></span><input type="number" className="input" value={form.endYear} onChange={e => setForm({ ...form, endYear: e.target.value })} /></div>
+              
+              {malResults.length > 0 && (
+                <div className="sidebar-mal-list">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px 4px 2px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--muted)', fontWeight: 600 }}>คลิกเลือกปกด้านล่าง:</span>
+                    <button className="btn-icon" onClick={() => setMalResults([])} style={{ width: '18px', height: '18px' }} title="ปิดกล่องค้นหา"><Icons.X /></button>
+                  </div>
+                  {malResults.map(m => {
+                    const coverUrl = m.node.main_picture?.large || m.node.main_picture?.medium || "";
+                    const isSelected = form.imageUrl === coverUrl;
+                    return (
+                      <div 
+                        key={m.node.id} 
+                        className={`sidebar-mal-item ${isSelected ? 'is-selected' : ''}`}
+                        onClick={() => handleSelectMalItem(m)}
+                      >
+                        <img src={m.node.main_picture?.medium} alt="" className="sidebar-mal-thumb" />
+                        <div className="sidebar-mal-info">
+                          <p className="sidebar-mal-item-title" title={m.node.title}>{m.node.title}</p>
+                          <p className="sidebar-mal-item-sub">
+                            {m.node.status === 'finished' ? 'จบแล้ว' : 'กำลังลง'}
+                            {m.node.num_volumes ? ` • ${m.node.num_volumes} เล่ม` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            <div className="field-row">
-              <div className="field"><span>ประเภท</span><select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}><option value="manga">Manga</option><option value="novel">Novel</option><option value="light_novel">Light Novel</option></select></div>
-              <div className="field"><span>สถานะ</span><select className="input" value={form.status} onChange={handleStatusChange}><option value="ongoing">ยังไม่จบ</option><option value="completed">จบแล้ว</option><option value="hiatus">หยุดตีพิมพ์ชั่วคราว</option><option value="cancelled">โดนตัดจบ</option></select></div>
+
+            {/* Sidebar Notes area */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+              <span className="sidebar-mal-title">บันทึกช่วยจำ / ข้อมูลเพิ่มเติม</span>
+              <textarea 
+                className="textarea" 
+                value={form.notes} 
+                onChange={e => setForm({ ...form, notes: e.target.value })} 
+                placeholder="คำวิจารณ์ย่อๆ, ชั้นที่เก็บหนังสือ, หรือบันทึกความทรงจำอื่นๆ..."
+                style={{ flex: 1, minHeight: '100px' }}
+              />
             </div>
-            <div className="field">
-              <span>คะแนนส่วนตัว</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0' }}>
-                <StarRating rating={form.rating} onRate={(r) => setForm({ ...form, rating: r })} size="lg" />
-                {form.rating > 0 && <span style={{ fontSize: '.8rem', color: 'var(--muted)' }}>{RATING_LABEL[form.rating]}</span>}
+
+          </div>
+          
+          {/* ── Right Content Form Area ── */}
+          <div className="modal__form-content">
+            
+            {/* Card 1: ข้อมูลพื้นฐาน */}
+            <div className="form-section-card">
+              <h3 className="form-section-card__title"><Icons.Info /> ข้อมูลพื้นฐานของเรื่อง</h3>
+              
+              <div className="field">
+                <span>ชื่อเรื่องภาษาไทย / ชื่อเรื่องหลัก <span className="danger">*</span></span>
+                <input className="input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="กรอกชื่อเรื่องภาษาไทย..." />
+              </div>
+
+              <div className="field">
+                <span>ลิงก์รูปภาพหน้าปกหนังสือ (URL)</span>
+                <input className="input" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="วาง URL ลิงก์รูปปกตรงนี้ หรือคลิกดึงปกจาก MAL ในแถบด้านซ้าย..." />
+              </div>
+
+              <div className="field-row">
+                <div className="field">
+                  <span>ผู้แต่ง / ผู้แต่งเรื่อง <span className="danger">*</span></span>
+                  <input className="input" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} list={authorDatalistId} placeholder="พิมพ์ชื่อผู้แต่ง..." />
+                  <datalist id={authorDatalistId}>
+                    {authors.map(a => <option key={a.id} value={a.name} />)}
+                  </datalist>
+                </div>
+                <div className="field">
+                  <span>สำนักพิมพ์แปลไทย <span className="danger">*</span></span>
+                  <input className="input" value={form.publisher} onChange={e => setForm({ ...form, publisher: e.target.value })} list={publisherDatalistId} placeholder="พิมพ์ชื่อสำนักพิมพ์..." />
+                  <datalist id={publisherDatalistId}>
+                    {publishers.map(p => <option key={p.id} value={p.name} />)}
+                  </datalist>
+                </div>
+              </div>
+
+              <div className="field-row">
+                <div className="field">
+                  <span>ประเภทสื่อ</span>
+                  <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                    <option value="manga">Manga (การ์ตูน)</option>
+                    <option value="novel">Novel (นิยาย)</option>
+                    <option value="light_novel">Light Novel (ไลท์โนเวล)</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <span>สถานะความคืบหน้าเรื่อง</span>
+                  <select className="input" value={form.status} onChange={handleStatusChange}>
+                    <option value="ongoing">ยังไม่จบ (Ongoing)</option>
+                    <option value="completed">จบแล้ว (Completed)</option>
+                    <option value="hiatus">หยุดตีพิมพ์ชั่วคราว (On Hiatus)</option>
+                    <option value="cancelled">โดนตัดจบ (Cancelled)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="field-row">
+                <div className="field">
+                  <span>ปีที่พิมพ์ครั้งแรก (ค.ศ.) <span className="danger">*</span></span>
+                  <input type="number" className="input" value={form.publishYear} onChange={e => setForm({ ...form, publishYear: e.target.value })} placeholder="เช่น 2019" />
+                </div>
+                {(form.status === 'completed' || form.status === 'cancelled') && (
+                  <div className="field">
+                    <span>ปีที่พิมพ์เสร็จสิ้น (ค.ศ.) <span className="danger">*</span></span>
+                    <input type="number" className="input" value={form.endYear} onChange={e => setForm({ ...form, endYear: e.target.value })} placeholder="เช่น 2024" />
+                  </div>
+                )}
+              </div>
+
+              <div className="field">
+                <span>คะแนนความชื่นชอบส่วนตัว</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
+                  <StarRating rating={form.rating} onRate={(r) => setForm({ ...form, rating: r })} size="lg" />
+                  {form.rating > 0 && <span style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>{RATING_LABEL[form.rating]}</span>}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="form-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-              <h3 className="form-section__title" style={{ border: 'none', padding: 0, margin: 0 }}><Icons.Book /> บันทึกการอ่าน</h3>
-              <button className="btn btn--sm btn--ghost" onClick={() => setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: "", ranges: [] }] })}>+ เพิ่มชุดการอ่าน</button>
-            </div>
-            {form.readingLogs.map((log, idx) => (
-              <div key={log.id} className="log-editor-box">
-                {form.readingLogs.length > 1 && <button className="btn-icon btn-icon--danger log-editor-box__remove" onClick={() => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })}><Icons.Trash /></button>}
-                <div className="field-row" style={{ marginBottom: '8px', paddingRight: '30px' }}>
-                  <div className="field" style={{ flex: 2 }}><span>ชื่อชุด/ภาค</span><input className="input" value={log.title} onChange={e => updateLog('readingLogs', idx, 'title', e.target.value)} placeholder="เช่น ภาคหลัก" /></div>
-                  <div className="field" style={{ flex: 1 }}><span>ทั้งหมด (เล่ม)</span><input type="number" className="input" value={log.totalVolumes} onChange={e => updateLog('readingLogs', idx, 'totalVolumes', e.target.value)} /></div>
-                </div>
-                <div className="field"><span>ช่วงที่อ่านแล้ว</span><RangeEditor ranges={log.ranges} onChange={r => updateLog('readingLogs', idx, 'ranges', r)} /></div>
+            {/* Card 2: บันทึกการอ่าน */}
+            <div className="form-section-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0 }}><Icons.Book /> บันทึกความคืบหน้าการอ่าน</h3>
+                <button className="btn btn--sm btn--ghost" style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} onClick={() => setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: "", ranges: [] }] })}>+ เพิ่มชุด/ภาคใหม่</button>
               </div>
-            ))}
-          </div>
-
-          <div className="form-section">
-            <div className="field" style={{ marginBottom: '8px', padding: '12px', background: 'var(--cream)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <label className="field-checkbox"><input type="checkbox" checked={form.isCollecting} onChange={e => setForm({ ...form, isCollecting: e.target.checked })} /><strong>เก็บสะสมเรื่องนี้ (Physical / E-Book)</strong></label>
-            </div>
-            {form.isCollecting && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                  <h3 className="form-section__title" style={{ border: 'none', padding: 0, margin: 0, fontSize: '1rem' }}><Icons.Cart /> รูปแบบที่สะสม</h3>
-                  <button className="btn btn--sm btn--ghost" onClick={() => setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: "", ranges: [] }] })}>+ เพิ่มรูปแบบ</button>
-                </div>
-                {form.collectionLogs.map((log, idx) => (
-                  <div key={log.id} className="log-editor-box log-editor-box--alt">
-                    {form.collectionLogs.length > 1 && <button className="btn-icon btn-icon--danger log-editor-box__remove" onClick={() => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })}><Icons.Trash /></button>}
-                    <div className="field-row" style={{ marginBottom: '8px', paddingRight: '30px' }}>
-                      <div className="field" style={{ flex: 1 }}><span>รูปแบบ</span><select className="input" value={log.format} onChange={e => updateLog('collectionLogs', idx, 'format', e.target.value)}>{Object.entries(FORMAT_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-                      <div className="field" style={{ flex: 2 }}><span>ชื่อเรียก/หมายเหตุ</span><input className="input" value={log.title} onChange={e => updateLog('collectionLogs', idx, 'title', e.target.value)} /></div>
-                      <div className="field" style={{ flex: 1 }}><span>ทั้งหมด (เล่ม)</span><input type="number" className="input" value={log.totalVolumes} onChange={e => updateLog('collectionLogs', idx, 'totalVolumes', e.target.value)} /></div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {form.readingLogs.map((log, idx) => (
+                  <div key={log.id} className="log-editor-box" style={{ background: 'var(--paper)', borderRadius: '6px' }}>
+                    {form.readingLogs.length > 1 && (
+                      <button className="btn-icon btn-icon--danger log-editor-box__remove" onClick={() => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })} title="ลบชุดการอ่านนี้"><Icons.Trash /></button>
+                    )}
+                    <div className="field-row" style={{ marginBottom: '8px', paddingRight: form.readingLogs.length > 1 ? '32px' : '0' }}>
+                      <div className="field" style={{ flex: 3 }}>
+                        <span>ชื่อชุด / ภาคเรื่อง (อ่านเล่มญี่ปุ่น/เล่มแปล)</span>
+                        <input className="input" value={log.title} onChange={e => updateLog('readingLogs', idx, 'title', e.target.value)} placeholder="เช่น ภาคหลัก, ภาคต้น, ภาคสมทบ..." />
+                      </div>
+                      <div className="field" style={{ flex: 1 }}>
+                        <span>ทั้งหมด (เล่ม)</span>
+                        <input type="number" className="input" value={log.totalVolumes} onChange={e => updateLog('readingLogs', idx, 'totalVolumes', e.target.value)} placeholder="ระบุเล่มรวม" />
+                      </div>
                     </div>
-                    <div className="field"><span>ช่วงที่เก็บแล้ว</span><RangeEditor ranges={log.ranges} onChange={r => updateLog('collectionLogs', idx, 'ranges', r)} /></div>
+                    <div className="field">
+                      <span>ช่วงเล่มที่อ่านเสร็จแล้ว</span>
+                      <RangeEditor ranges={log.ranges} onChange={r => updateLog('readingLogs', idx, 'ranges', r)} />
+                    </div>
                   </div>
                 ))}
-              </>
-            )}
+              </div>
+            </div>
+
+            {/* Card 3: ข้อมูลการสะสม */}
+            <div className="form-section-card">
+              <div className="modal-checkbox-wrapper" onClick={() => setForm({ ...form, isCollecting: !form.isCollecting })}>
+                <input type="checkbox" checked={form.isCollecting} readOnly style={{ cursor: 'pointer' }} />
+                <strong style={{ fontSize: '0.88rem', color: 'var(--ink)' }}>เปิดเก็บสะสมคอลเลกชันสำหรับเรื่องนี้ (ตามเล่มแปลไทย)</strong>
+              </div>
+              
+              {form.isCollecting && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                    <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.88rem' }}><Icons.Cart /> รูปแบบรูปเล่มสะสม (Physical / E-Book)</h3>
+                    <button className="btn btn--sm btn--ghost" style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} onClick={() => setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: "", ranges: [] }] })}>+ เพิ่มรูปแบบสะสม</button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {form.collectionLogs.map((log, idx) => (
+                      <div key={log.id} className="log-editor-box log-editor-box--alt" style={{ borderRadius: '6px' }}>
+                        {form.collectionLogs.length > 1 && (
+                          <button className="btn-icon btn-icon--danger log-editor-box__remove" onClick={() => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })} title="ลบรูปแบบสะสมนี้"><Icons.Trash /></button>
+                        )}
+                        <div className="field-row" style={{ marginBottom: '8px', paddingRight: form.collectionLogs.length > 1 ? '32px' : '0' }}>
+                          <div className="field" style={{ flex: 1.5 }}>
+                            <span>รูปแบบจัดเก็บ</span>
+                            <select className="input" value={log.format} onChange={e => updateLog('collectionLogs', idx, 'format', e.target.value)}>
+                              {Object.entries(FORMAT_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                            </select>
+                          </div>
+                          <div className="field" style={{ flex: 2 }}>
+                            <span>ชื่อเรียกคอลเลกชัน / หมายเหตุย่อ</span>
+                            <input className="input" value={log.title} onChange={e => updateLog('collectionLogs', idx, 'title', e.target.value)} placeholder="เช่น เล่มปกติ, ฉบับพิเศษ..." />
+                          </div>
+                          <div className="field" style={{ flex: 1 }}>
+                            <span>มีทั้งหมด (เล่ม)</span>
+                            <input type="number" className="input" value={log.totalVolumes} onChange={e => updateLog('collectionLogs', idx, 'totalVolumes', e.target.value)} placeholder="เช่น 23" />
+                          </div>
+                        </div>
+                        <div className="field">
+                          <span>ช่วงเล่มที่มีอยู่ในครอบครอง (สะสมแล้ว)</span>
+                          <RangeEditor ranges={log.ranges} onChange={r => updateLog('collectionLogs', idx, 'ranges', r)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
+
         </div>
+        
         <div className="modal__footer">
           <button className="btn btn--ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn--save" onClick={save}>บันทึกทั้งหมด</button>
+          <button className="btn btn--save" style={{ background: 'var(--accent)', color: '#111' }} onClick={save}>บันทึกข้อมูลซีรีส์ทั้งหมด</button>
         </div>
       </div>
     </div>, document.body
