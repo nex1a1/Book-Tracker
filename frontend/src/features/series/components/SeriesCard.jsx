@@ -24,12 +24,16 @@ export function SeriesCard({ series }) {
       
       {/* 🔴 ส่วนบน: รูปปก (ซ้าย) + ข้อมูลหลัก (ขวา) */}
       <div className="card__top">
-        {/* เช็กว่ามีลิงก์รูปไหม ถ้ามีโชว์รูป ถ้าไม่มีโชว์กล่องว่างๆ */}
-        {stats.n.imageUrl ? (
-          <img src={stats.n.imageUrl} alt={stats.n.title} className="card__cover" />
-        ) : (
-          <div className="card__cover" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: '0.7rem' }}>ไม่มีรูป</div>
-        )}
+        <div className="card__cover-wrapper">
+          {/* เช็กว่ามีลิงก์รูปไหม ถ้ามีโชว์รูป ถ้าไม่มีโชว์กล่องว่างๆ */}
+          {stats.n.imageUrl ? (
+            <img src={stats.n.imageUrl} alt={stats.n.title} className="card__cover" />
+          ) : (
+            <div className="card__cover-empty">
+              <span>ไม่มีรูป</span>
+            </div>
+          )}
+        </div>
 
         <div className="card__info">
           <div className="card__header">
@@ -37,19 +41,28 @@ export function SeriesCard({ series }) {
               <span className={`badge badge--${stats.n.type}`}>{TYPE_LABEL[stats.n.type]}</span>
               <span className={`badge badge--${stats.n.status}`}>{STATUS_LABEL[stats.n.status]}</span>
             </div>
+            
+            {/* Sleek Action Buttons (Accessible Cluster) */}
             <div className="card__actions">
-              <button className="btn-icon" title="แก้ไข" onClick={() => setShowEdit(true)}><Icons.Edit /></button>
-              <button className="btn-icon btn-icon--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}><Icons.Trash /></button>
+              <button className="btn-icon card__action-btn card__action-btn--edit" title="แก้ไข" onClick={() => setShowEdit(true)}>
+                <Icons.Edit />
+              </button>
+              <button className="btn-icon btn-icon--danger card__action-btn card__action-btn--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}>
+                <Icons.Trash />
+              </button>
             </div>
           </div>
           
           <h3 className="card__title" title={stats.n.title}>{stats.n.title}</h3>
-          <span className="card__timeline-label">{renderTimeline()}</span>
-          <p className="card__author" title={`${stats.n.author || "?"} | ${stats.n.publisher || ""}`}>
-            {stats.n.author || "?"} {stats.n.publisher ? `| ${stats.n.publisher}` : ""}
-          </p>
+          
+          <div className="card__meta-details">
+            <span className="card__timeline-label">{renderTimeline()}</span>
+            <p className="card__author" title={`${stats.n.author || "?"} | ${stats.n.publisher || ""}`}>
+              {stats.n.author || "?"} {stats.n.publisher ? `| ${stats.n.publisher}` : ""}
+            </p>
+          </div>
 
-          <div style={{ marginTop: 'auto' }}>
+          <div className="card__rating-wrap">
             <StarRating rating={stats.n.rating || 0} onRate={(r) => updateSeriesRating(stats.n._id, r)} />
           </div>
         </div>
@@ -70,7 +83,7 @@ export function SeriesCard({ series }) {
             return (
               <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Icons.Cart /> <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format]}):</strong>
-                <span style={{ color: isComplete ? "var(--read-color)" : "var(--accent)", fontWeight: 'bold' }}>{missingText}</span>
+                <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
               </p>
             );
           })

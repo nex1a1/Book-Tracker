@@ -20,24 +20,29 @@ export function SeriesListItem({ series }) {
   };
 
   return (
-    <div className="list-row">
+    <div className={`list-row list-row--${stats.n.status}`}>
       
-      {/* 🔴 เพิ่มส่วนรูปปกขนาดเล็กตรงนี้ */}
-      {stats.n.imageUrl ? (
-        <img src={stats.n.imageUrl} alt={stats.n.title} className="list-row__cover" />
-      ) : (
-        <div className="list-row__cover list-row__cover--empty">ไม่มีรูป</div>
-      )}
+      {/* Column 1: Elegant cover wrapper with zoom */}
+      <div className="list-row__cover-wrapper">
+        {stats.n.imageUrl ? (
+          <img src={stats.n.imageUrl} alt={stats.n.title} className="list-row__cover" />
+        ) : (
+          <div className="list-row__cover--empty">ไม่มีรูป</div>
+        )}
+      </div>
 
+      {/* Column 2: Info Block (Title, Timeline, Author & Publisher) */}
       <div className="list-row__info">
         <div className="list-row__title-wrap">
           <h3 className="list-row__title" title={stats.n.title}>{stats.n.title}</h3>
           <span className="list-row__timeline">{renderTimeline()}</span>
         </div>
-        <p className="list-row__author">{stats.n.author || "?"} {stats.n.publisher ? `| ${stats.n.publisher}` : ""}</p>
-        <StarRating rating={stats.n.rating || 0} onRate={(r) => updateSeriesRating(stats.n._id, r)} size="xs" />
+        <p className="list-row__author" title={`${stats.n.author || "?"} ${stats.n.publisher ? `| ${stats.n.publisher}` : ""}`}>
+          {stats.n.author || "?"} {stats.n.publisher ? `| ${stats.n.publisher}` : ""}
+        </p>
       </div>
 
+      {/* Column 3: Badge Cluster */}
       <div className="list-row__badges">
         <span className={`badge badge--${stats.n.type}`}>{TYPE_LABEL[stats.n.type]}</span>
         <span className={`badge badge--${stats.n.status}`}>{STATUS_LABEL[stats.n.status]}</span>
@@ -48,30 +53,49 @@ export function SeriesListItem({ series }) {
         {stats.isUnread && stats.n.isCollecting && <span className="badge badge--collect-only">สายดอง</span>}
       </div>
 
+      {/* Column 4: Elegant mini progress bars */}
       <div className="list-row__bars">
         <AggregatedVolumeBar logs={stats.n.readingLogs} type="read" icon={Icons.Book} titleLabel="อ่าน" isMini />
         {stats.n.isCollecting && <AggregatedVolumeBar logs={stats.n.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="สะสม" isMini />}
       </div>
 
+      {/* Column 5: Refined Stock/Missing Volumes Status */}
       <div className="list-row__missing">
         {stats.n.isCollecting ? (
           stats.n.collectionLogs.map(log => {
             const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
             const isComplete = missingText === 'ครบถ้วน';
             return (
-              <div key={log.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: '2px' }}>
-                <span className="label">{isComplete ? 'สะสมครบ' : 'ขาด'} {log.title ? `(${log.title})` : `(${FORMAT_LABEL[log.format]})`}</span>
-                <span className="value" style={{ color: isComplete ? 'var(--read-color)' : 'var(--special-color)' }}>{missingText}</span>
+              <div key={log.id} className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>
+                <span className="list-row__missing-label">
+                  {isComplete ? 'สะสมครบ' : 'ขาด'} {log.title ? `(${log.title})` : `(${FORMAT_LABEL[log.format]})`}
+                </span>
+                <span className="list-row__missing-value" title={missingText}>
+                  {missingText}
+                </span>
               </div>
             );
           })
-        ) : <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>อ่านอย่างเดียว</span>}
+        ) : (
+          <span className="list-row__missing-read-only">อ่านอย่างเดียว</span>
+        )}
       </div>
 
-      <div className="list-row__actions">
-        <button className="btn-icon" title="แก้ไข" onClick={() => setShowEdit(true)}><Icons.Edit /></button>
-        <button className="btn-icon btn-icon--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}><Icons.Trash /></button>
+      {/* Column 6: Star Rating (Aligned to its own column) */}
+      <div className="list-row__rating">
+        <StarRating rating={stats.n.rating || 0} onRate={(r) => updateSeriesRating(stats.n._id, r)} size="xs" />
       </div>
+
+      {/* Column 7: Actions Panel */}
+      <div className="list-row__actions">
+        <button className="list-row__action-btn list-row__action-btn--edit" title="แก้ไข" onClick={() => setShowEdit(true)}>
+          <Icons.Edit />
+        </button>
+        <button className="list-row__action-btn list-row__action-btn--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}>
+          <Icons.Trash />
+        </button>
+      </div>
+
       {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
     </div>
   );

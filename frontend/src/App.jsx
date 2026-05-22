@@ -122,6 +122,17 @@ export default function App() {
             <div className="loading"><div className="loading__spinner" /></div>
           ) : (
             <div className={viewMode === 'grid' ? 'card-grid' : 'list-container'}>
+              {viewMode === 'list' && displaySeries.length > 0 && (
+                <div className="list-table-header">
+                  <div className="list-header-col">ปก</div>
+                  <div className="list-header-col">ชื่อเรื่อง & ผู้เขียน</div>
+                  <div className="list-header-col">ประเภท & สถานะ</div>
+                  <div className="list-header-col">ความคืบหน้า</div>
+                  <div className="list-header-col">การสะสม / เล่มขาด</div>
+                  <div className="list-header-col list-header-col--center">คะแนน</div>
+                  <div className="list-header-col list-header-col--right">จัดการ</div>
+                </div>
+              )}
               {displaySeries.map(s => (
                 viewMode === 'grid'
                   ? <SeriesCard key={s._id} series={s} />
