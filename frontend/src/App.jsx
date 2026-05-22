@@ -4,8 +4,8 @@ import { Icons } from "./components/Icons";
 import { useSeriesStore } from "./store/useSeriesStore";
 import { FilterSidebar } from "./features/filters/FilterSidebar";
 import { 
-  SeriesCard, 
-  SeriesListItem, 
+  SeriesGridView, 
+  SeriesListView, 
   SeriesInfoModal, 
   MissingVolumesModal, 
   useFilteredSeries 
@@ -121,34 +121,19 @@ export default function App() {
           {loading ? (
             <div className="loading"><div className="loading__spinner" /></div>
           ) : (
-            <div className={viewMode === 'grid' ? 'card-grid' : 'list-container'}>
-              {viewMode === 'list' && displaySeries.length > 0 && (
-                <div className="list-table-header">
-                  <div className="list-header-col">ปก</div>
-                  <div className="list-header-col">ชื่อเรื่อง & ผู้เขียน</div>
-                  <div className="list-header-col">ประเภท & สถานะ</div>
-                  <div className="list-header-col">ความคืบหน้า</div>
-                  <div className="list-header-col">การสะสม / เล่มขาด</div>
-                  <div className="list-header-col list-header-col--center">คะแนน</div>
-                  <div className="list-header-col list-header-col--right">จัดการ</div>
-                </div>
-              )}
-              {displaySeries.map(s => (
-                viewMode === 'grid'
-                  ? <SeriesCard key={s._id} series={s} />
-                  : <SeriesListItem key={s._id} series={s} />
-              ))}
-              {displaySeries.length === 0 && (
-                <div className="empty-state">
-                  <div className="empty-state__icon">📚</div>
-                  <h3>ไม่พบหนังสือที่คุณหา</h3>
-                  <p>ลองปรับตัวกรอง หรือล้างการค้นหาดูนะครับ</p>
-                  {activeFilterCount > 0 && (
-                    <button className="btn btn--ghost" style={{ marginTop: '12px' }} onClick={resetFilter}>ล้างตัวกรองทั้งหมด</button>
-                  )}
-                </div>
-              )}
-            </div>
+            viewMode === 'grid' ? (
+              <SeriesGridView 
+                displaySeries={displaySeries} 
+                activeFilterCount={activeFilterCount} 
+                onResetFilter={resetFilter} 
+              />
+            ) : (
+              <SeriesListView 
+                displaySeries={displaySeries} 
+                activeFilterCount={activeFilterCount} 
+                onResetFilter={resetFilter} 
+              />
+            )
           )}
         </main>
       </div>
