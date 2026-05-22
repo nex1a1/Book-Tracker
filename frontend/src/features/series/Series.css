@@ -1160,7 +1160,8 @@
 .modal__grid-container {
   display: grid;
   grid-template-columns: 320px 1fr;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1172,6 +1173,7 @@
   gap: 16px;
   padding: 16px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .modal__sidebar::-webkit-scrollbar {
@@ -1191,6 +1193,7 @@
   gap: 16px;
   padding: 20px;
   overflow-y: auto;
+  min-height: 0;
   background: var(--paper);
 }
 

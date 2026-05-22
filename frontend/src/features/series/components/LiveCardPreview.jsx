@@ -18,11 +18,15 @@ export function LiveCardPreview({ form, stats }) {
       <div className="live-preview-card-wrap">
         <div className="card" style={{ margin: 0, border: '1px solid rgba(255, 123, 0, 0.25)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
           <div className="card__top">
-            {form.imageUrl ? (
-              <img src={form.imageUrl} alt={form.title} className="card__cover" />
-            ) : (
-              <div className="card__cover" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: '0.7rem', background: 'var(--cream)' }}>ไม่มีรูปปก</div>
-            )}
+            <div className="card__cover-wrapper">
+              {form.imageUrl ? (
+                <img src={form.imageUrl} alt={form.title} className="card__cover" />
+              ) : (
+                <div className="card__cover-empty">
+                  <span>ไม่มีรูป</span>
+                </div>
+              )}
+            </div>
             
             <div className="card__info">
               <div className="card__header">
@@ -33,14 +37,17 @@ export function LiveCardPreview({ form, stats }) {
               </div>
               
               <h3 className="card__title" title={form.title || "ชื่อเรื่อง"}>{form.title || "ชื่อเรื่องที่พิมพ์..."}</h3>
-              <span className="card__timeline-label">
-                {form.publishYear || "?"} – {(form.status === 'completed' || form.endYear) ? (form.endYear || "จบแล้ว") : "ปัจจุบัน"}
-              </span>
-              <p className="card__author" title={`${form.author || "?"} | ${form.publisher || ""}`}>
-                {form.author || "ผู้แต่ง"} {form.publisher ? `| ${form.publisher}` : ""}
-              </p>
               
-              <div style={{ marginTop: 'auto' }}>
+              <div className="card__meta-details">
+                <span className="card__timeline-label">
+                  {form.publishYear || "?"} – {(form.status === 'completed' || form.endYear) ? (form.endYear || "จบแล้ว") : "ปัจจุบัน"}
+                </span>
+                <p className="card__author" title={`${form.author || "?"} | ${form.publisher || ""}`}>
+                  {form.author || "ผู้แต่ง"} {form.publisher ? `| ${form.publisher}` : ""}
+                </p>
+              </div>
+              
+              <div className="card__rating-wrap">
                 <StarRating rating={form.rating || 0} size="sm" readOnly />
               </div>
             </div>
@@ -64,7 +71,7 @@ export function LiveCardPreview({ form, stats }) {
                   <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
                     <Icons.Cart /> 
                     <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format]}):</strong>
-                    <span style={{ color: isComplete ? "var(--read-color)" : "var(--accent)", fontWeight: 'bold' }}>{missingText}</span>
+                    <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
                   </p>
                 );
               })
