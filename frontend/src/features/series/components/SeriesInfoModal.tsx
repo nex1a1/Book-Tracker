@@ -8,6 +8,7 @@ import { seriesApi } from "../../../api/seriesApi";
 import { normalizeSeriesData, getSeriesDerivedStats } from "../../../utils/helpers";
 import { FORMAT_LABEL, RATING_LABEL } from "../../../utils/constants";
 import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
+import type { CreateSeriesInput } from "../../../../../backend/src/utils/validation";
 
 // Sub-components
 import { LiveCardPreview } from "./LiveCardPreview";
@@ -197,7 +198,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
       if (isEdit && series) {
         await seriesApi.update(series._id, payload);
       } else {
-        await seriesApi.create(payload);
+        await seriesApi.create(payload as CreateSeriesInput);
       }
       await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
       toast.success("บันทึกสำเร็จ"); 

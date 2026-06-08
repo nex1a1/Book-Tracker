@@ -84,3 +84,4 @@ try { db.exec("ALTER TABLE series ADD COLUMN author_id INTEGER REFERENCES author
 try { db.exec("ALTER TABLE series ADD COLUMN publisher_id INTEGER REFERENCES publishers(id)"); } catch (e) {}
 
 export default db;
+export type DatabaseInstance = typeof db;

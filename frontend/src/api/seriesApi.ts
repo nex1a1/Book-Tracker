@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { Series, SeriesStats, FilterState, MetadataItem } from "../types";
+import type { CreateSeriesInput, UpdateSeriesInput } from "../../../backend/src/utils/validation";
 
 const API_BASE = "/api";
 
@@ -21,10 +22,10 @@ export const seriesApi = {
   getPublishers: (): Promise<AxiosResponse<MetadataItem[]>> => 
     axios.get(`${API_BASE}/publishers`),
   
-  create: (data: Partial<Series>): Promise<AxiosResponse<Series>> => 
+  create: (data: CreateSeriesInput): Promise<AxiosResponse<Series>> => 
     axios.post(`${API_BASE}/series`, data),
   
-  update: (id: string, data: Partial<Series>): Promise<AxiosResponse<Series>> => 
+  update: (id: string, data: UpdateSeriesInput): Promise<AxiosResponse<Series>> => 
     axios.patch(`${API_BASE}/series/${id}`, data),
   
   delete: (id: string): Promise<AxiosResponse<{ success: boolean }>> => 

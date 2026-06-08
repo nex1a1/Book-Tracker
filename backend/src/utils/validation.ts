@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const logSchema = z.object({
+export const logSchema = z.object({
   title: z.string().trim().optional(),
   totalVolumes: z.number().int().nonnegative().nullable().optional(),
   ranges: z.array(z.array(z.number().int().nonnegative()).length(2)).optional().default([])
@@ -28,3 +28,7 @@ export const updateSeriesSchema = createSeriesSchema.partial().extend({
   author: z.string().trim().min(1).optional(),
   publisher: z.string().trim().min(1).optional()
 });
+
+export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;
+export type UpdateSeriesInput = z.infer<typeof updateSeriesSchema>;
+export type BookLogInput = z.infer<typeof logSchema>;

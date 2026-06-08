@@ -7,7 +7,14 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../../');
 
-export const config = {
+export interface AppConfig {
+  PORT: string | number;
+  MAL_CLIENT_ID: string;
+  DB_PATH: string;
+  DATA_DIR: string;
+}
+
+export const config: AppConfig = {
   PORT: process.env.PORT || 3001,
   MAL_CLIENT_ID: process.env.MAL_CLIENT_ID || 'c46d973094ed01130b93efd3a0015ab4',
   DB_PATH: process.env.DB_PATH || path.join(rootDir, 'data/manga.db'),
