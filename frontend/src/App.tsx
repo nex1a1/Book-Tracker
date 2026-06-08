@@ -50,7 +50,7 @@ export default function App() {
 
         {stats && (
           <div className="top-header__stats">
-            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }}>
+            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--accent)', ['--stat-glow' as any]: 'rgba(255, 123, 0, 0.12)' }}>
               <div className="stat-card__icon"><Icons.Book /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เรื่องทั้งหมด</span>
@@ -58,7 +58,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }}>
+            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--badge-manga)', ['--stat-glow' as any]: 'rgba(168, 85, 247, 0.12)' }}>
               <div className="stat-card__icon"><Icons.Archive /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">กำลังสะสม</span>
@@ -66,7 +66,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }}>
+            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--badge-finished)', ['--stat-glow' as any]: 'rgba(16, 185, 129, 0.12)' }}>
               <div className="stat-card__icon"><Icons.BookOpen /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เล่มที่อ่านแล้ว</span>
@@ -78,8 +78,22 @@ export default function App() {
 
         <div className="top-header__actions">
           <div className="view-toggle">
-            <button className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')} title="Grid View"><Icons.Grid /></button>
-            <button className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="List View"><Icons.List /></button>
+            <button 
+              type="button"
+              className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`} 
+              onClick={() => setViewMode('grid')} 
+              title="Grid View"
+            >
+              <Icons.Grid />
+            </button>
+            <button 
+              type="button"
+              className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`} 
+              onClick={() => setViewMode('list')} 
+              title="List View"
+            >
+              <Icons.List />
+            </button>
           </div>
 
           <SortDropdown
@@ -89,11 +103,11 @@ export default function App() {
             onSortOrderToggle={() => setFilter({ sortOrder: filter.sortOrder === 'DESC' ? 'ASC' : 'DESC' })}
           />
 
-          <button className="btn btn--ghost" onClick={() => setShowMissing(true)}>
+          <button type="button" className="btn btn--ghost" onClick={() => setShowMissing(true)}>
             <Icons.Receipt /> เช็กลิสต์ที่ขาด
           </button>
 
-          <button className="btn btn--primary btn--add" onClick={() => setShowAdd(true)}>
+          <button type="button" className="btn btn--primary btn--add" onClick={() => setShowAdd(true)}>
             <Icons.Plus /> เพิ่มเรื่องใหม่
           </button>
         </div>
@@ -112,7 +126,12 @@ export default function App() {
           <div className="content-meta">
             <span>แสดง <strong>{displaySeries.length}</strong> จากทั้งหมด <strong>{series.length}</strong> เรื่อง</span>
             {activeFilterCount > 0 && (
-              <button className="btn btn--sm btn--ghost" onClick={resetFilter} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button 
+                type="button"
+                className="btn btn--sm btn--ghost" 
+                onClick={resetFilter} 
+                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
                 <Icons.X /> ล้างตัวกรอง ({activeFilterCount})
               </button>
             )}

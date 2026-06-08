@@ -6,11 +6,17 @@ import { SeriesInfoModal } from "./SeriesInfoModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
+import { Series } from "../../../types";
 import '../Series.css';
 
-export function SeriesCard({ series }) {
+interface SeriesCardProps {
+  series: Series;
+}
+
+export function SeriesCard({ series }: SeriesCardProps) {
   const [showEdit, setShowEdit] = useState(false);
-  const { deleteSeries, updateSeriesRating } = useSeriesStore(s => ({ deleteSeries: s.deleteSeries, updateSeriesRating: s.updateSeriesRating }));
+  const deleteSeries = useSeriesStore(s => s.deleteSeries);
+  const updateSeriesRating = useSeriesStore(s => s.updateSeriesRating);
   const stats = getSeriesDerivedStats(series);
 
   const renderTimeline = () => {
@@ -44,10 +50,20 @@ export function SeriesCard({ series }) {
             
             {/* Sleek Action Buttons (Accessible Cluster) */}
             <div className="card__actions">
-              <button className="btn-icon card__action-btn card__action-btn--edit" title="แก้ไข" onClick={() => setShowEdit(true)}>
+              <button 
+                type="button"
+                className="btn-icon card__action-btn card__action-btn--edit" 
+                title="แก้ไข" 
+                onClick={() => setShowEdit(true)}
+              >
                 <Icons.Edit />
               </button>
-              <button className="btn-icon btn-icon--danger card__action-btn card__action-btn--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}>
+              <button 
+                type="button"
+                className="btn-icon btn-icon--danger card__action-btn card__action-btn--danger" 
+                title="ลบ" 
+                onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}
+              >
                 <Icons.Trash />
               </button>
             </div>
@@ -82,7 +98,7 @@ export function SeriesCard({ series }) {
             const isComplete = missingText === 'ครบถ้วน';
             return (
               <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icons.Cart /> <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format]}):</strong>
+                <Icons.Cart /> <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
                 <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
               </p>
             );

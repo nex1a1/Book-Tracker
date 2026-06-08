@@ -1,7 +1,14 @@
 import React from "react";
 import { SeriesCard } from "./SeriesCard";
+import { Series } from "../../../types";
 
-export function SeriesGridView({ displaySeries, activeFilterCount, onResetFilter }) {
+interface SeriesGridViewProps {
+  displaySeries: Series[];
+  activeFilterCount: number;
+  onResetFilter: () => void;
+}
+
+export function SeriesGridView({ displaySeries, activeFilterCount, onResetFilter }: SeriesGridViewProps) {
   return (
     <div className="card-grid">
       {displaySeries.length === 0 ? (
@@ -10,7 +17,12 @@ export function SeriesGridView({ displaySeries, activeFilterCount, onResetFilter
           <h3>ไม่พบหนังสือที่คุณหา</h3>
           <p>ลองปรับตัวกรอง หรือล้างการค้นหาดูนะครับ</p>
           {activeFilterCount > 0 && (
-            <button className="btn btn--ghost" style={{ marginTop: '12px' }} onClick={onResetFilter}>
+            <button 
+              type="button"
+              className="btn btn--ghost" 
+              style={{ marginTop: '12px' }} 
+              onClick={onResetFilter}
+            >
               ล้างตัวกรองทั้งหมด
             </button>
           )}

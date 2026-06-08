@@ -6,11 +6,16 @@ import '../Series.css';
 import { SeriesInfoModal } from "./SeriesInfoModal";
 
 // Sub-components & hooks
-import { useMissingVolumes } from "../hooks/useMissingVolumes";
+import { useMissingVolumes, MissingSeriesItem } from "../hooks/useMissingVolumes";
 import { MissingVolumeRow } from "./MissingVolumeRow";
+import { Series } from "../../../types";
 
-export function MissingVolumesModal({ onClose }) {
-  const [editingSeries, setEditingSeries] = useState(null);
+interface MissingVolumesModalProps {
+  onClose: () => void;
+}
+
+export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
+  const [editingSeries, setEditingSeries] = useState<Series | null>(null);
 
   const {
     searchQuery,
@@ -35,10 +40,11 @@ export function MissingVolumesModal({ onClose }) {
       const remainingFormats = item.formats.filter(f => !checkedItems.has(`${item._id}-${f.id}`));
       if (remainingFormats.length === 0) return null;
       return { ...item, formats: remainingFormats };
-    }).filter(Boolean);
+    }).filter((x): x is typeof filteredList[number] => x !== null);
 
     if (itemsToCopy.length === 0) {
-      return toast.error("ไม่มีรายการที่ยังไม่เช็กเหลืออยู่ให้คัดลอก");
+      toast.error("ไม่มีรายการที่ยังไม่เช็กเหลืออยู่ให้คัดลอก");
+      return;
     }
 
     let textToCopy = "📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n";
@@ -57,7 +63,7 @@ export function MissingVolumesModal({ onClose }) {
       .catch(() => toast.error("ไม่สามารถคัดลอกได้"));
   };
 
-  const handleCopySingle = (item) => {
+  const handleCopySingle = (item: MissingSeriesItem) => {
     let textToCopy = `📚 ${item.title}\n`;
     const details = [];
     if (item.author) details.push(`แต่ง: ${item.author}`);
@@ -75,7 +81,7 @@ export function MissingVolumesModal({ onClose }) {
       <div className="modal" style={{ maxWidth: '1200px', width: '95vw', height: '85vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal__header">
           <h2 className="modal__title" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><Icons.Receipt /> เช็กลิสต์หนังสือที่ยังขาด</h2>
-          <button className="modal__close" onClick={onClose}>✕</button>
+          <button type="button" className="modal__close" onClick={onClose}>✕</button>
         </div>
 
         <div className="modal__body" style={{ padding: '16px 20px', gap: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -128,6 +134,7 @@ export function MissingVolumesModal({ onClose }) {
               {/* View Toggle */}
               <div className="checklist-view-toggle">
                 <button 
+                  type="button"
                   className={`checklist-view-btn ${viewMode === 'grouped' ? 'active' : ''}`}
                   onClick={() => setViewMode('grouped')}
                   title="แยกกลุ่มตามสำนักพิมพ์"
@@ -135,6 +142,7 @@ export function MissingVolumesModal({ onClose }) {
                   <Icons.Filter /> แยก สนพ.
                 </button>
                 <button 
+                  type="button"
                   className={`checklist-view-btn ${viewMode === 'list' ? 'active' : ''}`}
                   onClick={() => setViewMode('list')}
                   title="แสดงรายการยาวทั้งหมด"
@@ -252,6 +260,7 @@ export function MissingVolumesModal({ onClose }) {
         <div className="modal__footer" style={{ justifyContent: 'space-between', padding: '12px 20px' }}>
           {filteredList.length > 0 ? (
             <button 
+              type="button"
               className="btn btn--ghost" 
               onClick={handleCopy} 
               style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}
@@ -259,7 +268,7 @@ export function MissingVolumesModal({ onClose }) {
               <Icons.Copy /> คัดลอกข้อความ ({stats.totalVolumes - stats.checkedVolumes} เล่มที่เหลือ)
             </button>
           ) : <div />}
-          <button className="btn btn--primary" onClick={onClose}>ปิดเช็กลิสต์</button>
+          <button type="button" className="btn btn--primary" onClick={onClose}>ปิดเช็กลิสต์</button>
         </div>
       </div>
 

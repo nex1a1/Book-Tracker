@@ -4,8 +4,33 @@ import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { getMissingVolumesText } from "../../../utils/helpers";
 import { FORMAT_LABEL, TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
+import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
 
-export function LiveCardPreview({ form, stats }) {
+interface LiveCardPreviewProps {
+  form: {
+    title?: string;
+    imageUrl?: string;
+    type?: string;
+    status?: string;
+    publishYear?: number | string | null;
+    endYear?: number | string | null;
+    author?: string;
+    publisher?: string;
+    rating?: number;
+    readingLogs: BookLog[];
+    collectionLogs: BookLog[];
+    isCollecting?: boolean;
+  };
+  stats: {
+    totalReadCount: number;
+    totalReadJP: number;
+  };
+}
+
+export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
+  const displayType = (form.type || 'manga') as SeriesType;
+  const displayStatus = (form.status || 'ongoing') as SeriesStatus;
+
   return (
     <div className="live-preview-section">
       <div className="live-preview-header">
@@ -31,8 +56,8 @@ export function LiveCardPreview({ form, stats }) {
             <div className="card__info">
               <div className="card__header">
                 <div className="card__badges">
-                  <span className={`badge badge--${form.type}`}>{TYPE_LABEL[form.type]}</span>
-                  <span className={`badge badge--${form.status}`}>{STATUS_LABEL[form.status]}</span>
+                  <span className={`badge badge--${displayType}`}>{TYPE_LABEL[displayType]}</span>
+                  <span className={`badge badge--${displayStatus}`}>{STATUS_LABEL[displayStatus]}</span>
                 </div>
               </div>
               
@@ -70,7 +95,7 @@ export function LiveCardPreview({ form, stats }) {
                 return (
                   <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
                     <Icons.Cart /> 
-                    <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format]}):</strong>
+                    <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
                     <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
                   </p>
                 );

@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { getSeriesDerivedStats } from "../../../utils/helpers";
+import { Series, FilterState } from "../../../types";
 
-export function useFilteredSeries(series, filter) {
+export function useFilteredSeries(series: Series[], filter: FilterState) {
   const displaySeries = useMemo(() => {
-    let filtered = series;
+    let filtered = [...series];
 
     if (filter.search) {
       const q = filter.search.toLowerCase();
@@ -15,15 +16,15 @@ export function useFilteredSeries(series, filter) {
     }
     
     if (filter.type && filter.type.length > 0) {
-      filtered = filtered.filter(s => Array.isArray(filter.type) ? filter.type.includes(s.type) : filter.type === s.type);
+      filtered = filtered.filter(s => Array.isArray(filter.type) ? filter.type.includes(s.type) : (filter.type as any) === s.type);
     }
     if (filter.status && filter.status.length > 0) {
-      filtered = filtered.filter(s => Array.isArray(filter.status) ? filter.status.includes(s.status) : filter.status === s.status);
+      filtered = filtered.filter(s => Array.isArray(filter.status) ? filter.status.includes(s.status) : (filter.status as any) === s.status);
     }
     
     if (filter.publisher) filtered = filtered.filter(s => s.publisher === filter.publisher);
-    if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear >= Number(filter.yearFrom));
-    if (filter.yearTo) filtered = filtered.filter(s => s.publishYear <= Number(filter.yearTo));
+    if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear >= Number(filter.yearFrom));
+    if (filter.yearTo) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear <= Number(filter.yearTo));
 
     if (filter.minRating) filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
     if (filter.maxRating) filtered = filtered.filter(s => (s.rating || 0) <= filter.maxRating && (s.rating || 0) > 0);
@@ -54,16 +55,18 @@ export function useFilteredSeries(series, filter) {
     });
 
     filtered.sort((a, b) => {
-      let valA = a[filter.sortBy];
-      let valB = b[filter.sortBy];
+      let valA = a[filter.sortBy as keyof Series];
+      let valB = b[filter.sortBy as keyof Series];
       if (filter.sortBy === 'updatedAt' || filter.sortBy === 'createdAt') {
-        valA = new Date(valA).getTime();
-        valB = new Date(valB).getTime();
+        valA = new Date(valA as string).getTime();
+        valB = new Date(valB as string).getTime();
       }
       if (filter.sortBy === 'rating') {
         valA = a.rating || 0;
         valB = b.rating || 0;
       }
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
       if (valA < valB) return filter.sortOrder === 'ASC' ? -1 : 1;
       if (valA > valB) return filter.sortOrder === 'ASC' ? 1 : -1;
       return 0;

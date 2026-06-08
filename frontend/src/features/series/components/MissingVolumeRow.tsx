@@ -1,7 +1,17 @@
 import React from "react";
 import { Icons } from "../../../components/Icons";
+import { MissingSeriesItem, MissingLogItem } from "../hooks/useMissingVolumes";
 
-export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle }) {
+interface MissingVolumeRowProps {
+  item: MissingSeriesItem;
+  f: MissingLogItem;
+  isChecked: boolean;
+  onToggleCheck: () => void;
+  onEdit: () => void;
+  onCopySingle: () => void;
+}
+
+export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle }: MissingVolumeRowProps) {
   return (
     <div className={`checklist-item-row ${isChecked ? "is-checked" : ""}`}>
       <div className="checklist-item-checkbox-wrapper">
@@ -42,6 +52,7 @@ export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, on
 
       <div className="checklist-item-actions">
         <button 
+          type="button"
           className="checklist-row-btn checklist-row-btn--edit" 
           onClick={onEdit}
           title="แก้ไขรายละเอียดเรื่องนี้"
@@ -49,6 +60,7 @@ export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, on
           <Icons.Edit />
         </button>
         <button 
+          type="button"
           className="checklist-row-btn checklist-row-btn--copy" 
           onClick={onCopySingle}
           title="คัดลอกข้อมูลเรื่องนี้"

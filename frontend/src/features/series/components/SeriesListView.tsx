@@ -1,7 +1,14 @@
 import React from "react";
 import { SeriesListItem } from "./SeriesListItem";
+import { Series } from "../../../types";
 
-export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter }) {
+interface SeriesListViewProps {
+  displaySeries: Series[];
+  activeFilterCount: number;
+  onResetFilter: () => void;
+}
+
+export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter }: SeriesListViewProps) {
   return (
     <div className="list-container">
       {displaySeries.length === 0 ? (
@@ -10,7 +17,12 @@ export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter
           <h3>ไม่พบหนังสือที่คุณหา</h3>
           <p>ลองปรับตัวกรอง หรือล้างการค้นหาดูนะครับ</p>
           {activeFilterCount > 0 && (
-            <button className="btn btn--ghost" style={{ marginTop: '12px' }} onClick={onResetFilter}>
+            <button 
+              type="button"
+              className="btn btn--ghost" 
+              style={{ marginTop: '12px' }} 
+              onClick={onResetFilter}
+            >
               ล้างตัวกรองทั้งหมด
             </button>
           )}

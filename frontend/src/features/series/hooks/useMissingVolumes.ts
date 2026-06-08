@@ -2,22 +2,42 @@ import { useState, useMemo } from "react";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges } from "../../../utils/helpers";
 import { FORMAT_LABEL, TYPE_LABEL } from "../../../utils/constants";
+import { Series } from "../../../types";
+
+export interface MissingLogItem {
+  id: string;
+  format?: string;
+  title: string;
+  missingText: string;
+  missingCount: number;
+}
+
+export interface MissingSeriesItem {
+  _id: string;
+  title: string;
+  author: string;
+  publisher: string;
+  typeStr: string;
+  rawType: string;
+  formats: MissingLogItem[];
+  rawSeries: Series;
+}
 
 export function useMissingVolumes() {
   const { series } = useSeriesStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPublisher, setSelectedPublisher] = useState("all");
-  const [viewMode, setViewMode] = useState("grouped"); // "grouped" | "list"
-  const [checkedItems, setCheckedItems] = useState(new Set());
-  const [collapsedPubs, setCollapsedPubs] = useState(new Set());
+  const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [collapsedPubs, setCollapsedPubs] = useState<Set<string>>(new Set());
 
   // 1. Gather all series that have missing volumes
   const missingList = useMemo(() => {
-    const list = [];
+    const list: MissingSeriesItem[] = [];
     series.forEach(s => {
       const stats = getSeriesDerivedStats(s);
       if (stats.n.isCollecting && stats.isCollectMissing) {
-        const formats = [];
+        const formats: MissingLogItem[] = [];
         stats.n.collectionLogs.forEach(log => {
           const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
           if (missingText !== 'ครบถ้วน' && missingText !== '-') {
@@ -28,7 +48,7 @@ export function useMissingVolumes() {
             formats.push({ 
               id: log.id,
               format: log.format,
-              title: log.title || FORMAT_LABEL[log.format], 
+              title: log.title || FORMAT_LABEL[log.format || 'normal'] || 'เล่มปกติ', 
               missingText,
               missingCount: count
             });
@@ -67,7 +87,7 @@ export function useMissingVolumes() {
 
   // 3. Unique publisher options for filter dropdown
   const publisherOptions = useMemo(() => {
-    const pubs = new Set();
+    const pubs = new Set<string>();
     missingList.forEach(item => {
       if (item.publisher) pubs.add(item.publisher);
     });
@@ -76,7 +96,7 @@ export function useMissingVolumes() {
 
   // 4. Grouped missing items for Publisher view
   const groupedByPublisher = useMemo(() => {
-    const groups = {};
+    const groups: Record<string, MissingSeriesItem[]> = {};
     filteredList.forEach(item => {
       const pub = item.publisher || "ไม่ระบุสำนักพิมพ์";
       if (!groups[pub]) groups[pub] = [];
@@ -87,7 +107,7 @@ export function useMissingVolumes() {
 
   // 5. Active dynamic statistics
   const stats = useMemo(() => {
-    let totalSeries = filteredList.length;
+    const totalSeries = filteredList.length;
     let totalVolumes = 0;
     let checkedVolumes = 0;
     let checkedItemsCount = 0;
@@ -106,14 +126,14 @@ export function useMissingVolumes() {
     return { totalSeries, totalVolumes, checkedVolumes, checkedItemsCount };
   }, [filteredList, checkedItems]);
 
-  const toggleCheckItem = (key) => {
+  const toggleCheckItem = (key: string) => {
     const next = new Set(checkedItems);
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setCheckedItems(next);
   };
 
-  const toggleCollapsePub = (pub) => {
+  const toggleCollapsePub = (pub: string) => {
     const next = new Set(collapsedPubs);
     if (next.has(pub)) next.delete(pub);
     else next.add(pub);

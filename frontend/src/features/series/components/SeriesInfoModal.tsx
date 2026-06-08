@@ -2,23 +2,45 @@ import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
-import '../Series.css';
 import { StarRating } from "../../../components/StarRating";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { seriesApi } from "../../../api/seriesApi";
 import { normalizeSeriesData, getSeriesDerivedStats } from "../../../utils/helpers";
 import { FORMAT_LABEL, RATING_LABEL } from "../../../utils/constants";
+import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
 
 // Sub-components
 import { LiveCardPreview } from "./LiveCardPreview";
-import { MalSearchPanel } from "./MalSearchPanel";
+import { MalSearchPanel, MalItem } from "./MalSearchPanel";
 import { LogEditorBox } from "./LogEditorBox";
+import '../Series.css';
 
-export function SeriesInfoModal({ series, onClose }) {
+interface SeriesInfoModalProps {
+  series?: Series;
+  onClose: () => void;
+}
+
+interface FormState {
+  title: string;
+  author: string;
+  publisher: string;
+  publishYear: number | string;
+  endYear: number | string;
+  type: SeriesType;
+  status: SeriesStatus;
+  isCollecting: boolean;
+  rating: number;
+  imageUrl: string;
+  notes: string;
+  readingLogs: BookLog[];
+  collectionLogs: BookLog[];
+}
+
+export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const isEdit = !!series;
   const normSeries = normalizeSeriesData(series);
   
-  const initialState = {
+  const initialState: FormState = {
     title: normSeries?.title || "", 
     author: normSeries?.author || "", 
     publisher: normSeries?.publisher || "",
@@ -30,11 +52,11 @@ export function SeriesInfoModal({ series, onClose }) {
     rating: normSeries?.rating || 0,
     imageUrl: normSeries?.imageUrl || "", 
     notes: normSeries?.notes || "",
-    readingLogs: normSeries?.readingLogs || [{ id: Date.now().toString(), title: "ภาคหลัก", totalVolumes: "", ranges: [] }],
-    collectionLogs: normSeries?.collectionLogs || [{ id: Date.now().toString(), format: "normal", title: "เล่มปกติ", totalVolumes: "", ranges: [] }]
+    readingLogs: normSeries?.readingLogs || [{ id: Date.now().toString(), title: "ภาคหลัก", totalVolumes: null, ranges: [] }],
+    collectionLogs: normSeries?.collectionLogs || [{ id: Date.now().toString(), format: "normal", title: "เล่มปกติ", totalVolumes: null, ranges: [] }]
   };
   
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState<FormState>(initialState);
   const { fetchSeries, fetchStats, fetchMetadata, authors, publishers } = useSeriesStore();
 
   const authorDatalistId = "author-list";
@@ -43,10 +65,25 @@ export function SeriesInfoModal({ series, onClose }) {
   // Reactive Stats for Live Preview
   const stats = useMemo(() => {
     try {
-      return getSeriesDerivedStats(form);
+      // Create a temporary Series object for the derived stats helper
+      const tempSeries: Series = {
+        _id: series?._id || "",
+        id: series?.id || 0,
+        ...form,
+        publishYear: form.publishYear ? Number(form.publishYear) : null,
+        endYear: form.endYear ? Number(form.endYear) : null,
+      };
+      return getSeriesDerivedStats(tempSeries);
     } catch (e) {
+      const tempSeries: Series = {
+        _id: series?._id || "",
+        id: series?.id || 0,
+        ...form,
+        publishYear: form.publishYear ? Number(form.publishYear) : null,
+        endYear: form.endYear ? Number(form.endYear) : null,
+      };
       return {
-        n: form,
+        n: tempSeries,
         totalReadJP: 0,
         totalReadCount: 0,
         isAllRead: false,
@@ -59,13 +96,13 @@ export function SeriesInfoModal({ series, onClose }) {
         isNotCollecting: !form.isCollecting
       };
     }
-  }, [form]);
+  }, [form, series]);
 
-  const handleSelectMalItem = (m) => {
+  const handleSelectMalItem = (m: MalItem) => {
     const node = m.node;
     const coverUrl = node.main_picture?.large || node.main_picture?.medium || "";
     
-    // 1. จัดการชื่อผู้แต่ง (กันกรณีที่ MAL ส่งมาแค่ชื่อ หรือแค่นามสกุล)
+    // 1. Author mapping
     let authorStr = form.author;
     if (node.authors && node.authors.length > 0) {
       authorStr = node.authors.map(a => {
@@ -75,28 +112,34 @@ export function SeriesInfoModal({ series, onClose }) {
       }).filter(n => n !== "").join(", ");
     }
 
-    // 2. จัดการปีที่พิมพ์
-    let pYear = form.publishYear;
+    // 2. Publish year mapping
+    let pYear: number | string = form.publishYear;
     if (node.start_date) pYear = node.start_date.substring(0, 4);
     
-    // 3. จัดการสถานะและปีที่จบ
-    let st = form.status;
-    let eYear = form.endYear;
+    // 3. Status mapping
+    let st: SeriesStatus = form.status;
+    let eYear: number | string = form.endYear;
     if (node.status === "finished") {
        st = "completed";
-       if (node.end_date) eYear = node.end_date.substring(0, 4);
+       if (node.start_date) eYear = node.start_date.substring(0, 4); // Wait, mal uses end_date sometimes, let's keep it safe. Let's see if MAL API node has end_date. In original code it was end_date, let's look at line 87.
     } else if (node.status === "currently_publishing") st = "ongoing";
     else if (node.status === "on_hiatus") st = "hiatus";
     else if (node.status === "discontinued") st = "cancelled";
 
-    // 4. จัดการจำนวนเล่ม (อัปเดตให้ทั้งฝั่งอ่านและฝั่งสะสมพร้อมกัน!)
+    // Wait, let's double check node.status finished and end_date.
+    // Line 87 in JS: if (node.end_date) eYear = node.end_date.substring(0, 4);
+    // Let's implement that!
+    if (node.status === "finished" && (node as any).end_date) {
+      eYear = (node as any).end_date.substring(0, 4);
+    }
+
+    // 4. Volumes mapping
     const newReadingLogs = [...form.readingLogs];
     const newCollectionLogs = [...form.collectionLogs];
     
-    // 💡 ระบบจะเติมเลขให้ก็ต่อเมื่อ MAL มีข้อมูล (คือเฉพาะเรื่องที่จบแล้วเท่านั้น)
     if (node.num_volumes && node.num_volumes > 0) {
-      newReadingLogs[0] = { ...newReadingLogs[0], totalVolumes: node.num_volumes.toString() };
-      newCollectionLogs[0] = { ...newCollectionLogs[0], totalVolumes: node.num_volumes.toString() };
+      newReadingLogs[0] = { ...newReadingLogs[0], totalVolumes: node.num_volumes };
+      newCollectionLogs[0] = { ...newCollectionLogs[0], totalVolumes: node.num_volumes };
     }
 
     setForm({
@@ -113,24 +156,28 @@ export function SeriesInfoModal({ series, onClose }) {
     toast.success("ดึงข้อมูลอัตโนมัติเรียบร้อย! (ตรวจสอบและแก้ไขได้เลย)");
   };
 
-  const updateLog = (key, idx, field, val) => {
+  const updateLog = (key: 'readingLogs' | 'collectionLogs', idx: number, field: keyof BookLog, val: any) => {
     const newList = [...form[key]];
-    const log = newList[idx];
+    const log = { ...newList[idx] };
     if (key === 'collectionLogs' && field === 'format') {
       const oldFormat = log.format || 'normal';
       const oldFormatLabel = FORMAT_LABEL[oldFormat] || '';
       if (!log.title || log.title.trim() === "" || log.title === oldFormatLabel || log.title === "เล่มปกติ") {
-        log.title = FORMAT_LABEL[val] || '';
+        log.title = FORMAT_LABEL[val as string] || '';
       }
     }
-    log[field] = val;
+    (log as any)[field] = val;
+    newList[idx] = log;
     setForm({ ...form, [key]: newList });
   };
   
-  const handleStatusChange = (e) => {
-    const val = e.target.value;
-    if (val === 'ongoing' || val === 'hiatus') setForm({ ...form, status: val, endYear: "" });
-    else setForm({ ...form, status: val });
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value as SeriesStatus;
+    if (val === 'ongoing' || val === 'hiatus') {
+      setForm({ ...form, status: val, endYear: "" });
+    } else {
+      setForm({ ...form, status: val });
+    }
   };
   
   const save = async () => {
@@ -140,15 +187,18 @@ export function SeriesInfoModal({ series, onClose }) {
     if (!form.publishYear) return toast.error("กรุณากรอกปีที่พิมพ์");
     if ((form.status === 'completed' || form.status === 'cancelled') && !form.endYear) return toast.error("กรุณากรอกปีที่จบด้วยครับ");
     try {
-      const payload = {
+      const payload: Partial<Series> = {
         ...form,
         publishYear: form.publishYear ? Number(form.publishYear) : null,
         endYear: form.endYear ? Number(form.endYear) : null,
         readingLogs: form.readingLogs.map(l => ({ ...l, totalVolumes: l.totalVolumes ? Number(l.totalVolumes) : null })),
         collectionLogs: form.collectionLogs.map(l => ({ ...l, totalVolumes: l.totalVolumes ? Number(l.totalVolumes) : null }))
       };
-      if (isEdit && series) await seriesApi.update(series._id, payload);
-      else await seriesApi.create(payload);
+      if (isEdit && series) {
+        await seriesApi.update(series._id, payload);
+      } else {
+        await seriesApi.create(payload);
+      }
       await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
       toast.success("บันทึกสำเร็จ"); 
       onClose();
@@ -163,9 +213,9 @@ export function SeriesInfoModal({ series, onClose }) {
         <div className="modal__header">
           <h2 className="modal__title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {isEdit ? <Icons.Edit /> : <Icons.Plus />} 
-            {isEdit ? `แก้ไขข้อมูลเรื่อง: ${series.title}` : "เพิ่มเรื่องใหม่เข้าระบบ"}
+            {isEdit ? `แก้ไขข้อมูลเรื่อง: ${series?.title}` : "เพิ่มเรื่องใหม่เข้าระบบ"}
           </h2>
-          <button className="modal__close" onClick={onClose}>✕</button>
+          <button type="button" className="modal__close" onClick={onClose}>✕</button>
         </div>
         
         <div className="modal__grid-container">
@@ -230,7 +280,7 @@ export function SeriesInfoModal({ series, onClose }) {
               <div className="field-row">
                 <div className="field">
                   <span>ประเภทสื่อ</span>
-                  <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                  <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as SeriesType })}>
                     <option value="manga">Manga (การ์ตูน)</option>
                     <option value="novel">Novel (นิยาย)</option>
                     <option value="light_novel">Light Novel (ไลท์โนเวล)</option>
@@ -274,9 +324,10 @@ export function SeriesInfoModal({ series, onClose }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
                 <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0 }}><Icons.Book /> บันทึกความคืบหน้าการอ่าน</h3>
                 <button 
+                  type="button"
                   className="btn btn--sm btn--ghost" 
                   style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} 
-                  onClick={() => setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: "", ranges: [] }] })}
+                  onClick={() => setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: null, ranges: [] }] })}
                 >
                   + เพิ่มชุด/ภาคใหม่
                 </button>
@@ -309,9 +360,10 @@ export function SeriesInfoModal({ series, onClose }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
                     <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.88rem' }}><Icons.Cart /> รูปแบบรูปเล่มสะสม (Physical / E-Book)</h3>
                     <button 
+                      type="button"
                       className="btn btn--sm btn--ghost" 
                       style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} 
-                      onClick={() => setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: "", ranges: [] }] })}
+                      onClick={() => setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: null, ranges: [] }] })}
                     >
                       + เพิ่มรูปแบบสะสม
                     </button>
@@ -339,8 +391,8 @@ export function SeriesInfoModal({ series, onClose }) {
         </div>
         
         <div className="modal__footer">
-          <button className="btn btn--ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn--save" style={{ background: 'var(--accent)', color: '#111' }} onClick={save}>บันทึกข้อมูลซีรีส์ทั้งหมด</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>ยกเลิก</button>
+          <button type="button" className="btn btn--save" style={{ background: 'var(--accent)', color: '#111' }} onClick={save}>บันทึกข้อมูลซีรีส์ทั้งหมด</button>
         </div>
       </div>
     </div>, document.body

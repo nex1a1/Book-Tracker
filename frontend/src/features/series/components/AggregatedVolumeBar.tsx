@@ -1,12 +1,27 @@
 import React from "react";
-import { Icons } from "../../../components/Icons";
 import { getSetFromRanges } from "../../../utils/helpers";
+import { BookLog } from "../../../types";
 
-export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini = false }) {
+interface AggregatedVolumeBarProps {
+  logs: BookLog[];
+  type: 'read' | 'buy';
+  icon: React.ComponentType;
+  titleLabel: string;
+  isMini?: boolean;
+}
+
+interface GridCell {
+  id: string;
+  isFilled: boolean;
+  isSpecial: boolean;
+  logIndex: number;
+}
+
+export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini = false }: AggregatedVolumeBarProps) {
   if (!logs || logs.length === 0) return null;
   const totalVolumes = logs.reduce((sum, log) => sum + (Number(log.totalVolumes) || 0), 0);
   let count = 0;
-  const gridCells = [];
+  const gridCells: GridCell[] = [];
   logs.forEach((log, logIndex) => {
     const set = getSetFromRanges(log.ranges);
     count += set.size;

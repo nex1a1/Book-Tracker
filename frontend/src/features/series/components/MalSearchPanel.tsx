@@ -2,13 +2,44 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
 
-export function MalSearchPanel({ title, imageUrl, onSelectMalItem }) {
-  const [malResults, setMalResults] = useState([]);
+export interface MalItemNode {
+  id: number;
+  title: string;
+  main_picture?: {
+    medium?: string;
+    large?: string;
+  };
+  status?: string;
+  num_volumes?: number;
+  start_date?: string;
+  authors?: {
+    node: {
+      id: number;
+      first_name: string;
+      last_name: string;
+    };
+    role: string;
+  }[];
+}
+
+export interface MalItem {
+  node: MalItemNode;
+}
+
+interface MalSearchPanelProps {
+  title: string;
+  imageUrl: string;
+  onSelectMalItem: (item: MalItem) => void;
+}
+
+export function MalSearchPanel({ title, imageUrl, onSelectMalItem }: MalSearchPanelProps) {
+  const [malResults, setMalResults] = useState<MalItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const searchMAL = async () => {
     if (!title || title.trim() === "") {
-      return toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
+      toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
+      return;
     }
     setIsSearching(true);
     try {
@@ -33,6 +64,7 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }) {
       <span className="sidebar-mal-title">ค้นปกและข้อมูลจาก MAL</span>
       <div style={{ display: 'flex', gap: '6px' }}>
         <button 
+          type="button"
           className="btn btn--primary" 
           onClick={searchMAL} 
           disabled={isSearching} 
@@ -47,6 +79,7 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px 4px 2px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
             <span style={{ fontSize: '0.62rem', color: 'var(--muted)', fontWeight: 600 }}>คลิกเลือกปกด้านล่าง:</span>
             <button 
+              type="button"
               className="btn-icon" 
               onClick={() => setMalResults([])} 
               style={{ width: '18px', height: '18px' }} 
@@ -64,7 +97,7 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }) {
                 className={`sidebar-mal-item ${isSelected ? 'is-selected' : ''}`}
                 onClick={() => onSelectMalItem(m)}
               >
-                <img src={m.node.main_picture?.medium} alt="" className="sidebar-mal-thumb" />
+                <img src={m.node.main_picture?.medium || ""} alt="" className="sidebar-mal-thumb" />
                 <div className="sidebar-mal-info">
                   <p className="sidebar-mal-item-title" title={m.node.title}>{m.node.title}</p>
                   <p className="sidebar-mal-item-sub">

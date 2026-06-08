@@ -6,11 +6,17 @@ import { SeriesInfoModal } from "./SeriesInfoModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
+import { Series } from "../../../types";
 import '../Series.css';
 
-export function SeriesListItem({ series }) {
+interface SeriesListItemProps {
+  series: Series;
+}
+
+export function SeriesListItem({ series }: SeriesListItemProps) {
   const [showEdit, setShowEdit] = useState(false);
-  const { deleteSeries, updateSeriesRating } = useSeriesStore(s => ({ deleteSeries: s.deleteSeries, updateSeriesRating: s.updateSeriesRating }));
+  const deleteSeries = useSeriesStore(s => s.deleteSeries);
+  const updateSeriesRating = useSeriesStore(s => s.updateSeriesRating);
   const stats = getSeriesDerivedStats(series);
 
   const renderTimeline = () => {
@@ -22,7 +28,7 @@ export function SeriesListItem({ series }) {
   return (
     <div className={`list-row list-row--${stats.n.status}`}>
       
-      {/* Column 1: Elegant cover wrapper with zoom */}
+      {/* Column 1: cover wrapper */}
       <div className="list-row__cover-wrapper">
         {stats.n.imageUrl ? (
           <img src={stats.n.imageUrl} alt={stats.n.title} className="list-row__cover" />
@@ -31,7 +37,7 @@ export function SeriesListItem({ series }) {
         )}
       </div>
 
-      {/* Column 2: Info Block (Title, Timeline, Author & Publisher) */}
+      {/* Column 2: Info Block */}
       <div className="list-row__info">
         <div className="list-row__title-wrap">
           <h3 className="list-row__title" title={stats.n.title}>{stats.n.title}</h3>
@@ -53,13 +59,13 @@ export function SeriesListItem({ series }) {
         {stats.isUnread && stats.n.isCollecting && <span className="badge badge--collect-only">สายดอง</span>}
       </div>
 
-      {/* Column 4: Elegant mini progress bars */}
+      {/* Column 4: mini progress bars */}
       <div className="list-row__bars">
         <AggregatedVolumeBar logs={stats.n.readingLogs} type="read" icon={Icons.Book} titleLabel="อ่าน" isMini />
         {stats.n.isCollecting && <AggregatedVolumeBar logs={stats.n.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="สะสม" isMini />}
       </div>
 
-      {/* Column 5: Refined Stock/Missing Volumes Status */}
+      {/* Column 5: Stock/Missing Volumes Status */}
       <div className="list-row__missing">
         {stats.n.isCollecting ? (
           stats.n.collectionLogs.map(log => {
@@ -68,7 +74,7 @@ export function SeriesListItem({ series }) {
             return (
               <div key={log.id} className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>
                 <span className="list-row__missing-label">
-                  {isComplete ? 'สะสมครบ' : 'ขาด'} {log.title ? `(${log.title})` : `(${FORMAT_LABEL[log.format]})`}
+                  {isComplete ? 'สะสมครบ' : 'ขาด'} {log.title ? `(${log.title})` : `(${FORMAT_LABEL[log.format || 'normal']})`}
                 </span>
                 <span className="list-row__missing-value" title={missingText}>
                   {missingText}
@@ -81,17 +87,27 @@ export function SeriesListItem({ series }) {
         )}
       </div>
 
-      {/* Column 6: Star Rating (Aligned to its own column) */}
+      {/* Column 6: Star Rating */}
       <div className="list-row__rating">
         <StarRating rating={stats.n.rating || 0} onRate={(r) => updateSeriesRating(stats.n._id, r)} size="xs" />
       </div>
 
       {/* Column 7: Actions Panel */}
       <div className="list-row__actions">
-        <button className="list-row__action-btn list-row__action-btn--edit" title="แก้ไข" onClick={() => setShowEdit(true)}>
+        <button 
+          type="button"
+          className="list-row__action-btn list-row__action-btn--edit" 
+          title="แก้ไข" 
+          onClick={() => setShowEdit(true)}
+        >
           <Icons.Edit />
         </button>
-        <button className="list-row__action-btn list-row__action-btn--danger" title="ลบ" onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}>
+        <button 
+          type="button"
+          className="list-row__action-btn list-row__action-btn--danger" 
+          title="ลบ" 
+          onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}
+        >
           <Icons.Trash />
         </button>
       </div>

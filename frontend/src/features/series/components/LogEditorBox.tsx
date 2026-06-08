@@ -2,8 +2,18 @@ import React from "react";
 import { Icons } from "../../../components/Icons";
 import { RangeEditor } from "../../../components/RangeEditor";
 import { FORMAT_LABEL } from "../../../utils/constants";
+import { BookLog } from "../../../types";
 
-export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }) {
+interface LogEditorBoxProps {
+  log: BookLog;
+  idx: number;
+  type: "reading" | "collection";
+  showRemove: boolean;
+  onRemove: () => void;
+  onUpdate: (field: keyof BookLog, value: any) => void;
+}
+
+export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }: LogEditorBoxProps) {
   const isReading = type === "reading";
 
   return (
@@ -13,6 +23,7 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate })
     >
       {showRemove && (
         <button 
+          type="button"
           className="btn-icon btn-icon--danger log-editor-box__remove" 
           onClick={onRemove} 
           title={isReading ? "ลบชุดการอ่านนี้" : "ลบรูปแบบสะสมนี้"}
@@ -40,7 +51,10 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate })
                 type="number" 
                 className="input" 
                 value={log.totalVolumes || ""} 
-                onChange={e => onUpdate('totalVolumes', e.target.value)} 
+                onChange={e => {
+                  const val = e.target.value;
+                  onUpdate('totalVolumes', val === "" ? null : Number(val));
+                }} 
                 placeholder="ระบุเล่มรวม" 
               />
             </div>
@@ -81,7 +95,10 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate })
                 type="number" 
                 className="input" 
                 value={log.totalVolumes || ""} 
-                onChange={e => onUpdate('totalVolumes', e.target.value)} 
+                onChange={e => {
+                  const val = e.target.value;
+                  onUpdate('totalVolumes', val === "" ? null : Number(val));
+                }} 
                 placeholder="เช่น 23" 
               />
             </div>

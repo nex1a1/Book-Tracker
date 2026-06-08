@@ -45,7 +45,13 @@ const CheckIcon = () => (
   </svg>
 );
 
-const SORT_OPTIONS = [
+interface SortOption {
+  value: string;
+  label: string;
+  icon: React.ComponentType;
+}
+
+const SORT_OPTIONS: SortOption[] = [
   { value: "updatedAt", label: "อัปเดตล่าสุด", icon: ClockIcon },
   { value: "title", label: "ชื่อเรื่อง A–Z", icon: BookIcon },
   { value: "publishYear", label: "ปีที่พิมพ์", icon: CalendarIcon },
@@ -53,16 +59,23 @@ const SORT_OPTIONS = [
   { value: "createdAt", label: "วันที่เพิ่มระบบ", icon: PlusIcon },
 ];
 
-export function SortDropdown({ sortBy, sortOrder, onSortByChange, onSortOrderToggle }) {
+interface SortDropdownProps {
+  sortBy: string;
+  sortOrder: "ASC" | "DESC";
+  onSortByChange: (val: string) => void;
+  onSortOrderToggle: () => void;
+}
+
+export function SortDropdown({ sortBy, sortOrder, onSortByChange, onSortOrderToggle }: SortDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const activeOption = SORT_OPTIONS.find((opt) => opt.value === sortBy) || SORT_OPTIONS[0];
   const ActiveIcon = activeOption.icon;
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -72,7 +85,7 @@ export function SortDropdown({ sortBy, sortOrder, onSortByChange, onSortOrderTog
     };
   }, []);
 
-  const handleSelect = (val) => {
+  const handleSelect = (val: string) => {
     onSortByChange(val);
     setIsOpen(false);
   };

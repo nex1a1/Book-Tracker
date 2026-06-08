@@ -2,18 +2,25 @@ import React, { useState } from "react";
 import { Icons } from "./Icons";
 import './StarRating.css';
 
-export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }) {
+interface StarRatingProps {
+  rating?: number;
+  onRate?: (rating: number) => void;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  readOnly?: boolean;
+}
+
+export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }: StarRatingProps) {
   const [hover, setHover] = useState(0);
   const display = hover || rating;
 
-  const handleMouseMove = (e, n) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>, n: number) => {
     if (readOnly) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const isHalf = e.clientX - rect.left < rect.width / 2;
     setHover(isHalf ? n - 0.5 : n);
   };
 
-  const getRatingText = (r) => {
+  const getRatingText = (r: number): string => {
     if (r >= 4.5) return "ยอดเยี่ยม";
     if (r >= 3.5) return "ดีมาก";
     if (r >= 2.5) return "ดี";
@@ -31,6 +38,7 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
         return (
           <button
             key={n}
+            type="button"
             className={`star-btn ${isFilled || isHalf ? 'filled' : ''}`}
             onMouseMove={(e) => handleMouseMove(e, n)}
             onClick={(e) => { 
@@ -42,7 +50,7 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
             }}
             title={readOnly ? `${rating} ดาว` : `ให้ ${display} ดาว`}
           >
-            <Icons.Star filled={isFilled} half={isHalf} id={`star-${n}`} />
+            <Icons.Star filled={isFilled} half={isHalf} />
           </button>
         );
       })}

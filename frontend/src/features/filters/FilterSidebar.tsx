@@ -1,12 +1,18 @@
 import React, { useState } from "react";
 import { Icons } from "../../components/Icons";
+import { FilterState } from "../../types";
 import './FilterSidebar.css';
 
-export function FilterSection({ title, children }) {
+interface FilterSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+export function FilterSection({ title, children }: FilterSectionProps) {
   const [open, setOpen] = useState(true);
   return (
     <div className={`filter-section ${open ? 'is-open' : ''}`}>
-      <button className="filter-section__header" onClick={() => setOpen(!open)}>
+      <button type="button" className="filter-section__header" onClick={() => setOpen(!open)}>
         <span>{title}</span>
         <span className="filter-section__chevron"><Icons.ChevronDown /></span>
       </button>
@@ -17,9 +23,17 @@ export function FilterSection({ title, children }) {
   );
 }
 
-export function FilterChip({ label, active, onClick, icon }) {
+interface FilterChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+}
+
+export function FilterChip({ label, active, onClick, icon }: FilterChipProps) {
   return (
     <button 
+      type="button"
       className={`filter-chip ${active ? 'filter-chip--active' : ''}`} 
       onClick={onClick}
     >
@@ -29,11 +43,22 @@ export function FilterChip({ label, active, onClick, icon }) {
   );
 }
 
-export function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount }) {
-  const toggleArr = (key, val) => {
-    const arr = filter[key] || [];
-    if (arr.includes(val)) setFilter({ [key]: arr.filter(v => v !== val) });
-    else setFilter({ [key]: [...arr, val] });
+interface FilterSidebarProps {
+  filter: FilterState;
+  setFilter: (f: Partial<FilterState>) => void;
+  resetFilter: () => void;
+  publishers: string[];
+  activeCount: number;
+}
+
+export function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount }: FilterSidebarProps) {
+  const toggleArr = (key: 'type' | 'status' | 'readStatus' | 'collectStatus', val: string) => {
+    const arr = (filter[key] as string[]) || [];
+    if (arr.includes(val)) {
+      setFilter({ [key]: arr.filter(v => v !== val) });
+    } else {
+      setFilter({ [key]: [...arr, val] });
+    }
   };
 
   return (
@@ -45,7 +70,12 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
           {activeCount > 0 && <span className="filter-count-badge">{activeCount}</span>}
         </div>
         {activeCount > 0 && (
-          <button className="btn btn--sm btn--ghost" style={{ padding: '4px 10px', fontSize: '.75rem' }} onClick={resetFilter}>
+          <button 
+            type="button" 
+            className="btn btn--sm btn--ghost" 
+            style={{ padding: '4px 10px', fontSize: '.75rem' }} 
+            onClick={resetFilter}
+          >
             ล้างทั้งหมด
           </button>
         )}
@@ -54,8 +84,21 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
       <div className="filter-sidebar__body">
         <div className="filter-search-wrap">
           <Icons.Search />
-          <input className="filter-search-input" placeholder="ค้นหาชื่อ, ผู้แต่ง, สำนักพิมพ์..." value={filter.search || ""} onChange={e => setFilter({ search: e.target.value })} />
-          {filter.search && <button className="filter-search-clear" onClick={() => setFilter({ search: '' })}><Icons.X /></button>}
+          <input 
+            className="filter-search-input" 
+            placeholder="ค้นหาชื่อ, ผู้แต่ง, สำนักพิมพ์..." 
+            value={filter.search || ""} 
+            onChange={e => setFilter({ search: e.target.value })} 
+          />
+          {filter.search && (
+            <button 
+              type="button" 
+              className="filter-search-clear" 
+              onClick={() => setFilter({ search: '' })}
+            >
+              <Icons.X />
+            </button>
+          )}
         </div>
 
         <FilterSection title="ประเภท">
