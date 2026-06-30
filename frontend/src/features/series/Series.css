@@ -64,12 +64,10 @@
 
 .vbar-mini-grid .vbar-mini-cell.read {
   background: var(--read-color);
-  box-shadow: 0 0 4px var(--read-color);
   border-color: transparent;
 }
 .vbar-mini-grid .vbar-mini-cell.bought {
   background: var(--buy-color);
-  box-shadow: 0 0 4px rgba(224, 224, 224, 0.5);
   border-color: transparent;
 }
 .vbar-mini-grid .vbar-mini-cell.special {
@@ -78,12 +76,10 @@
 }
 .vbar-mini-grid .vbar-mini-cell.read.special {
   background: var(--special-color);
-  box-shadow: 0 0 6px var(--special-color);
   border-color: transparent;
 }
 .vbar-mini-grid .vbar-mini-cell.bought.special {
   background: var(--special-color);
-  box-shadow: 0 0 6px var(--special-color);
   border-color: transparent;
 }
 
@@ -115,8 +111,7 @@
   gap: 14px;
 }
 .card:hover {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 123, 0, 0.15);
-  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
   border-color: rgba(255, 123, 0, 0.3);
   border-top-color: var(--accent);
 }
@@ -135,7 +130,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card:hover .card__cover-wrapper {
-  box-shadow: 0 4px 15px rgba(255, 123, 0, 0.25);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 123, 0, 0.3);
 }
 
@@ -147,7 +142,7 @@
   display: block;
 }
 .card:hover .card__cover {
-  transform: scale(1.06);
+  transform: none;
 }
 
 .card__cover-empty {
@@ -200,19 +195,19 @@
   background: rgba(255, 123, 0, 0.1) !important;
   color: var(--accent) !important;
   border-color: var(--accent) !important;
-  box-shadow: 0 0 10px rgba(255, 123, 0, 0.2);
+  box-shadow: none;
 }
 .card__action-btn--edit:hover svg {
-  transform: scale(1.1);
+  transform: none;
 }
 .card__action-btn--danger:hover {
   background: rgba(186, 12, 12, 0.1) !important;
   color: var(--special-color) !important;
   border-color: var(--special-color) !important;
-  box-shadow: 0 0 10px rgba(186, 12, 12, 0.2);
+  box-shadow: none;
 }
 .card__action-btn--danger:hover svg {
-  transform: scale(1.1) rotate(5deg);
+  transform: none;
 }
 
 /* Glassmorphic Summary Status Pills */
@@ -228,13 +223,11 @@
   background: rgba(16, 185, 129, 0.08);
   color: var(--badge-finished);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.05);
 }
 .summary-status-pill.missing {
   background: rgba(255, 123, 0, 0.06);
   color: var(--accent);
   border: 1px solid rgba(255, 123, 0, 0.15);
-  box-shadow: 0 0 8px rgba(255, 123, 0, 0.05);
 }
 
 .card__info {
@@ -400,23 +393,22 @@
 }
 
 .list-row:hover {
-  transform: translateX(6px);
   border-color: rgba(255, 255, 255, 0.06);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
 }
 
 /* Status-Colored Border Glows */
 .list-row--ongoing { border-left-color: var(--accent) !important; }
-.list-row--ongoing:hover { box-shadow: 0 8px 30px rgba(255, 123, 0, 0.06), 0 0 15px rgba(255, 123, 0, 0.04); border-color: rgba(255, 123, 0, 0.18); }
+.list-row--ongoing:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(255, 123, 0, 0.18); }
 
 .list-row--completed { border-left-color: var(--badge-finished) !important; }
-.list-row--completed:hover { box-shadow: 0 8px 30px rgba(16, 185, 129, 0.06), 0 0 15px rgba(16, 185, 129, 0.04); border-color: rgba(16, 185, 129, 0.18); }
+.list-row--completed:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(16, 185, 129, 0.18); }
 
 .list-row--hiatus { border-left-color: #fbbf24 !important; }
-.list-row--hiatus:hover { box-shadow: 0 8px 30px rgba(251, 191, 36, 0.06), 0 0 15px rgba(251, 191, 36, 0.04); border-color: rgba(251, 191, 36, 0.18); }
+.list-row--hiatus:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(251, 191, 36, 0.18); }
 
 .list-row--cancelled { border-left-color: #555555 !important; }
-.list-row--cancelled:hover { box-shadow: 0 8px 30px rgba(85, 85, 85, 0.06); border-color: rgba(85, 85, 85, 0.18); }
+.list-row--cancelled:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(85, 85, 85, 0.18); }
 
 /* Elegant Cover Wrapper with Zoom animation */
 .list-row__cover-wrapper {
@@ -430,7 +422,7 @@
 }
 .list-row:hover .list-row__cover-wrapper {
   border-color: rgba(255, 123, 0, 0.2);
-  box-shadow: 0 3px 12px rgba(255, 123, 0, 0.15);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
 }
 
 .list-row__cover {
@@ -441,7 +433,7 @@
   display: block;
 }
 .list-row:hover .list-row__cover {
-  transform: scale(1.08);
+  transform: none;
 }
 .list-row__cover--empty {
   width: 100%;
@@ -562,11 +554,9 @@
 }
 .list-row__missing-pill.complete .list-row__missing-value {
   color: var(--badge-finished);
-  text-shadow: 0 0 6px rgba(16, 185, 129, 0.1);
 }
 .list-row__missing-pill.missing .list-row__missing-value {
   color: var(--accent);
-  text-shadow: 0 0 6px rgba(255, 123, 0, 0.1);
 }
 .list-row__missing-read-only {
   font-size: 0.72rem;
@@ -606,12 +596,10 @@
   align-items: center;
   justify-content: flex-end;
   opacity: 0.2;
-  transform: translateX(4px);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .list-row:hover .list-row__actions {
   opacity: 1;
-  transform: translateX(0);
 }
 
 .list-row__action-btn {
@@ -637,19 +625,19 @@
   background: rgba(255, 123, 0, 0.1) !important;
   color: var(--accent) !important;
   border-color: var(--accent) !important;
-  box-shadow: 0 0 10px rgba(255, 123, 0, 0.2);
+  box-shadow: none;
 }
 .list-row__action-btn--edit:hover svg {
-  transform: scale(1.12);
+  transform: none;
 }
 .list-row__action-btn--danger:hover {
   background: rgba(186, 12, 12, 0.1) !important;
   color: var(--special-color) !important;
   border-color: var(--special-color) !important;
-  box-shadow: 0 0 10px rgba(186, 12, 12, 0.2);
+  box-shadow: none;
 }
 .list-row__action-btn--danger:hover svg {
-  transform: scale(1.12) rotate(5deg);
+  transform: none;
 }
 
 @media (max-width: 1023px) {

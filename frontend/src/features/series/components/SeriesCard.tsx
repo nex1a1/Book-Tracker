@@ -86,7 +86,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
 
       {/* 🔴 ส่วนล่าง: หลอดสถานะต่างๆ วางเต็มความกว้าง */}
       <div className="volume-progress">
-        <AggregatedVolumeBar logs={stats.n.readingLogs} type="read" icon={Icons.Book} titleLabel="การอ่าน (JP)" />
+        <AggregatedVolumeBar logs={stats.n.readingLogs} type="read" icon={Icons.Book} titleLabel="การอ่าน" />
         {stats.n.isCollecting && <AggregatedVolumeBar logs={stats.n.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="การสะสม (ไทย)" />}
       </div>
 
