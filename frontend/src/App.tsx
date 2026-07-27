@@ -8,6 +8,7 @@ import {
   SeriesListView, 
   SeriesInfoModal, 
   MissingVolumesModal, 
+  ExportCsvModal,
   useFilteredSeries 
 } from "./features/series";
 import { SortDropdown } from "./components/SortDropdown";
@@ -21,6 +22,7 @@ export default function App() {
   
   const [showAdd, setShowAdd] = useState(false);
   const [showMissing, setShowMissing] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => { 
     fetchSeries(); 
@@ -103,6 +105,10 @@ export default function App() {
             onSortOrderToggle={() => setFilter({ sortOrder: filter.sortOrder === 'DESC' ? 'ASC' : 'DESC' })}
           />
 
+          <button type="button" className="btn btn--ghost" onClick={() => setShowExport(true)}>
+            <Icons.Download /> Export CSV
+          </button>
+
           <button type="button" className="btn btn--ghost" onClick={() => setShowMissing(true)}>
             <Icons.Receipt /> เช็กลิสต์ที่ขาด
           </button>
@@ -159,6 +165,15 @@ export default function App() {
 
       {showAdd && <SeriesInfoModal onClose={() => setShowAdd(false)} />}
       {showMissing && <MissingVolumesModal onClose={() => setShowMissing(false)} />}
+      {showExport && (
+        <ExportCsvModal
+          onClose={() => setShowExport(false)}
+          allSeries={series}
+          filteredSeries={displaySeries}
+          hasActiveFilter={activeFilterCount > 0}
+        />
+      )}
     </div>
   );
 }
+

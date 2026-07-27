@@ -6,13 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: "0.0.0.0",
-    port: 5173,
+    port: 5174,
     watch: {
       usePolling: true, // For Hot Reload in Windows/Docker environments
     },
     proxy: {
       "/api": {
-        target: "http://backend:3001",
+        target: process.env.VITE_BACKEND_TARGET || "http://localhost:3001",
         changeOrigin: true,
       },
     },

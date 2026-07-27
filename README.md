@@ -193,7 +193,7 @@ DB_PATH=data/manga.db
 docker-compose up --build
 ```
 - **Backend Service:** ทำงานที่ `http://localhost:3001`
-- **Frontend App:** เข้าชมได้ที่ `http://localhost:5173`
+- **Frontend App:** เข้าชมได้ที่ `http://localhost:5174`
 
 ---
 
@@ -224,7 +224,7 @@ docker-compose up --build
    ```bash
    npm run dev
    ```
-3. เปิดเบราว์เซอร์ไปที่ลิงก์ที่แสดงอยู่บน Terminal (ตามค่ามาตรฐานคือ `http://localhost:5173`)
+3. เปิดเบราว์เซอร์ไปที่ลิงก์ที่แสดงอยู่บน Terminal (ตามค่ามาตรฐานคือ `http://localhost:5174`)
 
 ---
 
