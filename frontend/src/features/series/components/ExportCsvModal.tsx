@@ -236,30 +236,7 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
             </div>
           </div>
 
-          {/* Row Layout Mode Toggle */}
-          <div className="export-toolbar__group">
-            <span className="toolbar-label">โหมดแถว:</span>
-            <div className="preview-tab-switcher">
-              <button
-                type="button"
-                className={`tab-btn ${layoutMode === 'series' ? 'active' : ''}`}
-                onClick={() => setLayoutMode('series')}
-                title="1 บรรทัดต่อ 1 เรื่อง (รวมภาคในเซลล์เดียว)"
-              >
-                <Icons.Book /> 1 เรื่องต่อ 1 แถว
-              </button>
-              <button
-                type="button"
-                className={`tab-btn ${layoutMode === 'split_logs' ? 'active' : ''}`}
-                onClick={() => setLayoutMode('split_logs')}
-                title="แตกบรรทัดใหม่แยกตามภาค (เช่น JJK ภาคหลัก, ภาค 0)"
-              >
-                <Icons.List /> แตกแถวย่อยตามภาค
-              </button>
-            </div>
-          </div>
-
-          {/* Dedicated Filter Popover Button */}
+          {/* Dedicated Filter Popover Button (Placed right after Scope!) */}
           <div className="export-toolbar__group" style={{ position: 'relative' }}>
             <button
               ref={filterBtnRef}
@@ -473,6 +450,30 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Row Layout Mode Toggle */}
+          <div className="export-toolbar__group">
+            <span className="toolbar-label">โหมดแถว:</span>
+            <div className="preview-tab-switcher">
+              <button
+                type="button"
+                className={`tab-btn ${layoutMode === 'series' ? 'active' : ''}`}
+                onClick={() => setLayoutMode('series')}
+                title="1 บรรทัดต่อ 1 เรื่อง (รวมภาคในเซลล์เดียว)"
+              >
+                <Icons.Book /> 1 เรื่องต่อ 1 แถว
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${layoutMode === 'split_logs' ? 'active' : ''}`}
+                onClick={() => setLayoutMode('split_logs')}
+                title="แตกบรรทัดใหม่แยกตามภาค (เช่น JJK ภาคหลัก, ภาค 0)"
+              >
+                <Icons.List /> แตกแถวย่อยตามภาค
+              </button>
+            </div>
+          </div>
+
 
           {/* Dedicated Column Selector & Reordering Popover Button */}
           <div className="export-toolbar__group" style={{ position: 'relative' }}>
