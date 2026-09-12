@@ -10,7 +10,7 @@ interface LogEditorBoxProps {
   type: "reading" | "collection";
   showRemove: boolean;
   onRemove: () => void;
-  onUpdate: (field: keyof BookLog, value: any) => void;
+  onUpdate: (field: keyof BookLog, value: BookLog[keyof BookLog]) => void;
 }
 
 export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }: LogEditorBoxProps) {

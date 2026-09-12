@@ -5,7 +5,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
-    "seed": "tsx src/seed.js",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -18,7 +17,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
+    "@types/express": "^4.17.25",
     "@types/node": "^25.9.2",
     "nodemon": "^3.1.0",
     "tsx": "^4.22.4",

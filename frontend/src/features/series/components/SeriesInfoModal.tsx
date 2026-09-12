@@ -122,16 +122,13 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     let eYear: number | string = form.endYear;
     if (node.status === "finished") {
        st = "completed";
-       if (node.start_date) eYear = node.start_date.substring(0, 4); // Wait, mal uses end_date sometimes, let's keep it safe. Let's see if MAL API node has end_date. In original code it was end_date, let's look at line 87.
+       if (node.start_date) eYear = node.start_date.substring(0, 4);
     } else if (node.status === "currently_publishing") st = "ongoing";
     else if (node.status === "on_hiatus") st = "hiatus";
     else if (node.status === "discontinued") st = "cancelled";
 
-    // Wait, let's double check node.status finished and end_date.
-    // Line 87 in JS: if (node.end_date) eYear = node.end_date.substring(0, 4);
-    // Let's implement that!
-    if (node.status === "finished" && (node as any).end_date) {
-      eYear = (node as any).end_date.substring(0, 4);
+    if (node.status === "finished" && node.end_date) {
+      eYear = node.end_date.substring(0, 4);
     }
 
     // 4. Volumes mapping
@@ -157,7 +154,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     toast.success("ดึงข้อมูลอัตโนมัติเรียบร้อย! (ตรวจสอบและแก้ไขได้เลย)");
   };
 
-  const updateLog = (key: 'readingLogs' | 'collectionLogs', idx: number, field: keyof BookLog, val: any) => {
+  const updateLog = (key: 'readingLogs' | 'collectionLogs', idx: number, field: keyof BookLog, val: BookLog[keyof BookLog]) => {
     const newList = [...form[key]];
     const log = { ...newList[idx] };
     if (key === 'collectionLogs' && field === 'format') {
@@ -167,8 +164,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
         log.title = FORMAT_LABEL[val as string] || '';
       }
     }
-    (log as any)[field] = val;
-    newList[idx] = log;
+    newList[idx] = { ...log, [field]: val };
     setForm({ ...form, [key]: newList });
   };
   

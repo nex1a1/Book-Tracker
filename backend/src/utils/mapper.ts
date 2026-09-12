@@ -19,6 +19,17 @@ export interface DbSeriesRow {
   publisher_name?: string;
 }
 
+interface DbGroupRow {
+  id: number;
+  title: string | null;
+  totalVolumes: number | null;
+}
+
+interface DbRangeRow {
+  startVol: number;
+  endVol: number;
+}
+
 export interface MappedBookLog {
   id: string;
   title: string;
@@ -53,12 +64,12 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
     if (!s || !s.id) return null;
 
     // 1. Fetch Reading Groups and their Ranges
-    const readingLogs: MappedBookLog[] = db.prepare(`
+    const readingLogs: MappedBookLog[] = (db.prepare(`
       SELECT id, title, totalVolumes FROM reading_groups WHERE series_id = ?
-    `).all(s.id).map((rg: any) => {
-      const ranges = db.prepare(`
+    `).all(s.id) as DbGroupRow[]).map((rg) => {
+      const ranges = (db.prepare(`
         SELECT startVol, endVol FROM reading_ranges WHERE group_id = ? ORDER BY startVol ASC
-      `).all(rg.id).map((r: any) => [r.startVol, r.endVol] as [number, number]);
+      `).all(rg.id) as DbRangeRow[]).map((r) => [r.startVol, r.endVol] as [number, number]);
 
       return {
         id: rg.id.toString(),
@@ -69,12 +80,12 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
     });
 
     // 2. Fetch Collection Groups and their Ranges
-    const collectionLogs: MappedBookLog[] = db.prepare(`
+    const collectionLogs: MappedBookLog[] = (db.prepare(`
       SELECT id, title, totalVolumes FROM collection_groups WHERE series_id = ?
-    `).all(s.id).map((cg: any) => {
-      const ranges = db.prepare(`
+    `).all(s.id) as DbGroupRow[]).map((cg) => {
+      const ranges = (db.prepare(`
         SELECT startVol, endVol FROM collection_ranges WHERE group_id = ? ORDER BY startVol ASC
-      `).all(cg.id).map((r: any) => [r.startVol, r.endVol] as [number, number]);
+      `).all(cg.id) as DbRangeRow[]).map((r) => [r.startVol, r.endVol] as [number, number]);
 
       return {
         id: cg.id.toString(),

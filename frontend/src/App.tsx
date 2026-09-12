@@ -3,31 +3,34 @@ import { Toaster } from "react-hot-toast";
 import { Icons } from "./components/Icons";
 import { useSeriesStore } from "./store/useSeriesStore";
 import { FilterSidebar } from "./features/filters/FilterSidebar";
-import { 
-  SeriesGridView, 
-  SeriesListView, 
-  SeriesInfoModal, 
-  MissingVolumesModal, 
+import {
+  SeriesGridView,
+  SeriesListView,
+  SeriesInfoModal,
+  MissingVolumesModal,
   ExportCsvModal,
-  useFilteredSeries 
+  useFilteredSeries,
+  useMissingVolumes
 } from "./features/series";
 import { SortDropdown } from "./components/SortDropdown";
 
 export default function App() {
-  const { 
-    series, loading, fetchSeries, fetchStats, fetchMetadata, 
-    stats, publishers, filter, setFilter, resetFilter, 
-    viewMode, setViewMode 
+  const {
+    series, loading, fetchSeries, fetchStats, fetchMetadata,
+    stats, publishers, filter, setFilter, resetFilter,
+    viewMode, setViewMode
   } = useSeriesStore();
-  
+
   const [showAdd, setShowAdd] = useState(false);
   const [showMissing, setShowMissing] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  useEffect(() => { 
-    fetchSeries(); 
-    fetchStats(); 
-    fetchMetadata(); 
+  const missing = useMissingVolumes();
+
+  useEffect(() => {
+    fetchSeries();
+    fetchStats();
+    fetchMetadata();
   }, []);
 
   const { displaySeries, activeFilterCount } = useFilteredSeries(series, filter);
@@ -52,7 +55,7 @@ export default function App() {
 
         {stats && (
           <div className="top-header__stats">
-            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--accent)', ['--stat-glow' as any]: 'rgba(255, 123, 0, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }}>
               <div className="stat-card__icon"><Icons.Book /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เรื่องทั้งหมด</span>
@@ -60,7 +63,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--badge-manga)', ['--stat-glow' as any]: 'rgba(168, 85, 247, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }}>
               <div className="stat-card__icon"><Icons.Archive /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">กำลังสะสม</span>
@@ -68,30 +71,44 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ ['--stat-color' as any]: 'var(--badge-finished)', ['--stat-glow' as any]: 'rgba(16, 185, 129, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }}>
               <div className="stat-card__icon"><Icons.BookOpen /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เล่มที่อ่านแล้ว</span>
                 <span className="stat-card__value">{stats.totals.totalRead}</span>
               </div>
             </div>
+
+            <button
+              type="button"
+              className="stat-card stat-card--clickable"
+              style={{ '--stat-color': 'var(--special-color)', '--stat-glow': 'rgba(186, 12, 12, 0.12)' }}
+              onClick={() => setShowMissing(true)}
+              title="เปิดเช็กลิสต์หนังสือที่ยังขาด"
+            >
+              <div className="stat-card__icon"><Icons.Receipt /></div>
+              <div className="stat-card__info">
+                <span className="stat-card__label">เล่มที่ยังขาด</span>
+                <span className="stat-card__value">{missing.stats.totalVolumes}</span>
+              </div>
+            </button>
           </div>
         )}
 
         <div className="top-header__actions">
           <div className="view-toggle">
-            <button 
+            <button
               type="button"
-              className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`} 
-              onClick={() => setViewMode('grid')} 
+              className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
               title="Grid View"
             >
               <Icons.Grid />
             </button>
-            <button 
+            <button
               type="button"
-              className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`} 
-              onClick={() => setViewMode('list')} 
+              className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
               title="List View"
             >
               <Icons.List />
@@ -132,10 +149,10 @@ export default function App() {
           <div className="content-meta">
             <span>แสดง <strong>{displaySeries.length}</strong> จากทั้งหมด <strong>{series.length}</strong> เรื่อง</span>
             {activeFilterCount > 0 && (
-              <button 
+              <button
                 type="button"
-                className="btn btn--sm btn--ghost" 
-                onClick={resetFilter} 
+                className="btn btn--sm btn--ghost"
+                onClick={resetFilter}
                 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 <Icons.X /> ล้างตัวกรอง ({activeFilterCount})
@@ -147,16 +164,16 @@ export default function App() {
             <div className="loading"><div className="loading__spinner" /></div>
           ) : (
             viewMode === 'grid' ? (
-              <SeriesGridView 
-                displaySeries={displaySeries} 
-                activeFilterCount={activeFilterCount} 
-                onResetFilter={resetFilter} 
+              <SeriesGridView
+                displaySeries={displaySeries}
+                activeFilterCount={activeFilterCount}
+                onResetFilter={resetFilter}
               />
             ) : (
-              <SeriesListView 
-                displaySeries={displaySeries} 
-                activeFilterCount={activeFilterCount} 
-                onResetFilter={resetFilter} 
+              <SeriesListView
+                displaySeries={displaySeries}
+                activeFilterCount={activeFilterCount}
+                onResetFilter={resetFilter}
               />
             )
           )}
@@ -176,4 +193,3 @@ export default function App() {
     </div>
   );
 }
-

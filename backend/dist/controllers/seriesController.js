@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import { mapSeries, mergeRanges } from '../utils/mapper.js';
+import { getErrorMessage } from '../utils/errors.js';
 export const getSeries = (req, res) => {
     try {
         const { page = 1, limit = 24, type, status, isCollecting, search, sortBy = 'updatedAt', sortOrder = 'DESC' } = req.query;
@@ -55,7 +56,7 @@ export const getSeries = (req, res) => {
     }
     catch (error) {
         console.error("[getSeries] Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: getErrorMessage(error) });
     }
 };
 export const getStats = (req, res) => {
@@ -95,7 +96,7 @@ export const getStats = (req, res) => {
     }
     catch (error) {
         console.error("[getStats] Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: getErrorMessage(error) });
     }
 };
 export const createSeries = (req, res) => {
@@ -157,7 +158,7 @@ export const createSeries = (req, res) => {
     }
     catch (error) {
         console.error("[createSeries] Error:", error);
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ error: getErrorMessage(error) });
     }
 };
 export const updateSeries = (req, res) => {
@@ -209,23 +210,28 @@ export const updateSeries = (req, res) => {
                     });
                 });
             }
-            const data = { ...b };
-            if (data.isCollecting !== undefined)
-                data.isCollecting = data.isCollecting ? 1 : 0;
-            if (data.rating !== undefined)
-                data.rating = Number(data.rating);
+            const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'imageUrl', 'notes'];
+            const data = {};
+            for (const key of allowedFields) {
+                const value = b[key];
+                if (value === undefined)
+                    continue;
+                if (key === 'isCollecting')
+                    data.isCollecting = value ? 1 : 0;
+                else if (key === 'rating')
+                    data.rating = Number(value);
+                else
+                    data[key] = value;
+            }
             if (data.status === 'completed')
                 data.endYear = (data.endYear && data.endYear !== "") ? Number(data.endYear) : null;
             else if (data.status)
                 data.endYear = null;
             const fields = [];
             const params = [];
-            const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'imageUrl', 'notes'];
             Object.keys(data).forEach(key => {
-                if (allowedFields.includes(key)) {
-                    fields.push(`${key} = ?`);
-                    params.push(data[key]);
-                }
+                fields.push(`${key} = ?`);
+                params.push(data[key] ?? null);
             });
             if (fields.length > 0) {
                 fields.push("updatedAt = CURRENT_TIMESTAMP");
@@ -244,7 +250,7 @@ export const updateSeries = (req, res) => {
     }
     catch (error) {
         console.error("[updateSeries] Error:", error);
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ error: getErrorMessage(error) });
     }
 };
 export const deleteSeries = (req, res) => {
@@ -254,6 +260,6 @@ export const deleteSeries = (req, res) => {
     }
     catch (error) {
         console.error("[deleteSeries] Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: getErrorMessage(error) });
     }
 };

@@ -181,9 +181,9 @@ export function generateCsvData(
   layoutMode: ExportLayoutMode = 'series'
 ): { csvString: string; headers: string[]; rows: string[][] } {
   // Map columns strictly according to selectedColumnKeys order!
-  const colMap = new Map(CSV_COLUMNS.map(c => [c.key, c]));
+  const colMap = new Map<string, CsvColumnOption>(CSV_COLUMNS.map(c => [c.key, c]));
   const activeCols = selectedColumnKeys
-    .map(key => colMap.get(key as any))
+    .map(key => colMap.get(key))
     .filter((col): col is CsvColumnOption => col !== undefined);
 
   const headers = activeCols.map(col => col.label);

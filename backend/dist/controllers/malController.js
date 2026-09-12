@@ -1,4 +1,5 @@
 import { config } from '../config/env.js';
+import { getErrorMessage } from '../utils/errors.js';
 export const searchMAL = async (req, res) => {
     try {
         const q = req.query.q;
@@ -18,7 +19,8 @@ export const searchMAL = async (req, res) => {
         res.json(data);
     }
     catch (error) {
-        console.error("[searchMAL] Error:", error.message);
-        res.status(500).json({ error: error.message });
+        const message = getErrorMessage(error);
+        console.error("[searchMAL] Error:", message);
+        res.status(500).json({ error: message });
     }
 };

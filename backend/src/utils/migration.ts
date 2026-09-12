@@ -8,8 +8,18 @@ interface OldSeriesRow {
   collectionLogsJSON?: string;
 }
 
+interface TableColumnInfo {
+  name: string;
+}
+
+interface OldBookLog {
+  title: string | null;
+  totalVolumes: number | null;
+  ranges?: [number, number][];
+}
+
 export const migrateData = (): void => {
-  const tableInfo: any[] = db.prepare("PRAGMA table_info(series)").all();
+  const tableInfo = db.prepare("PRAGMA table_info(series)").all() as TableColumnInfo[];
   const hasOldLogs = tableInfo.some(c => c.name === 'readingLogsJSON');
   
   if (hasOldLogs) {
@@ -38,8 +48,8 @@ export const migrateData = (): void => {
         db.prepare("UPDATE series SET author_id = ?, publisher_id = ? WHERE id = ?").run(authorId, publisherId, row.id);
 
         // Migrate Reading Logs
-        const rLogs = JSON.parse(row.readingLogsJSON || '[]');
-        rLogs.forEach((log: any) => {
+        const rLogs = JSON.parse(row.readingLogsJSON || '[]') as OldBookLog[];
+        rLogs.forEach((log) => {
           const info = db.prepare("INSERT INTO reading_groups (series_id, title, totalVolumes) VALUES (?, ?, ?)")
             .run(row.id, log.title, log.totalVolumes || null);
           const groupId = info.lastInsertRowid;
@@ -49,8 +59,8 @@ export const migrateData = (): void => {
         });
 
         // Migrate Collection Logs
-        const cLogs = JSON.parse(row.collectionLogsJSON || '[]');
-        cLogs.forEach((log: any) => {
+        const cLogs = JSON.parse(row.collectionLogsJSON || '[]') as OldBookLog[];
+        cLogs.forEach((log) => {
           const info = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes) VALUES (?, ?, ?)")
             .run(row.id, log.title, log.totalVolumes || null);
           const groupId = info.lastInsertRowid;

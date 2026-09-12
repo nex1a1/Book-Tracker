@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { getErrorMessage } from '../utils/errors.js';
 export const getAuthors = (req, res) => {
     try {
         const rows = db.prepare("SELECT * FROM authors ORDER BY name ASC").all();
@@ -6,7 +7,7 @@ export const getAuthors = (req, res) => {
     }
     catch (error) {
         console.error("[getAuthors] Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: getErrorMessage(error) });
     }
 };
 export const getPublishers = (req, res) => {
@@ -16,6 +17,6 @@ export const getPublishers = (req, res) => {
     }
     catch (error) {
         console.error("[getPublishers] Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: getErrorMessage(error) });
     }
 };

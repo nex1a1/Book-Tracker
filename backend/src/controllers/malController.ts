@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { config } from '../config/env.js';
+import { getErrorMessage } from '../utils/errors.js';
 
 export const searchMAL = async (req: Request, res: Response) => {
   try {
@@ -22,8 +23,9 @@ export const searchMAL = async (req: Request, res: Response) => {
     }
 
     res.json(data);
-  } catch (error: any) {
-    console.error("[searchMAL] Error:", error.message);
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    const message = getErrorMessage(error);
+    console.error("[searchMAL] Error:", message);
+    res.status(500).json({ error: message });
   }
 };

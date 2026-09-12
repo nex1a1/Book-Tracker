@@ -16,10 +16,10 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     }
     
     if (filter.type && filter.type.length > 0) {
-      filtered = filtered.filter(s => Array.isArray(filter.type) ? filter.type.includes(s.type) : (filter.type as any) === s.type);
+      filtered = filtered.filter(s => filter.type.includes(s.type));
     }
     if (filter.status && filter.status.length > 0) {
-      filtered = filtered.filter(s => Array.isArray(filter.status) ? filter.status.includes(s.status) : (filter.status as any) === s.status);
+      filtered = filtered.filter(s => filter.status.includes(s.status));
     }
     
     if (filter.publisher) filtered = filtered.filter(s => s.publisher === filter.publisher);

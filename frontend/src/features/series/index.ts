@@ -6,4 +6,5 @@ export { SeriesInfoModal } from "./components/SeriesInfoModal";
 export { MissingVolumesModal } from "./components/MissingVolumesModal";
 export { ExportCsvModal } from "./components/ExportCsvModal";
 export { useFilteredSeries } from "./hooks/useFilteredSeries";
+export { useMissingVolumes } from "./hooks/useMissingVolumes";
 

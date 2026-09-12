@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import db from '../config/db.js';
 import { mapSeries, mergeRanges, DbSeriesRow } from '../utils/mapper.js';
 import { CreateSeriesInput, UpdateSeriesInput } from '../utils/validation.js';
+import { getErrorMessage } from '../utils/errors.js';
 
 export const getSeries = (req: Request, res: Response) => {
   try {
@@ -27,15 +28,15 @@ export const getSeries = (req: Request, res: Response) => {
       LEFT JOIN publishers p ON s.publisher_id = p.id
       WHERE 1=1
     `;
-    const params: any[] = [];
-    
-    if (type) { 
-      baseQuery += " AND s.type = ?"; 
-      params.push(type); 
+    const params: (string | number)[] = [];
+
+    if (type) {
+      baseQuery += " AND s.type = ?";
+      params.push(type as string);
     }
     if (status) { 
-      baseQuery += " AND s.status = ?"; 
-      params.push(status); 
+      baseQuery += " AND s.status = ?";
+      params.push(status as string);
     }
     
     if (isCollecting !== undefined && isCollecting !== '') {
@@ -73,9 +74,9 @@ export const getSeries = (req: Request, res: Response) => {
       data: rows.map(mapSeries).filter(s => s !== null), 
       pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) } 
     });
-  } catch (error: any) { 
+  } catch (error) {
     console.error("[getSeries] Error:", error);
-    res.status(500).json({ error: error.message }); 
+    res.status(500).json({ error: getErrorMessage(error) });
   }
 };
 
@@ -118,9 +119,9 @@ export const getStats = (req: Request, res: Response) => {
       byStatus: byStatusRows, 
       totals: { totalSeries, collecting, totalRead } 
     });
-  } catch (error: any) { 
+  } catch (error) {
     console.error("[getStats] Error:", error);
-    res.status(500).json({ error: error.message }); 
+    res.status(500).json({ error: getErrorMessage(error) });
   }
 };
 
@@ -193,9 +194,9 @@ export const createSeries = (req: Request, res: Response) => {
     `).get(seriesId) as DbSeriesRow | undefined;
 
     res.status(201).json(mapSeries(result));
-  } catch (error: any) { 
+  } catch (error) {
     console.error("[createSeries] Error:", error);
-    res.status(400).json({ error: error.message }); 
+    res.status(400).json({ error: getErrorMessage(error) });
   }
 };
 
@@ -255,21 +256,26 @@ export const updateSeries = (req: Request, res: Response) => {
         });
       }
 
-      const data = { ...b } as any;
-      if (data.isCollecting !== undefined) data.isCollecting = data.isCollecting ? 1 : 0;
-      if (data.rating !== undefined) data.rating = Number(data.rating);
-      if (data.status === 'completed') data.endYear = (data.endYear && data.endYear !== "") ? Number(data.endYear) : null; 
+      const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'imageUrl', 'notes'] as const;
+      const data: Partial<Record<typeof allowedFields[number], string | number | null>> = {};
+
+      for (const key of allowedFields) {
+        const value = b[key];
+        if (value === undefined) continue;
+        if (key === 'isCollecting') data.isCollecting = value ? 1 : 0;
+        else if (key === 'rating') data.rating = Number(value);
+        else data[key] = value as string | number | null;
+      }
+
+      if (data.status === 'completed') data.endYear = (data.endYear && data.endYear !== "") ? Number(data.endYear) : null;
       else if (data.status) data.endYear = null;
 
       const fields: string[] = [];
-      const params: any[] = [];
-      const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'imageUrl', 'notes'];
-      
-      Object.keys(data).forEach(key => { 
-        if (allowedFields.includes(key)) { 
-          fields.push(`${key} = ?`); 
-          params.push(data[key]); 
-        } 
+      const params: (string | number | null)[] = [];
+
+      (Object.keys(data) as (typeof allowedFields[number])[]).forEach(key => {
+        fields.push(`${key} = ?`);
+        params.push(data[key] ?? null);
       });
       
       if (fields.length > 0) {
@@ -288,9 +294,9 @@ export const updateSeries = (req: Request, res: Response) => {
     `).get(id) as DbSeriesRow | undefined;
 
     res.json(mapSeries(result));
-  } catch (error: any) { 
+  } catch (error) {
     console.error("[updateSeries] Error:", error);
-    res.status(400).json({ error: error.message }); 
+    res.status(400).json({ error: getErrorMessage(error) });
   }
 };
 
@@ -298,8 +304,8 @@ export const deleteSeries = (req: Request, res: Response) => {
   try { 
     db.prepare("DELETE FROM series WHERE id = ?").run(req.params.id); 
     res.json({ message: 'Deleted' }); 
-  } catch (error: any) { 
+  } catch (error) {
     console.error("[deleteSeries] Error:", error);
-    res.status(500).json({ error: error.message }); 
+    res.status(500).json({ error: getErrorMessage(error) });
   }
 };

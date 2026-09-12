@@ -12,6 +12,7 @@ export interface MalItemNode {
   status?: string;
   num_volumes?: number;
   start_date?: string;
+  end_date?: string;
   authors?: {
     node: {
       id: number;
