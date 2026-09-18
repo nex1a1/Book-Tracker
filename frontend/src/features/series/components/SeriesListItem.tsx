@@ -3,6 +3,7 @@ import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { SeriesInfoModal } from "./SeriesInfoModal";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
@@ -15,6 +16,7 @@ interface SeriesListItemProps {
 
 export function SeriesListItem({ series }: SeriesListItemProps) {
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteSeries = useSeriesStore(s => s.deleteSeries);
   const updateSeriesRating = useSeriesStore(s => s.updateSeriesRating);
   const stats = getSeriesDerivedStats(series);
@@ -105,14 +107,21 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
         <button 
           type="button"
           className="list-row__action-btn list-row__action-btn--danger" 
-          title="ลบ" 
-          onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}
+          title="ลบ"
+          onClick={() => setShowDeleteConfirm(true)}
         >
           <Icons.Trash />
         </button>
       </div>
 
       {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          series={stats.n}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={() => { deleteSeries(stats.n._id); setShowDeleteConfirm(false); }}
+        />
+      )}
     </div>
   );
 }

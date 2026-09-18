@@ -48,7 +48,7 @@
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.02);
 }
-.progress-fill { height: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.progress-fill { height: 100%; width: 100%; transform-origin: left; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .vbar-mini-grid { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 5px; }
 .vbar-mini-cell-wrap { width: 7px; height: 7px; }
 .vbar-mini-cell {
@@ -381,10 +381,10 @@
   display: grid;
   grid-template-columns: 44px minmax(180px, 2.8fr) minmax(150px, 2fr) minmax(180px, 2.8fr) minmax(120px, 1.8fr) minmax(110px, 1.2fr) 68px;
   align-items: center;
+  min-height: 88px;
   background: linear-gradient(135deg, rgba(23, 23, 23, 0.55) 0%, rgba(13, 13, 13, 0.9) 100%);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.03);
-  border-left: 4px solid var(--border);
   border-radius: 0px; /* Kept 0px for shinigami consistent typography */
   padding: 10px 18px;
   gap: 16px;
@@ -397,17 +397,10 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
 }
 
-/* Status-Colored Border Glows */
-.list-row--ongoing { border-left-color: var(--accent) !important; }
+/* Status hover tints (status itself is already conveyed by the status badge) */
 .list-row--ongoing:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(255, 123, 0, 0.18); }
-
-.list-row--completed { border-left-color: var(--badge-finished) !important; }
 .list-row--completed:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(16, 185, 129, 0.18); }
-
-.list-row--hiatus { border-left-color: #fbbf24 !important; }
 .list-row--hiatus:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(251, 191, 36, 0.18); }
-
-.list-row--cancelled { border-left-color: #555555 !important; }
 .list-row--cancelled:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); border-color: rgba(85, 85, 85, 0.18); }
 
 /* Elegant Cover Wrapper with Zoom animation */
@@ -538,7 +531,7 @@
   border-color: rgba(255, 123, 0, 0.15);
 }
 .list-row__missing-label {
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -1330,7 +1323,7 @@
 }
 
 .sidebar-mal-item-sub {
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   color: var(--muted);
   margin-top: 2px;
 }

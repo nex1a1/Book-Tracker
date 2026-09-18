@@ -45,9 +45,11 @@ export const useSeriesStore = create<SeriesStore>((set, get) => ({
     try {
       const res = await seriesApi.getStats();
       set({ stats: res.data });
-    } catch (err) {}
+    } catch (err) {
+      toast.error("ดึงข้อมูลสถิติไม่สำเร็จ");
+    }
   },
-  
+
   fetchMetadata: async () => {
     try {
       const [authors, publishers] = await Promise.all([
@@ -55,7 +57,9 @@ export const useSeriesStore = create<SeriesStore>((set, get) => ({
         seriesApi.getPublishers()
       ]);
       set({ authors: authors.data, publishers: publishers.data });
-    } catch (err) {}
+    } catch (err) {
+      toast.error("ดึงข้อมูลผู้แต่ง/สำนักพิมพ์ไม่สำเร็จ");
+    }
   },
   
   setFilter: (f) => set((s) => ({ filter: { ...s.filter, ...f } })),

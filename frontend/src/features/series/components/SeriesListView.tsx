@@ -13,9 +13,13 @@ export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter
     <div className="list-container">
       {displaySeries.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state__icon">📚</div>
-          <h3>ไม่พบหนังสือที่คุณหา</h3>
-          <p>ลองปรับตัวกรอง หรือล้างการค้นหาดูนะครับ</p>
+          <div className="empty-state__icon">{activeFilterCount > 0 ? "🔍" : "📚"}</div>
+          <h3>{activeFilterCount > 0 ? "ไม่พบผลลัพธ์ที่ตรงกัน" : "ยังไม่มีเรื่องในคอลเลกชัน"}</h3>
+          <p>
+            {activeFilterCount > 0
+              ? "ลองปรับตัวกรอง หรือล้างการค้นหาดูนะครับ"
+              : "เริ่มต้นด้วยการเพิ่มเรื่องแรกของคุณเข้าระบบ"}
+          </p>
           {activeFilterCount > 0 && (
             <button 
               type="button"

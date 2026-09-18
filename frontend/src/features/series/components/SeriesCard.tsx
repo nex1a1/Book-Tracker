@@ -3,6 +3,7 @@ import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { SeriesInfoModal } from "./SeriesInfoModal";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
@@ -15,6 +16,7 @@ interface SeriesCardProps {
 
 export function SeriesCard({ series }: SeriesCardProps) {
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteSeries = useSeriesStore(s => s.deleteSeries);
   const updateSeriesRating = useSeriesStore(s => s.updateSeriesRating);
   const stats = getSeriesDerivedStats(series);
@@ -61,8 +63,8 @@ export function SeriesCard({ series }: SeriesCardProps) {
               <button 
                 type="button"
                 className="btn-icon btn-icon--danger card__action-btn card__action-btn--danger" 
-                title="ลบ" 
-                onClick={() => window.confirm(`ลบ "${stats.n.title}"?`) && deleteSeries(stats.n._id)}
+                title="ลบ"
+                onClick={() => setShowDeleteConfirm(true)}
               >
                 <Icons.Trash />
               </button>
@@ -107,6 +109,13 @@ export function SeriesCard({ series }: SeriesCardProps) {
       </div>
 
       {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          series={stats.n}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={() => { deleteSeries(stats.n._id); setShowDeleteConfirm(false); }}
+        />
+      )}
     </div>
   );
 }

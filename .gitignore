@@ -18,6 +18,8 @@ frontend/.vite/
 Thumbs.db
 #Skills
 .gemini/
+.claude/
+.impeccable/
 #State
 GEMINI.md
 Skill.md

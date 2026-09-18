@@ -81,8 +81,5 @@ export const mergeRanges = (ranges) => {
         }
     }
     merged.push([currentStart, currentEnd]);
-    if (merged.length < ranges.length) {
-        console.log(`[mergeRanges] Optimized ranges from ${ranges.length} to ${merged.length}`);
-    }
     return merged;
 };

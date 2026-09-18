@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useId } from "react";
 import { Icons } from "../../components/Icons";
 import { FilterState } from "../../types";
 import './FilterSidebar.css';
@@ -10,14 +10,21 @@ interface FilterSectionProps {
 
 export function FilterSection({ title, children }: FilterSectionProps) {
   const [open, setOpen] = useState(true);
+  const bodyId = useId();
   return (
     <div className={`filter-section ${open ? 'is-open' : ''}`}>
-      <button type="button" className="filter-section__header" onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        className="filter-section__header"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={bodyId}
+      >
         <span>{title}</span>
         <span className="filter-section__chevron"><Icons.ChevronDown /></span>
       </button>
       <div className="filter-section__body-wrapper">
-        <div className="filter-section__body">{children}</div>
+        <div className="filter-section__body" id={bodyId}>{children}</div>
       </div>
     </div>
   );
@@ -32,10 +39,11 @@ interface FilterChipProps {
 
 export function FilterChip({ label, active, onClick, icon }: FilterChipProps) {
   return (
-    <button 
+    <button
       type="button"
-      className={`filter-chip ${active ? 'filter-chip--active' : ''}`} 
+      className={`filter-chip ${active ? 'filter-chip--active' : ''}`}
       onClick={onClick}
+      aria-pressed={active}
     >
       {icon && <span className="filter-chip__icon">{icon}</span>}
       <span className="filter-chip__label">{label}</span>
@@ -61,6 +69,23 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
     }
   };
 
+  // Debounce search so typing doesn't re-filter/re-sort the whole list on every keystroke.
+  const [localSearch, setLocalSearch] = useState(filter.search || "");
+  useEffect(() => {
+    if (filter.search === "" && localSearch !== "") setLocalSearch("");
+  }, [filter.search]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (localSearch !== (filter.search || "")) setFilter({ search: localSearch });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [localSearch]);
+
+  const clearSearch = () => {
+    setLocalSearch("");
+    setFilter({ search: "" });
+  };
+
   return (
     <aside className="filter-sidebar">
       <div className="filter-sidebar__header">
@@ -84,17 +109,18 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
       <div className="filter-sidebar__body">
         <div className="filter-search-wrap">
           <Icons.Search />
-          <input 
-            className="filter-search-input" 
-            placeholder="ค้นหาชื่อ, ผู้แต่ง, สำนักพิมพ์..." 
-            value={filter.search || ""} 
-            onChange={e => setFilter({ search: e.target.value })} 
+          <input
+            className="filter-search-input"
+            placeholder="ค้นหาชื่อ, ผู้แต่ง, สำนักพิมพ์..."
+            aria-label="ค้นหาชื่อ, ผู้แต่ง, สำนักพิมพ์"
+            value={localSearch}
+            onChange={e => setLocalSearch(e.target.value)}
           />
-          {filter.search && (
-            <button 
-              type="button" 
-              className="filter-search-clear" 
-              onClick={() => setFilter({ search: '' })}
+          {localSearch && (
+            <button
+              type="button"
+              className="filter-search-clear"
+              onClick={clearSearch}
             >
               <Icons.X />
             </button>
@@ -139,18 +165,53 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
           </div>
         </FilterSection>
 
-        <FilterSection title="คะแนนขั้นต่ำ">
+        <FilterSection title="คะแนน">
+          <div className="filter-subgroup-label">อย่างน้อย</div>
           <div className="filter-chip-group">
             <FilterChip label="ทั้งหมด" active={!filter.minRating} onClick={() => setFilter({ minRating: 0 })} />
             {[1, 2, 3, 4, 5].map(r => (
               <FilterChip key={r} label={'★'.repeat(r) + '☆'.repeat(5 - r)} active={filter.minRating === r} onClick={() => setFilter({ minRating: filter.minRating === r ? 0 : r })} />
             ))}
           </div>
+          <div className="filter-subgroup-label">ไม่เกิน</div>
+          <div className="filter-chip-group">
+            <FilterChip label="ทั้งหมด" active={!filter.maxRating} onClick={() => setFilter({ maxRating: 0 })} />
+            {[1, 2, 3, 4, 5].map(r => (
+              <FilterChip key={r} label={'★'.repeat(r) + '☆'.repeat(5 - r)} active={filter.maxRating === r} onClick={() => setFilter({ maxRating: filter.maxRating === r ? 0 : r })} />
+            ))}
+          </div>
+        </FilterSection>
+
+        <FilterSection title="ปีที่พิมพ์">
+          <div className="filter-year-row">
+            <input
+              type="number"
+              className="filter-year-input"
+              placeholder="จาก"
+              aria-label="ปีที่พิมพ์ ตั้งแต่"
+              value={filter.yearFrom}
+              onChange={e => setFilter({ yearFrom: e.target.value })}
+            />
+            <span className="filter-year-sep">–</span>
+            <input
+              type="number"
+              className="filter-year-input"
+              placeholder="ถึง"
+              aria-label="ปีที่พิมพ์ จนถึง"
+              value={filter.yearTo}
+              onChange={e => setFilter({ yearTo: e.target.value })}
+            />
+          </div>
         </FilterSection>
 
         {publishers.length > 0 && (
           <FilterSection title="สำนักพิมพ์">
-            <select className="filter-select" value={filter.publisher || ""} onChange={e => setFilter({ publisher: e.target.value })}>
+            <select
+              className="filter-select"
+              value={filter.publisher || ""}
+              onChange={e => setFilter({ publisher: e.target.value })}
+              aria-label="สำนักพิมพ์"
+            >
               <option value="">ทุกสำนักพิมพ์</option>
               {publishers.map(p => <option key={p} value={p}>{p}</option>)}
             </select>

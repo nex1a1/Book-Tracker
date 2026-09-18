@@ -221,11 +221,11 @@
   color: var(--ink);
 }
 .filter-search-input::placeholder {
-  color: #666;
+  color: var(--muted-dim);
   transition: color 0.2s;
 }
 .filter-search-wrap:focus-within .filter-search-input::placeholder {
-  color: #888;
+  color: var(--muted);
 }
 
 .filter-search-clear {
@@ -240,8 +240,8 @@
   transition: all 0.2s;
 }
 .filter-search-clear:hover {
-  color: #ff3333;
-  background: rgba(255, 51, 51, 0.1);
+  color: var(--special-color);
+  background: rgba(186, 12, 12, 0.12);
 }
 
 /* Sleek Select Dropdown */
@@ -275,6 +275,49 @@
 .filter-select option {
   background: #171717;
   color: #ffffff;
+}
+
+/* Year-range inputs */
+.filter-year-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-year-input {
+  width: 100%;
+  background: rgba(38, 38, 38, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.filter-year-input::placeholder {
+  color: var(--muted-dim);
+}
+.filter-year-input:hover {
+  border-color: rgba(255, 123, 0, 0.4);
+  background: rgba(38, 38, 38, 0.6);
+}
+.filter-year-input:focus {
+  border-color: var(--accent);
+}
+.filter-year-sep {
+  color: var(--muted-dim);
+  font-size: 0.75rem;
+}
+
+/* Sub-label for min/max rating rows sharing one section */
+.filter-subgroup-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 4px 0 -2px;
 }
 
 @media (max-width: 1024px) {

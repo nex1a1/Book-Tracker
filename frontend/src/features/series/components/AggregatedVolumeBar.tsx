@@ -38,7 +38,7 @@ export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini
         <span className="progress-percent">{percent}%</span>
       </div>
       <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${percent}%`, background: progressColor, boxShadow: `0 0 8px ${progressColor}40` }}></div>
+        <div className="progress-fill" style={{ transform: `scaleX(${percent / 100})`, background: progressColor }}></div>
       </div>
       <div className="vbar-mini-grid">
         {gridCells.map((cell, idx) => {

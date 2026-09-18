@@ -60,6 +60,12 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const [form, setForm] = useState<FormState>(initialState);
   const { fetchSeries, fetchStats, fetchMetadata, authors, publishers } = useSeriesStore();
 
+  // New entries default to a focused "basic info first" view; editing keeps everything open
+  // since the user came here specifically to work with existing logs/search.
+  const [openSections, setOpenSections] = useState({ mal: isEdit, reading: isEdit, collection: isEdit });
+  const toggleSection = (key: keyof typeof openSections) =>
+    setOpenSections(s => ({ ...s, [key]: !s[key] }));
+
   const authorDatalistId = "author-list";
   const publisherDatalistId = "publisher-list";
 
@@ -221,11 +227,21 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
           <div className="modal__sidebar">
             <LiveCardPreview form={form} stats={stats} />
 
-            <MalSearchPanel 
-              title={form.title} 
-              imageUrl={form.imageUrl} 
-              onSelectMalItem={handleSelectMalItem} 
-            />
+            <div>
+              <div className="checklist-publisher-header" onClick={() => toggleSection('mal')}>
+                <div className="checklist-publisher-title" style={{ fontSize: '0.8rem' }}>
+                  <span style={{ transform: openSections.mal ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
+                  <Icons.Search /> ค้นหาจาก MyAnimeList (ดึงข้อมูลอัตโนมัติ)
+                </div>
+              </div>
+              {openSections.mal && (
+                <MalSearchPanel
+                  title={form.title}
+                  imageUrl={form.imageUrl}
+                  onSelectMalItem={handleSelectMalItem}
+                />
+              )}
+            </div>
 
             {/* Sidebar Notes area */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
@@ -319,30 +335,40 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
             {/* Card 2: บันทึกการอ่าน */}
             <div className="form-section-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0 }}><Icons.Book /> บันทึกความคืบหน้าการอ่าน</h3>
-                <button 
+                <h3
+                  className="form-section-card__title"
+                  style={{ border: 'none', padding: 0, margin: 0, cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => toggleSection('reading')}
+                >
+                  <span style={{ transform: openSections.reading ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
+                  <Icons.Book /> บันทึกความคืบหน้าการอ่าน
+                  {!openSections.reading && <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.75rem' }}> ({form.readingLogs.length} ชุด)</span>}
+                </h3>
+                <button
                   type="button"
-                  className="btn btn--sm btn--ghost" 
-                  style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} 
-                  onClick={() => setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: null, ranges: [] }] })}
+                  className="btn btn--sm btn--ghost"
+                  style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }}
+                  onClick={() => { setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, reading: true })); }}
                 >
                   + เพิ่มชุด/ภาคใหม่
                 </button>
               </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {form.readingLogs.map((log, idx) => (
-                  <LogEditorBox
-                    key={log.id}
-                    log={log}
-                    idx={idx}
-                    type="reading"
-                    showRemove={form.readingLogs.length > 1}
-                    onRemove={() => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })}
-                    onUpdate={(field, val) => updateLog('readingLogs', idx, field, val)}
-                  />
-                ))}
-              </div>
+
+              {openSections.reading && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {form.readingLogs.map((log, idx) => (
+                    <LogEditorBox
+                      key={log.id}
+                      log={log}
+                      idx={idx}
+                      type="reading"
+                      showRemove={form.readingLogs.length > 1}
+                      onRemove={() => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })}
+                      onUpdate={(field, val) => updateLog('readingLogs', idx, field, val)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Card 3: ข้อมูลการสะสม */}
@@ -355,30 +381,40 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
               {form.isCollecting && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                    <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.88rem' }}><Icons.Cart /> รูปแบบรูปเล่มสะสม (Physical / E-Book)</h3>
-                    <button 
+                    <h3
+                      className="form-section-card__title"
+                      style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.88rem', cursor: 'pointer', userSelect: 'none' }}
+                      onClick={() => toggleSection('collection')}
+                    >
+                      <span style={{ transform: openSections.collection ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
+                      <Icons.Cart /> รูปแบบรูปเล่มสะสม (Physical / E-Book)
+                      {!openSections.collection && <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.75rem' }}> ({form.collectionLogs.length} รูปแบบ)</span>}
+                    </h3>
+                    <button
                       type="button"
-                      className="btn btn--sm btn--ghost" 
-                      style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }} 
-                      onClick={() => setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: null, ranges: [] }] })}
+                      className="btn btn--sm btn--ghost"
+                      style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }}
+                      onClick={() => { setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, collection: true })); }}
                     >
                       + เพิ่มรูปแบบสะสม
                     </button>
                   </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {form.collectionLogs.map((log, idx) => (
-                      <LogEditorBox
-                        key={log.id}
-                        log={log}
-                        idx={idx}
-                        type="collection"
-                        showRemove={form.collectionLogs.length > 1}
-                        onRemove={() => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })}
-                        onUpdate={(field, val) => updateLog('collectionLogs', idx, field, val)}
-                      />
-                    ))}
-                  </div>
+
+                  {openSections.collection && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {form.collectionLogs.map((log, idx) => (
+                        <LogEditorBox
+                          key={log.id}
+                          log={log}
+                          idx={idx}
+                          type="collection"
+                          showRemove={form.collectionLogs.length > 1}
+                          onRemove={() => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })}
+                          onUpdate={(field, val) => updateLog('collectionLogs', idx, field, val)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
