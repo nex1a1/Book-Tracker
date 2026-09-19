@@ -41,10 +41,8 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
 
       {/* Column 2: Info Block */}
       <div className="list-row__info">
-        <div className="list-row__title-wrap">
-          <h3 className="list-row__title" title={stats.n.title}>{stats.n.title}</h3>
-          <span className="list-row__timeline">{renderTimeline()}</span>
-        </div>
+        <h3 className="list-row__title" title={stats.n.title}>{stats.n.title}</h3>
+        <span className="list-row__timeline">{renderTimeline()}</span>
         <p className="list-row__author" title={`${stats.n.author || "?"} ${stats.n.publisher ? `| ${stats.n.publisher}` : ""}`}>
           {stats.n.author || "?"} {stats.n.publisher ? `| ${stats.n.publisher}` : ""}
         </p>
@@ -76,11 +74,12 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
           const missingText = getMissingVolumesText(primaryLog.ranges, primaryLog.totalVolumes);
           const isComplete = missingText === 'ครบถ้วน';
           const extraCount = logs.length - 1;
+          const labelText = `${isComplete ? 'สะสมครบ' : 'ขาด'} ${primaryLog.title ? `(${primaryLog.title})` : `(${FORMAT_LABEL[primaryLog.format || 'normal']})`}`;
           return (
             <>
               <div className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>
-                <span className="list-row__missing-label">
-                  {isComplete ? 'สะสมครบ' : 'ขาด'} {primaryLog.title ? `(${primaryLog.title})` : `(${FORMAT_LABEL[primaryLog.format || 'normal']})`}
+                <span className="list-row__missing-label" title={labelText}>
+                  {labelText}
                 </span>
                 <span className="list-row__missing-value" title={missingText}>
                   {missingText}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useId } from "react";
 import { Icons } from "../../components/Icons";
+import { PublisherDropdown } from "../../components/PublisherDropdown";
 import { FilterState } from "../../types";
 import './FilterSidebar.css';
 
@@ -206,15 +207,12 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
 
         {publishers.length > 0 && (
           <FilterSection title="สำนักพิมพ์">
-            <select
-              className="filter-select"
-              value={filter.publisher || ""}
-              onChange={e => setFilter({ publisher: e.target.value })}
-              aria-label="สำนักพิมพ์"
-            >
-              <option value="">ทุกสำนักพิมพ์</option>
-              {publishers.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
+            <PublisherDropdown
+              selectedPublisher={filter.publisher || 'all'}
+              onSelectPublisher={(pub) => setFilter({ publisher: pub === 'all' ? '' : pub })}
+              publisherOptions={publishers}
+              fullWidth
+            />
           </FilterSection>
         )}
       </div>

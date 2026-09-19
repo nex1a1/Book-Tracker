@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges } from "../../../utils/helpers";
 import { FORMAT_LABEL, TYPE_LABEL } from "../../../utils/constants";
@@ -23,12 +23,25 @@ export interface MissingSeriesItem {
   rawSeries: Series;
 }
 
+const CHECKED_ITEMS_STORAGE_KEY = "manga-tracker:missing-checklist-checked";
+
+function loadCheckedItems(): Set<string> {
+  try {
+    const raw = localStorage.getItem(CHECKED_ITEMS_STORAGE_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export function useMissingVolumes() {
   const { series } = useSeriesStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPublisher, setSelectedPublisher] = useState("all");
   const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  // Persisted across closing/reopening the modal — a shopping trip is rarely one
+  // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(loadCheckedItems);
   const [collapsedPubs, setCollapsedPubs] = useState<Set<string>>(new Set());
 
   // 1. Gather all series that have missing volumes
@@ -126,11 +139,50 @@ export function useMissingVolumes() {
     return { totalSeries, totalVolumes, checkedVolumes, checkedItemsCount };
   }, [filteredList, checkedItems]);
 
+  // Every currently-missing item, unfiltered — used to prune stale checks and to
+  // detect "fully caught up" independent of whatever search/publisher filter is active.
+  const allKeys = useMemo(() => {
+    const keys = new Set<string>();
+    missingList.forEach(item => item.formats.forEach(f => keys.add(`${item._id}-${f.id}`)));
+    return keys;
+  }, [missingList]);
+
+  // Prunes checks for items no longer missing (e.g. the user edited a series directly
+  // instead of shopping it off the checklist) whenever the underlying data changes. The
+  // very first time real data becomes available, it also applies a one-time "fresh start":
+  // if a previous session had checked off literally everything, that trip is over. This is
+  // deliberately NOT re-evaluated on every later checkedItems change — resetting the instant
+  // the user taps their last checkbox would wipe the fully-checked list right in front of
+  // them, which reads as a bug rather than a fresh start. It only ever applies on next open.
+  const startedFresh = useRef(false);
+  useEffect(() => {
+    if (allKeys.size === 0) return;
+    const isFirstRun = !startedFresh.current;
+    startedFresh.current = true;
+    setCheckedItems(prev => {
+      const pruned = new Set([...prev].filter(k => allKeys.has(k)));
+      if (isFirstRun && pruned.size === allKeys.size) return new Set();
+      return pruned.size === prev.size ? prev : pruned;
+    });
+  }, [allKeys]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHECKED_ITEMS_STORAGE_KEY, JSON.stringify([...checkedItems]));
+    } catch {
+      // localStorage unavailable (private mode, etc.) — checked state just won't persist.
+    }
+  }, [checkedItems]);
+
+  const clearCheckedItems = () => setCheckedItems(new Set());
+
   const toggleCheckItem = (key: string) => {
-    const next = new Set(checkedItems);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setCheckedItems(next);
+    setCheckedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const toggleCollapsePub = (pub: string) => {
@@ -149,6 +201,7 @@ export function useMissingVolumes() {
     setViewMode,
     checkedItems,
     toggleCheckItem,
+    clearCheckedItems,
     collapsedPubs,
     toggleCollapsePub,
     missingList,

@@ -55,7 +55,7 @@ export default function App() {
 
         {stats && (
           <div className="top-header__stats">
-            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }} title="เรื่องทั้งหมดในระบบ">
               <div className="stat-card__icon"><Icons.Book /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เรื่องทั้งหมด</span>
@@ -63,7 +63,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }} title="เรื่องที่กำลังสะสมอยู่">
               <div className="stat-card__icon"><Icons.Archive /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">กำลังสะสม</span>
@@ -71,7 +71,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }}>
+            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }} title="เล่มที่อ่านแล้วทั้งหมด">
               <div className="stat-card__icon"><Icons.BookOpen /></div>
               <div className="stat-card__info">
                 <span className="stat-card__label">เล่มที่อ่านแล้ว</span>
@@ -91,27 +91,32 @@ export default function App() {
                 <span className="stat-card__label">เล่มที่ยังขาด</span>
                 <span className="stat-card__value">{missing.stats.totalVolumes}</span>
               </div>
+              <span className="stat-card__go" aria-hidden="true"><Icons.ChevronDown /></span>
             </button>
           </div>
         )}
 
         <div className="top-header__actions">
-          <div className="view-toggle">
+          <div className="view-toggle" role="group" aria-label="มุมมองการแสดงผล">
             <button
               type="button"
               className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`}
               onClick={() => setViewMode('grid')}
-              title="Grid View"
+              aria-pressed={viewMode === 'grid'}
+              title="มุมมองตาราง"
             >
               <Icons.Grid />
+              <span className="view-toggle__btn-label">ตาราง</span>
             </button>
             <button
               type="button"
               className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`}
               onClick={() => setViewMode('list')}
-              title="List View"
+              aria-pressed={viewMode === 'list'}
+              title="มุมมองรายการ"
             >
               <Icons.List />
+              <span className="view-toggle__btn-label">รายการ</span>
             </button>
           </div>
 
@@ -124,10 +129,6 @@ export default function App() {
 
           <button type="button" className="btn btn--ghost" onClick={() => setShowExport(true)}>
             <Icons.Download /> Export CSV
-          </button>
-
-          <button type="button" className="btn btn--ghost" onClick={() => setShowMissing(true)}>
-            <Icons.Receipt /> เช็กลิสต์ที่ขาด
           </button>
 
           <button type="button" className="btn btn--primary btn--add" onClick={() => setShowAdd(true)}>

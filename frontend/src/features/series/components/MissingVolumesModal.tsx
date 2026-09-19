@@ -8,6 +8,7 @@ import { SeriesInfoModal } from "./SeriesInfoModal";
 // Sub-components & hooks
 import { useMissingVolumes, MissingSeriesItem } from "../hooks/useMissingVolumes";
 import { MissingVolumeRow } from "./MissingVolumeRow";
+import { PublisherDropdown } from "./PublisherDropdown";
 import { Series } from "../../../types";
 
 interface MissingVolumesModalProps {
@@ -26,6 +27,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     setViewMode,
     checkedItems,
     toggleCheckItem,
+    clearCheckedItems,
     collapsedPubs,
     toggleCollapsePub,
     filteredList,
@@ -99,9 +101,14 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                     หยิบแล้ว {stats.checkedVolumes} เล่ม ({stats.checkedItemsCount} รายการ)
                   </span>
                 )}
+                {checkedItems.size > 0 && (
+                  <button type="button" className="btn-link" onClick={clearCheckedItems}>
+                    ล้างรายการที่หยิบ
+                  </button>
+                )}
               </div>
               <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                * ติ๊กถูกวงกลมด้านซ้ายเพื่อตัดรายการออกชั่วคราวขณะเลือกซื้อ
+                * ติ๊กถูกวงกลมด้านซ้ายเพื่อตัดรายการออกชั่วคราวขณะเลือกซื้อ — ระบบจะจำไว้แม้ปิดหน้าต่างนี้ไปก่อน
               </span>
             </div>
 
@@ -120,16 +127,11 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
               </div>
 
               {/* Publisher Selector */}
-              <select 
-                className="checklist-select-filter"
-                value={selectedPublisher}
-                onChange={(e) => setSelectedPublisher(e.target.value)}
-              >
-                <option value="all">ทุกสำนักพิมพ์</option>
-                {publisherOptions.map((pub, i) => (
-                  <option key={i} value={pub}>{pub}</option>
-                ))}
-              </select>
+              <PublisherDropdown
+                selectedPublisher={selectedPublisher}
+                onSelectPublisher={setSelectedPublisher}
+                publisherOptions={publisherOptions}
+              />
 
               {/* View Toggle */}
               <div className="checklist-view-toggle">
@@ -196,10 +198,11 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                           onClick={() => toggleCollapsePub(pub)}
                         >
                           <div className="checklist-publisher-title">
-                            <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>
-                              ▼
+                            <span className={`checklist-publisher-chevron ${isCollapsed ? 'collapsed' : ''}`}>
+                              <Icons.ChevronDown />
                             </span>
-                            {pub}
+                            <Icons.Book />
+                            <span>{pub}</span>
                           </div>
                           <span className="checklist-publisher-count">
                             {items.length} เรื่อง ({groupTotalVolumes} เล่ม)

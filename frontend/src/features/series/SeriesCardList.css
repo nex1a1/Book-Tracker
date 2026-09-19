@@ -2,7 +2,9 @@
    ── SeriesCard & SeriesListItem Layouts (Original SeriesCard.css)
    ========================================================================== */
 /* ── Cards (Grid View) ──────────────────────────────────── */
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+/* align-items: start keeps each card at its own natural height instead of the grid's
+   default stretch, which forced every card in a row to match its tallest neighbor. */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
 
 .card {
   background: linear-gradient(135deg, rgba(23, 23, 23, 0.7) 0%, rgba(13, 13, 13, 0.95) 100%);
@@ -247,12 +249,15 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Single source of truth for the header/row column split — both reference this
+     instead of repeating the track list, so they can never drift out of alignment. */
+  --list-grid: 44px minmax(200px, 3fr) minmax(190px, 2.6fr) minmax(160px, 2.3fr) minmax(95px, 1.1fr) minmax(110px, 1.2fr) 68px;
 }
 
 /* Premium sticky table header for ListView mode */
 .list-table-header {
   display: grid;
-  grid-template-columns: 44px minmax(180px, 2.8fr) minmax(150px, 2fr) minmax(180px, 2.8fr) minmax(120px, 1.8fr) minmax(110px, 1.2fr) 68px;
+  grid-template-columns: var(--list-grid);
   align-items: center;
   gap: 16px;
   padding: 8px 18px;
@@ -311,7 +316,7 @@
 /* Beautiful Grid-aligned list rows */
 .list-row {
   display: grid;
-  grid-template-columns: 44px minmax(180px, 2.8fr) minmax(150px, 2fr) minmax(180px, 2.8fr) minmax(120px, 1.8fr) minmax(110px, 1.2fr) 68px;
+  grid-template-columns: var(--list-grid);
   align-items: center;
   min-height: 88px;
   background: linear-gradient(135deg, rgba(23, 23, 23, 0.55) 0%, rgba(13, 13, 13, 0.9) 100%);
@@ -380,15 +385,9 @@
   gap: 4px;
   min-width: 0;
 }
-.list-row__title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 .list-row__title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
@@ -403,6 +402,12 @@
   color: var(--accent);
 }
 .list-row__timeline {
+  /* On its own line below the title (not sharing it): a long title used to force this
+     pill down anyway via flex-wrap, which is exactly what made row heights inconsistent.
+     Giving it a fixed line means every row's info block is the same 3-line height, and
+     the title always gets the column's full width for its own ellipsis. */
+  display: inline-block;
+  align-self: flex-start;
   font-size: 0.62rem;
   font-weight: 700;
   padding: 1.5px 6px;
@@ -429,14 +434,32 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+}
+/* Slightly tighter than the global .badge (used on grid cards) so up to 4 status
+   badges have a real chance of fitting this column's one line instead of wrapping
+   and growing the row — scoped to list rows only, cards are unaffected. */
+.list-row__badges .badge {
+  font-size: 0.58rem;
+  padding: 2px 5px;
 }
 
 /* Progress Bars Column */
 .list-row__bars {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
+  /* Reserve room for two mini bars (read + collection) so a non-collecting row's
+     single bar doesn't leave that row visibly shorter than its collecting neighbors. */
+  min-height: 60px;
+}
+/* The per-volume cell grid (one tiny square per volume) is right at home in the spacious
+   card view, but a 70+ volume series wraps it to several rows here and throws row height
+   off far more than its neighbors. The label ("อ่าน: 20/31") and the fill bar already
+   carry the same information in this denser context, so only the grid is dropped. */
+.list-row__bars .vbar-mini-grid {
+  display: none;
 }
 
 /* Stock/Missing Volumes Column */
@@ -448,6 +471,7 @@
 .list-row__missing-pill {
   display: inline-flex;
   flex-direction: column;
+  min-width: 0;
   padding: 4px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -471,6 +495,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 1px;
+  /* A custom collection-format title (e.g. "Big Book Edition") had no truncation here,
+     so it wrapped to 2-3 lines and made this one row's missing-column far taller than
+     its neighbors. Full text is still one hover away via the title attribute. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .list-row__missing-value {
   font-size: 0.78rem;
@@ -539,7 +569,10 @@
   gap: 4px;
   align-items: center;
   justify-content: flex-end;
-  opacity: 0.2;
+  /* 0.2 measured out at ~1.3:1 against the row background — effectively invisible
+     until a user already knows to hover. 0.45 keeps it clearly secondary to the
+     row's content while still reading as "a control lives here" at rest. */
+  opacity: 0.45;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .list-row:hover .list-row__actions,

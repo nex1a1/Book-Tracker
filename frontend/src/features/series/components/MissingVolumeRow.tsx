@@ -15,15 +15,18 @@ export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, on
   return (
     <div className={`checklist-item-row ${isChecked ? "is-checked" : ""}`}>
       <div className="checklist-item-checkbox-wrapper">
-        <div 
-          className="checklist-custom-checkbox" 
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isChecked}
+          className="checklist-custom-checkbox"
           onClick={onToggleCheck}
           title={isChecked ? "ยกเลิกการเลือก" : "ทำเครื่องหมายว่าหยิบแล้ว"}
         >
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-        </div>
+        </button>
       </div>
 
       <div className="checklist-item-title-col">

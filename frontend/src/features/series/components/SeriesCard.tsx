@@ -48,6 +48,11 @@ export function SeriesCard({ series }: SeriesCardProps) {
             <div className="card__badges">
               <span className={`badge badge--${stats.n.type}`}>{TYPE_LABEL[stats.n.type]}</span>
               <span className={`badge badge--${stats.n.status}`}>{STATUS_LABEL[stats.n.status]}</span>
+              {stats.isFinishedReading && <span className="badge badge--finished">อ่านจบแล้ว</span>}
+              {stats.isCaughtUp && <span className="badge badge--caughtup">ทันปัจจุบัน</span>}
+              {stats.totalReadCount > 0 && stats.n.isCollecting && <span className="badge badge--both">ทั้งอ่านทั้งเก็บ</span>}
+              {stats.totalReadCount > 0 && !stats.n.isCollecting && <span className="badge badge--read-only">อ่านอย่างเดียว</span>}
+              {stats.isUnread && stats.n.isCollecting && <span className="badge badge--collect-only">สายดอง</span>}
             </div>
             
             {/* Sleek Action Buttons (Accessible Cluster) */}
@@ -92,10 +97,12 @@ export function SeriesCard({ series }: SeriesCardProps) {
         {stats.n.isCollecting && <AggregatedVolumeBar logs={stats.n.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="การสะสม (ไทย)" />}
       </div>
 
-      <div className="card__summary">
-        <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icons.Book /> <strong>อ่านแล้ว:</strong> เล่ม {stats.totalReadCount}/{stats.totalReadJP || '?'}</p>
-        {stats.n.isCollecting ? (
-          stats.n.collectionLogs.map(log => {
+      {/* Read count and read-only status already show via the progress bar above and the
+          badge row, respectively — this block now carries only what's unique here: which
+          specific volumes are missing, per collection format. */}
+      {stats.n.isCollecting && (
+        <div className="card__summary">
+          {stats.n.collectionLogs.map(log => {
             const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
             const isComplete = missingText === 'ครบถ้วน';
             return (
@@ -104,9 +111,9 @@ export function SeriesCard({ series }: SeriesCardProps) {
                 <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
               </p>
             );
-          })
-        ) : <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icons.Cart /> <strong>สถานะ:</strong> อ่านอย่างเดียว</p>}
-      </div>
+          })}
+        </div>
+      )}
 
       {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
       {showDeleteConfirm && (

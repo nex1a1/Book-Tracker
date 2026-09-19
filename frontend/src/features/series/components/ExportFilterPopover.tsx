@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from '../../../components/Icons';
 import { FilterState, SeriesType, SeriesStatus } from '../../../types';
+import { PublisherDropdown } from './PublisherDropdown';
 
 interface ExportFilterPopoverProps {
   popoverRef: React.RefObject<HTMLDivElement>;
@@ -188,16 +189,12 @@ export function ExportFilterPopover({
         {publisherList.length > 0 && (
           <div className="filter-field">
             <label className="field-label">สำนักพิมพ์:</label>
-            <select
-              value={filter.publisher || ''}
-              onChange={e => onUpdate({ publisher: e.target.value })}
-              className="select-input"
-            >
-              <option value="">ทุกสำนักพิมพ์</option>
-              {publisherList.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+            <PublisherDropdown
+              selectedPublisher={filter.publisher || 'all'}
+              onSelectPublisher={(pub) => onUpdate({ publisher: pub === 'all' ? '' : pub })}
+              publisherOptions={publisherList}
+              fullWidth
+            />
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@
 .volume-progress {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
   background: rgba(0, 0, 0, 0.25);
   padding: 10px 12px;
@@ -70,16 +71,21 @@
   background: var(--buy-color);
   border-color: transparent;
 }
+/* A second sub-log (e.g. "Side Stories", or a 2nd collection format) used to mark its cells
+   in --special-color — the same red reserved everywhere else for delete/danger, so a glance
+   at the grid could misread "extra sub-log" as "missing/problem". A dashed border marks
+   "different sub-log" by shape instead, and filled cells stay in their own read/bought hue
+   family (just a shade deeper), so the type is still legible at a glance across sub-logs. */
 .vbar-mini-grid .vbar-mini-cell.special {
-  border: 1px solid var(--special-color);
-  background: rgba(186, 12, 12, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
 }
 .vbar-mini-grid .vbar-mini-cell.read.special {
-  background: var(--special-color);
+  background: var(--read-color-alt);
   border-color: transparent;
 }
 .vbar-mini-grid .vbar-mini-cell.bought.special {
-  background: var(--special-color);
+  background: var(--buy-color-alt);
   border-color: transparent;
 }
 
