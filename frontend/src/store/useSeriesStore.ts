@@ -12,6 +12,7 @@ export const EMPTY_FILTER: FilterState = {
   collectStatus: [],
   minRating: 0,
   maxRating: 0,
+  unratedOnly: false,
   yearFrom: '',
   yearTo: '',
   sortBy: 'updatedAt',

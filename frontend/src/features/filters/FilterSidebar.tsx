@@ -2,28 +2,49 @@ import React, { useState, useEffect, useId } from "react";
 import { Icons } from "../../components/Icons";
 import { PublisherDropdown } from "../../components/PublisherDropdown";
 import { FilterState } from "../../types";
+import { RatingFilter, getRatingBadgeText } from "./RatingFilter";
 import './FilterSidebar.css';
 
 interface FilterSectionProps {
   title: string;
+  badge?: React.ReactNode;
+  onClear?: () => void;
   children: React.ReactNode;
 }
 
-export function FilterSection({ title, children }: FilterSectionProps) {
+export function FilterSection({ title, badge, onClear, children }: FilterSectionProps) {
   const [open, setOpen] = useState(true);
   const bodyId = useId();
   return (
     <div className={`filter-section ${open ? 'is-open' : ''}`}>
-      <button
-        type="button"
-        className="filter-section__header"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-controls={bodyId}
-      >
-        <span>{title}</span>
-        <span className="filter-section__chevron"><Icons.ChevronDown /></span>
-      </button>
+      <div className="filter-section__header-row">
+        <button
+          type="button"
+          className="filter-section__header"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={bodyId}
+        >
+          <div className="filter-section__title-wrap">
+            <span>{title}</span>
+            {badge}
+          </div>
+          <span className="filter-section__chevron"><Icons.ChevronDown /></span>
+        </button>
+        {onClear && (
+          <button
+            type="button"
+            className="filter-section__clear-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            title={`ล้างตัวกรอง ${title}`}
+          >
+            ล้าง
+          </button>
+        )}
+      </div>
       <div className="filter-section__body-wrapper">
         <div className="filter-section__body" id={bodyId}>{children}</div>
       </div>
@@ -167,21 +188,27 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
           </div>
         </FilterSection>
 
-        <FilterSection title="คะแนน">
-          <div className="filter-subgroup-label">อย่างน้อย</div>
-          <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.minRating} onClick={() => setFilter({ minRating: 0 })} />
-            {[1, 2, 3, 4, 5].map(r => (
-              <FilterChip key={r} label={'★'.repeat(r) + '☆'.repeat(5 - r)} active={filter.minRating === r} onClick={() => setFilter({ minRating: filter.minRating === r ? 0 : r })} />
-            ))}
-          </div>
-          <div className="filter-subgroup-label">ไม่เกิน</div>
-          <div className="filter-chip-group">
-            <FilterChip label="ทั้งหมด" active={!filter.maxRating} onClick={() => setFilter({ maxRating: 0 })} />
-            {[1, 2, 3, 4, 5].map(r => (
-              <FilterChip key={r} label={'★'.repeat(r) + '☆'.repeat(5 - r)} active={filter.maxRating === r} onClick={() => setFilter({ maxRating: filter.maxRating === r ? 0 : r })} />
-            ))}
-          </div>
+        <FilterSection
+          title="คะแนน"
+          badge={
+            getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly) ? (
+              <span className="filter-rating-badge">
+                {getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly)}
+              </span>
+            ) : undefined
+          }
+          onClear={
+            getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly)
+              ? () => setFilter({ minRating: 0, maxRating: 0, unratedOnly: false })
+              : undefined
+          }
+        >
+          <RatingFilter
+            minRating={filter.minRating}
+            maxRating={filter.maxRating}
+            unratedOnly={filter.unratedOnly}
+            onChange={(patch) => setFilter(patch)}
+          />
         </FilterSection>
 
         <FilterSection title="ปีที่พิมพ์">

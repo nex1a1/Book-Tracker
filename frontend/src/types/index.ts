@@ -58,6 +58,7 @@ export interface FilterState {
   collectStatus: string[];
   minRating: number;
   maxRating: number;
+  unratedOnly?: boolean;
   yearFrom: string | number;
   yearTo: string | number;
   sortBy: string;

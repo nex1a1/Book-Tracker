@@ -54,44 +54,66 @@ export default function App() {
         </div>
 
         {stats && (
-          <div className="top-header__stats">
-            <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'rgba(255, 123, 0, 0.12)' }} title="เรื่องทั้งหมดในระบบ">
-              <div className="stat-card__icon"><Icons.Book /></div>
-              <div className="stat-card__info">
-                <span className="stat-card__label">เรื่องทั้งหมด</span>
-                <span className="stat-card__value">{stats.totals.totalSeries}</span>
+          <div className="telemetry-bar" role="region" aria-label="สถิติระบบ">
+            <div
+              className="telemetry-item"
+              style={{ '--item-accent': 'var(--accent)', '--item-glow': 'rgba(255, 123, 0, 0.2)' }}
+              title="เรื่องทั้งหมดในระบบ"
+            >
+              <span className="telemetry-item__icon"><Icons.Book /></span>
+              <div className="telemetry-item__body">
+                <span className="telemetry-item__label">เรื่องทั้งหมด</span>
+                <span className="telemetry-item__value">{stats.totals.totalSeries.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-manga)', '--stat-glow': 'rgba(168, 85, 247, 0.12)' }} title="เรื่องที่กำลังสะสมอยู่">
-              <div className="stat-card__icon"><Icons.Archive /></div>
-              <div className="stat-card__info">
-                <span className="stat-card__label">กำลังสะสม</span>
-                <span className="stat-card__value">{stats.totals.collecting}</span>
+            <div className="telemetry-divider" aria-hidden="true" />
+
+            <div
+              className="telemetry-item"
+              style={{ '--item-accent': 'var(--badge-manga)', '--item-glow': 'rgba(168, 85, 247, 0.2)' }}
+              title="เรื่องที่กำลังสะสมอยู่"
+            >
+              <span className="telemetry-item__icon"><Icons.Archive /></span>
+              <div className="telemetry-item__body">
+                <span className="telemetry-item__label">กำลังสะสม</span>
+                <span className="telemetry-item__value">{stats.totals.collecting.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="stat-card" style={{ '--stat-color': 'var(--badge-finished)', '--stat-glow': 'rgba(16, 185, 129, 0.12)' }} title="เล่มที่อ่านแล้วทั้งหมด">
-              <div className="stat-card__icon"><Icons.BookOpen /></div>
-              <div className="stat-card__info">
-                <span className="stat-card__label">เล่มที่อ่านแล้ว</span>
-                <span className="stat-card__value">{stats.totals.totalRead}</span>
+            <div className="telemetry-divider" aria-hidden="true" />
+
+            <div
+              className="telemetry-item"
+              style={{ '--item-accent': 'var(--badge-finished)', '--item-glow': 'rgba(16, 185, 129, 0.2)' }}
+              title="เล่มที่อ่านแล้วทั้งหมด"
+            >
+              <span className="telemetry-item__icon"><Icons.BookOpen /></span>
+              <div className="telemetry-item__body">
+                <span className="telemetry-item__label">เล่มที่อ่านแล้ว</span>
+                <span className="telemetry-item__value">{stats.totals.totalRead.toLocaleString()}</span>
               </div>
             </div>
+
+            <div className="telemetry-divider" aria-hidden="true" />
 
             <button
               type="button"
-              className="stat-card stat-card--clickable"
-              style={{ '--stat-color': 'var(--special-color)', '--stat-glow': 'rgba(186, 12, 12, 0.12)' }}
+              className="telemetry-item telemetry-item--action"
+              style={{ '--item-accent': 'var(--danger-text)', '--item-glow': 'rgba(255, 107, 107, 0.25)' }}
               onClick={() => setShowMissing(true)}
               title="เปิดเช็กลิสต์หนังสือที่ยังขาด"
             >
-              <div className="stat-card__icon"><Icons.Receipt /></div>
-              <div className="stat-card__info">
-                <span className="stat-card__label">เล่มที่ยังขาด</span>
-                <span className="stat-card__value">{missing.stats.totalVolumes}</span>
+              <span className="telemetry-item__icon"><Icons.Receipt /></span>
+              <div className="telemetry-item__body">
+                <span className="telemetry-item__label">
+                  เล่มที่ยังขาด
+                  <span className="telemetry-item__action-hint" aria-hidden="true">↗</span>
+                </span>
+                <span className="telemetry-item__value telemetry-item__value--highlight">
+                  {missing.stats.totalVolumes.toLocaleString()}
+                </span>
               </div>
-              <span className="stat-card__go" aria-hidden="true"><Icons.ChevronDown /></span>
             </button>
           </div>
         )}

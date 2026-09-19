@@ -247,97 +247,152 @@ body {
   100% { transform: scale(3.5); opacity: 0; }
 }
 
-/* --- Telemetry Stats --- */
-.top-header__stats {
-  display: flex;
-  gap: 16px;
-  flex: 1;
-  margin-left: 20px;
+/* --- Unified Telemetry HUD Bar --- */
+.telemetry-bar {
+  display: inline-flex;
+  align-items: stretch;
+  background: rgba(20, 20, 20, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0px;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  height: 44px;
+  position: relative;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
-.stat-card {
+
+.telemetry-bar:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.telemetry-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: rgba(38, 38, 38, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  border-radius: 0px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 10px;
+  padding: 0 16px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: inherit;
   position: relative;
-  overflow: hidden;
-  min-width: 135px;
+  cursor: default;
+  user-select: none;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
 }
-.stat-card::before {
+
+.telemetry-item::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
-  pointer-events: none;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--item-accent);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.stat-card:hover {
-  transform: translateY(-2px);
-  background: rgba(38, 38, 38, 0.55);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+
+.telemetry-item:hover {
+  background: rgba(255, 255, 255, 0.025);
 }
-.stat-card__icon {
+
+.telemetry-item:hover::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.telemetry-item__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--stat-color);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.25s;
+  color: var(--item-accent);
+  font-size: 1.05rem;
+  filter: drop-shadow(0 0 8px var(--item-glow));
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease;
 }
-.stat-card:hover .stat-card__icon {
-  background: rgba(255, 255, 255, 0.06);
-  transform: scale(1.08);
+
+.telemetry-item:hover .telemetry-item__icon {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 12px var(--item-glow));
 }
-.stat-card__info {
+
+.telemetry-item__body {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1px;
+  text-align: left;
 }
-.stat-card__label {
-  font-size: 0.75rem;
+
+.telemetry-item__label {
+  font-size: 0.67rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: var(--muted);
-}
-.stat-card__value {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: #ffffff;
-}
-.stat-card--clickable {
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  border-color: rgba(186, 12, 12, 0.35);
-  padding-right: 30px;
-}
-.stat-card--clickable:hover {
-  border-color: rgba(186, 12, 12, 0.6);
-}
-.stat-card__go {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%) rotate(-90deg);
   display: flex;
-  color: var(--stat-color);
-  opacity: 0.55;
-  transition: all 0.2s ease;
+  align-items: center;
+  gap: 4px;
 }
-.stat-card--clickable:hover .stat-card__go {
+
+.telemetry-item__value {
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.telemetry-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.07);
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* Action item (เล่มที่ยังขาด) */
+.telemetry-item--action {
+  cursor: pointer;
+  outline: none;
+  padding-right: 18px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.telemetry-item--action:hover {
+  background: rgba(255, 107, 107, 0.06);
+}
+
+.telemetry-item--action:hover::before {
   opacity: 1;
-  right: 7px;
+}
+
+.telemetry-item--action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.telemetry-item__action-hint {
+  font-size: 0.65rem;
+  color: var(--item-accent);
+  opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  display: inline-block;
+}
+
+.telemetry-item--action:hover .telemetry-item__action-hint {
+  transform: translate(2px, -2px);
+  opacity: 1;
+}
+
+.telemetry-item__value--highlight {
+  color: var(--danger-text);
 }
 
 /* --- Action Section --- */
@@ -346,6 +401,7 @@ body {
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 /* sort-inline and sort-dir-btn styles have been migrated to the premium custom .sort-widget inside SortDropdown.css */
 
@@ -381,7 +437,7 @@ body {
 .btn { font-family: var(--font-body); font-size: .8rem; font-weight: 600; padding: 8px 16px; border-radius: 0px; border: none; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
 .btn:focus-visible,
 .view-toggle__btn:focus-visible,
-.stat-card--clickable:focus-visible {
+.telemetry-item--action:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -452,18 +508,16 @@ body {
 /* ── Responsive Layout (Global) ──────────────────────────── */
 @media (max-width: 1200px) {
   :root { --sidebar-w: 240px; }
-  .top-header__stats { gap: 8px; }
-  .stat-card { padding: 6px 12px; gap: 8px; min-width: auto; }
-  .stat-card__value { font-size: 1.05rem; }
+  .telemetry-item { padding: 0 12px; gap: 8px; }
+  .telemetry-item__value { font-size: 0.9rem; }
+  .telemetry-item__label { font-size: 0.62rem; }
 }
 
 @media (max-width: 1024px) {
-  .top-header__stats { gap: 4px; margin-left: 8px; }
-  .stat-card { padding: 8px; min-width: auto; gap: 0; }
-  .stat-card--clickable { padding: 8px 22px 8px 8px; }
-  .stat-card__info { display: none; }
-  .stat-card__go { right: 4px; }
   .top-header { padding: 0 20px; gap: 16px; }
+  .telemetry-item { padding: 0 10px; gap: 6px; }
+  .telemetry-item__label { display: none; }
+  .telemetry-item__value { font-size: 0.88rem; }
 }
 
 @media (max-width: 600px) {

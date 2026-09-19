@@ -52,8 +52,12 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear >= Number(filter.yearFrom));
     if (filter.yearTo) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear <= Number(filter.yearTo));
 
-    if (filter.minRating) filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
-    if (filter.maxRating) filtered = filtered.filter(s => (s.rating || 0) <= filter.maxRating && (s.rating || 0) > 0);
+    if (filter.unratedOnly) {
+      filtered = filtered.filter(s => !s.rating || s.rating === 0);
+    } else {
+      if (filter.minRating) filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
+      if (filter.maxRating) filtered = filtered.filter(s => (s.rating || 0) <= filter.maxRating && (s.rating || 0) > 0);
+    }
 
     filtered = filtered.filter(s => {
       const st = getSeriesDerivedStats(s);
@@ -120,8 +124,12 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     }
     if (filter.readStatus && filter.readStatus.length > 0) c++;
     if (filter.collectStatus && filter.collectStatus.length > 0) c++;
-    if (filter.minRating) c++;
-    if (filter.maxRating) c++;
+    if (filter.unratedOnly) {
+      c++;
+    } else {
+      if (filter.minRating) c++;
+      if (filter.maxRating) c++;
+    }
     if (filter.yearFrom) c++;
     if (filter.yearTo) c++;
     return c;
