@@ -37,7 +37,7 @@ function loadCheckedItems(): Set<string> {
 export function useMissingVolumes() {
   const { series } = useSeriesStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPublisher, setSelectedPublisher] = useState("all");
+  const [selectedPublisher, setSelectedPublisher] = useState<string | string[]>("all");
   const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
   // Persisted across closing/reopening the modal — a shopping trip is rarely one
   // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
@@ -49,7 +49,7 @@ export function useMissingVolumes() {
     const list: MissingSeriesItem[] = [];
     series.forEach(s => {
       const stats = getSeriesDerivedStats(s);
-      if (stats.n.isCollecting && stats.isCollectMissing) {
+      if (stats.n.isCollecting && !stats.n.isCollectingStopped && stats.isCollectMissing) {
         const formats: MissingLogItem[] = [];
         stats.n.collectionLogs.forEach(log => {
           const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
@@ -92,7 +92,10 @@ export function useMissingVolumes() {
         (item.author && item.author.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (item.publisher && item.publisher.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchPublisher = selectedPublisher === "all" || item.publisher === selectedPublisher;
+      const matchPublisher = selectedPublisher === "all" ||
+        (Array.isArray(selectedPublisher)
+          ? selectedPublisher.length === 0 || selectedPublisher.includes(item.publisher)
+          : item.publisher === selectedPublisher);
       
       return matchSearch && matchPublisher;
     });

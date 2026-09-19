@@ -57,6 +57,7 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
         {stats.totalReadCount > 0 && stats.n.isCollecting && <span className="badge badge--both">ทั้งอ่านทั้งเก็บ</span>}
         {stats.totalReadCount > 0 && !stats.n.isCollecting && <span className="badge badge--read-only">อ่านอย่างเดียว</span>}
         {stats.isUnread && stats.n.isCollecting && <span className="badge badge--collect-only">สายดอง</span>}
+        {stats.n.isCollectingStopped && <span className="badge badge--stopped">เลิกตามแล้ว</span>}
       </div>
 
       {/* Column 4: mini progress bars */}
@@ -69,12 +70,26 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
           series don't stretch the row taller than its neighbors; the rest are one click away. */}
       <div className="list-row__missing">
         {stats.n.isCollecting ? (() => {
+          if (stats.n.isCollectingStopped) {
+            return (
+              <div className="list-row__missing-pill stopped">
+                <span className="list-row__missing-label" title="เลิกตามแล้ว">
+                  เลิกตามแล้ว
+                </span>
+                <span className="list-row__missing-value" title="เลิกตามแล้ว">
+                  เลิกตามแล้ว
+                </span>
+              </div>
+            );
+          }
           const logs = stats.n.collectionLogs;
           const primaryLog = logs.find(log => getMissingVolumesText(log.ranges, log.totalVolumes) !== 'ครบถ้วน') || logs[0];
           const missingText = getMissingVolumesText(primaryLog.ranges, primaryLog.totalVolumes);
           const isComplete = missingText === 'ครบถ้วน';
           const extraCount = logs.length - 1;
-          const labelText = `${isComplete ? 'สะสมครบ' : 'ขาด'} ${primaryLog.title ? `(${primaryLog.title})` : `(${FORMAT_LABEL[primaryLog.format || 'normal']})`}`;
+          const labelText = isComplete
+            ? 'สะสมครบ'
+            : `ขาด ${primaryLog.title ? `(${primaryLog.title})` : `(${FORMAT_LABEL[primaryLog.format || 'normal']})`}`;
           return (
             <>
               <div className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>

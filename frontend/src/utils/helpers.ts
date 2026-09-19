@@ -66,7 +66,7 @@ export function getMissingVolumesText(ranges: VolumeRange[] | undefined | null, 
 
 export function normalizeSeriesData(series: Series | null | undefined): Series | null {
   if (!series) return null;
-  const n = { ...series };
+  const n = { ...series, isCollectingStopped: Boolean(series.isCollectingStopped) };
   if (!n.readingLogs || n.readingLogs.length === 0) {
     n.readingLogs = [
       {
@@ -103,11 +103,12 @@ export function getSeriesDerivedStats(series: Series): SeriesDerivedStats {
   
   let isCollectMissing = false;
   let isCollectComplete = false;
+  const isCollectStopped = n.isCollecting && Boolean(n.isCollectingStopped);
   const isNotCollecting = !n.isCollecting;
   
   if (n.isCollecting) {
     const hasMissing = n.collectionLogs.some(log => getMissingVolumesText(log.ranges, log.totalVolumes) !== 'ครบถ้วน');
-    isCollectMissing = hasMissing;
+    isCollectMissing = !isCollectStopped && hasMissing;
     isCollectComplete = !hasMissing;
   }
   
@@ -122,6 +123,7 @@ export function getSeriesDerivedStats(series: Series): SeriesDerivedStats {
     isUnread,
     isCollectMissing,
     isCollectComplete,
+    isCollectStopped,
     isNotCollecting
   };
 }

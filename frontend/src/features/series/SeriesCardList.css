@@ -137,6 +137,11 @@
   color: var(--accent);
   border: 1px solid rgba(255, 123, 0, 0.15);
 }
+.summary-status-pill.stopped {
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--ink-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
 
 .card__info {
   flex: 1;
@@ -488,6 +493,10 @@
   background: rgba(255, 123, 0, 0.03);
   border-color: rgba(255, 123, 0, 0.15);
 }
+.list-row__missing-pill.stopped {
+  background: rgba(148, 163, 184, 0.04);
+  border-color: rgba(148, 163, 184, 0.2);
+}
 .list-row__missing-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -514,6 +523,9 @@
 }
 .list-row__missing-pill.missing .list-row__missing-value {
   color: var(--accent);
+}
+.list-row__missing-pill.stopped .list-row__missing-value {
+  color: var(--ink-secondary);
 }
 .list-row__missing-read-only {
   font-size: 0.72rem;

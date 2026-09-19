@@ -20,6 +20,7 @@ interface LiveCardPreviewProps {
     readingLogs: BookLog[];
     collectionLogs: BookLog[];
     isCollecting?: boolean;
+    isCollectingStopped?: boolean;
   };
   stats: {
     totalReadCount: number;
@@ -58,6 +59,7 @@ export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
                 <div className="card__badges">
                   <span className={`badge badge--${displayType}`}>{TYPE_LABEL[displayType]}</span>
                   <span className={`badge badge--${displayStatus}`}>{STATUS_LABEL[displayStatus]}</span>
+                  {form.isCollecting && form.isCollectingStopped && <span className="badge badge--stopped">เลิกตามแล้ว</span>}
                 </div>
               </div>
               
@@ -89,17 +91,25 @@ export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
               <strong>อ่านแล้ว:</strong> เล่ม {stats.totalReadCount}/{stats.totalReadJP || '?'}
             </p>
             {form.isCollecting ? (
-              form.collectionLogs.map(log => {
-                const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
-                const isComplete = missingText === 'ครบถ้วน';
-                return (
-                  <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
-                    <Icons.Cart /> 
-                    <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
-                    <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
-                  </p>
-                );
-              })
+              form.isCollectingStopped ? (
+                <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                  <Icons.Cart /> 
+                  <strong>เลิกตามแล้ว :</strong>
+                  <span className="summary-status-pill stopped">เลิกตามแล้ว</span>
+                </p>
+              ) : (
+                form.collectionLogs.map(log => {
+                  const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
+                  const isComplete = missingText === 'ครบถ้วน';
+                  return (
+                    <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                      <Icons.Cart /> 
+                      <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
+                      <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
+                    </p>
+                  );
+                })
+              )
             ) : (
               <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
                 <Icons.Cart /> 

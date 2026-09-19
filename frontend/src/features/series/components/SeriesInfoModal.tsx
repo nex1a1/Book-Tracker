@@ -30,6 +30,7 @@ interface FormState {
   type: SeriesType;
   status: SeriesStatus;
   isCollecting: boolean;
+  isCollectingStopped: boolean;
   rating: number;
   imageUrl: string;
   notes: string;
@@ -52,6 +53,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     type: normSeries?.type || "manga",
     status: normSeries?.status || "ongoing",
     isCollecting: normSeries?.isCollecting ?? true,
+    isCollectingStopped: normSeries?.isCollectingStopped ?? false,
     rating: normSeries?.rating || 0,
     imageUrl: normSeries?.imageUrl || "",
     notes: normSeries?.notes || "",
@@ -164,6 +166,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
         isUnread: true,
         isCollectMissing: false,
         isCollectComplete: false,
+        isCollectStopped: form.isCollecting && Boolean(form.isCollectingStopped),
         isNotCollecting: !form.isCollecting
       };
     }
@@ -351,18 +354,51 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
 
             {/* Card 3: ข้อมูลการสะสม */}
             <div className="form-section-card">
-              <label className="modal-checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  checked={form.isCollecting}
-                  onChange={() => setField('isCollecting', !form.isCollecting)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <strong style={{ fontSize: '0.88rem', color: 'var(--ink)' }}>เปิดเก็บสะสมคอลเลกชันสำหรับเรื่องนี้ (ตามเล่มแปลไทย)</strong>
-              </label>
+              <div className="collection-header-toggle">
+                <div className="collection-header-toggle__info">
+                  <h3 className="form-section-card__title" style={{ border: 'none', padding: 0, margin: 0 }}>
+                    <Icons.Cart /> ข้อมูลการสะสมเล่ม (แปลไทย)
+                  </h3>
+                  <span className="collection-header-toggle__desc">
+                    {form.isCollecting ? 'กำลังเปิดบันทึกข้อมูลเล่มแปลไทย' : 'ปิดการสะสม (อ่านแบบดิจิทัล / ไม่ได้เก็บเล่ม)'}
+                  </span>
+                </div>
+                <label className="switch-toggle" title={form.isCollecting ? 'คลิกเพื่อปิดการสะสม' : 'คลิกเพื่อเปิดการสะสม'}>
+                  <input
+                    type="checkbox"
+                    checked={form.isCollecting}
+                    onChange={() => setField('isCollecting', !form.isCollecting)}
+                  />
+                  <span className="switch-toggle__slider"></span>
+                </label>
+              </div>
 
               {form.isCollecting && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                  <div className="buying-status-control">
+                    <span className="buying-status-control__title">สถานะการตามซื้อ:</span>
+                    <div className="buying-status-control__pills" role="radiogroup" aria-label="สถานะการตามซื้อ">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!form.isCollectingStopped}
+                        className={`buying-status-pill ${!form.isCollectingStopped ? 'active active--buying' : ''}`}
+                        onClick={() => setField('isCollectingStopped', false)}
+                      >
+                        <Icons.Cart /> กำลังตามเก็บต่อ (เตือนเล่มขาด)
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={form.isCollectingStopped}
+                        className={`buying-status-pill ${form.isCollectingStopped ? 'active active--stopped' : ''}`}
+                        onClick={() => setField('isCollectingStopped', true)}
+                      >
+                        <Icons.Pause /> เลิกตามแล้ว (ดรอป / ไม่เตือนเล่มขาด)
+                      </button>
+                    </div>
+                  </div>
+
                   <SeriesLogsSection
                     type="collection"
                     logs={form.collectionLogs}

@@ -22,6 +22,7 @@ export interface Series {
   endYear?: number | null;
   status: SeriesStatus;
   isCollecting: boolean;
+  isCollectingStopped?: boolean;
   rating: number;
   imageUrl?: string;
   notes?: string;
@@ -52,7 +53,7 @@ export interface FilterState {
   search: string;
   type: SeriesType[];
   status: SeriesStatus[];
-  publisher: string;
+  publisher: string | string[];
   readStatus: string[];
   collectStatus: string[];
   minRating: number;
@@ -75,6 +76,7 @@ export interface SeriesDerivedStats {
   isUnread: boolean;
   isCollectMissing: boolean;
   isCollectComplete: boolean;
+  isCollectStopped: boolean;
   isNotCollecting: boolean;
 }
 

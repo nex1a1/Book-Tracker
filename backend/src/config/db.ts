@@ -29,6 +29,7 @@ db.exec(`
     endYear INTEGER DEFAULT NULL,
     status TEXT CHECK(status IN ('ongoing', 'completed', 'hiatus', 'cancelled')) DEFAULT 'ongoing',
     isCollecting INTEGER DEFAULT 1,
+    isCollectingStopped INTEGER DEFAULT 0,
     rating REAL DEFAULT 0,
     imageUrl TEXT DEFAULT '',
     notes TEXT,
@@ -82,6 +83,7 @@ db.exec(`
 // Ensure series table has new columns (Migration support)
 try { db.exec("ALTER TABLE series ADD COLUMN author_id INTEGER REFERENCES authors(id)"); } catch (e) {}
 try { db.exec("ALTER TABLE series ADD COLUMN publisher_id INTEGER REFERENCES publishers(id)"); } catch (e) {}
+try { db.exec("ALTER TABLE series ADD COLUMN isCollectingStopped INTEGER DEFAULT 0"); } catch (e) {}
 
 export default db;
 export type DatabaseInstance = typeof db;

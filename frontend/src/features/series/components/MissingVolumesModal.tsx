@@ -131,6 +131,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                 selectedPublisher={selectedPublisher}
                 onSelectPublisher={setSelectedPublisher}
                 publisherOptions={publisherOptions}
+                multiSelect
               />
 
               {/* View Toggle */}

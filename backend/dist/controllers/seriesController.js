@@ -65,7 +65,7 @@ export const getStats = (req, res) => {
         const totals = db.prepare(`
       SELECT 
         COUNT(*) as totalSeries, 
-        SUM(CASE WHEN isCollecting = 1 THEN 1 ELSE 0 END) as collecting 
+        SUM(CASE WHEN isCollecting = 1 AND isCollectingStopped = 0 THEN 1 ELSE 0 END) as collecting 
       FROM series
     `).get();
         const totalSeries = totals?.totalSeries || 0;
@@ -119,10 +119,10 @@ export const createSeries = (req, res) => {
             const info = db.prepare(`
         INSERT INTO series (
           title, type, publishYear, endYear, status, 
-          isCollecting, rating, imageUrl, notes, author_id, publisher_id
+          isCollecting, isCollectingStopped, rating, imageUrl, notes, author_id, publisher_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(b.title, b.type || 'manga', b.publishYear || null, b.endYear || null, b.status || 'ongoing', b.isCollecting ? 1 : 0, b.rating ? Number(b.rating) : 0, b.imageUrl || '', b.notes || '', authorId, publisherId);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(b.title, b.type || 'manga', b.publishYear || null, b.endYear || null, b.status || 'ongoing', b.isCollecting ? 1 : 0, b.isCollectingStopped ? 1 : 0, b.rating ? Number(b.rating) : 0, b.imageUrl || '', b.notes || '', authorId, publisherId);
             seriesId = info.lastInsertRowid;
             // 4. Insert Reading Logs
             (b.readingLogs || []).forEach(log => {
@@ -210,14 +210,14 @@ export const updateSeries = (req, res) => {
                     });
                 });
             }
-            const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'rating', 'imageUrl', 'notes'];
+            const allowedFields = ['title', 'type', 'publishYear', 'endYear', 'status', 'isCollecting', 'isCollectingStopped', 'rating', 'imageUrl', 'notes'];
             const data = {};
             for (const key of allowedFields) {
                 const value = b[key];
                 if (value === undefined)
                     continue;
-                if (key === 'isCollecting')
-                    data.isCollecting = value ? 1 : 0;
+                if (key === 'isCollecting' || key === 'isCollectingStopped')
+                    data[key] = value ? 1 : 0;
                 else if (key === 'rating')
                     data.rating = Number(value);
                 else

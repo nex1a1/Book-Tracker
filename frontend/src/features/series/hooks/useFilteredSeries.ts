@@ -6,7 +6,7 @@ import { Series, FilterState } from "../../../types";
 // so it can sort consistently to one end regardless of ASC/DESC.
 function getMissingCount(s: Series): number | undefined {
   const stats = getSeriesDerivedStats(s);
-  if (!stats.n.isCollecting) return undefined;
+  if (!stats.n.isCollecting || stats.n.isCollectingStopped) return undefined;
   return stats.n.collectionLogs.reduce((sum, log) => {
     const owned = getSetFromRanges(log.ranges).size;
     const limit = Number(log.totalVolumes) || 0;
@@ -40,7 +40,15 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
       filtered = filtered.filter(s => filter.status.includes(s.status));
     }
     
-    if (filter.publisher) filtered = filtered.filter(s => s.publisher === filter.publisher);
+    if (filter.publisher) {
+      if (Array.isArray(filter.publisher)) {
+        if (filter.publisher.length > 0) {
+          filtered = filtered.filter(s => (filter.publisher as string[]).includes(s.publisher));
+        }
+      } else if (filter.publisher !== 'all') {
+        filtered = filtered.filter(s => s.publisher === filter.publisher);
+      }
+    }
     if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear >= Number(filter.yearFrom));
     if (filter.yearTo) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear <= Number(filter.yearTo));
 
@@ -65,6 +73,7 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
         const cs = Array.isArray(filter.collectStatus) ? filter.collectStatus : [filter.collectStatus];
         if (cs.includes('complete') && st.isCollectComplete) matchCollect = true;
         if (cs.includes('missing') && st.isCollectMissing) matchCollect = true;
+        if (cs.includes('stopped') && st.isCollectStopped) matchCollect = true;
         if (cs.includes('not_collecting') && st.isNotCollecting) matchCollect = true;
         if (!matchCollect) return false;
       }
@@ -106,7 +115,9 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     if (filter.search) c++;
     if (filter.type && filter.type.length > 0) c++;
     if (filter.status && filter.status.length > 0) c++;
-    if (filter.publisher) c++;
+    if (filter.publisher) {
+      if (Array.isArray(filter.publisher) ? filter.publisher.length > 0 : Boolean(filter.publisher && filter.publisher !== 'all')) c++;
+    }
     if (filter.readStatus && filter.readStatus.length > 0) c++;
     if (filter.collectStatus && filter.collectStatus.length > 0) c++;
     if (filter.minRating) c++;

@@ -46,11 +46,12 @@ export function formatCollectionProgress(series: Series, logTitle?: string): str
     return 'ยังไม่มีเล่ม';
   }
 
+  const suffix = series.isCollectingStopped ? ' (เลิกตามแล้ว)' : '';
   return normalized.collectionLogs.map(log => {
     const ownedCount = getSetFromRanges(log.ranges).size;
     const totalText = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
     const prefix = logTitle ? '' : `${log.title}: `;
-    return `${prefix}มีแล้ว ${ownedCount}${totalText}`;
+    return `${prefix}มีแล้ว ${ownedCount}${totalText}${suffix}`;
   }).join(' | ');
 }
 
@@ -71,7 +72,7 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
   { key: 'publisher', label: 'สำนักพิมพ์', defaultSelected: true, getValue: (item) => item.publisher || '' },
   { key: 'type', label: 'ประเภท', defaultSelected: true, getValue: (item) => TYPE_LABEL[item.type] || item.type },
   { key: 'status', label: 'สถานะการตีพิมพ์', defaultSelected: true, getValue: (item) => STATUS_LABEL[item.status] || item.status },
-  { key: 'isCollecting', label: 'สถานะสะสม', defaultSelected: true, getValue: (item) => item.isCollecting ? 'กำลังสะสม' : 'ไม่ได้เก็บสะสม' },
+  { key: 'isCollecting', label: 'สถานะสะสม', defaultSelected: true, getValue: (item) => item.isCollecting ? (item.isCollectingStopped ? 'เลิกตามแล้ว' : 'กำลังสะสม') : 'ไม่ได้เก็บสะสม' },
   { key: 'rating', label: 'คะแนน (0-5)', defaultSelected: true, getValue: (item) => item.rating || 0 },
   { 
     key: 'publishPeriod', 
@@ -212,7 +213,7 @@ export function generateCsvData(
             if (!log) return 'ยังไม่มีเล่ม';
             const count = getSetFromRanges(log.ranges).size;
             const total = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
-            return `มีแล้ว ${count}${total}`;
+            return `มีแล้ว ${count}${total}${series.isCollectingStopped ? ' (เลิกตามแล้ว)' : ''}`;
           }
           return String(col.getValue(series));
         });
@@ -243,7 +244,7 @@ export function generateCsvData(
             }
             if (col.key === 'collectionProgress') {
               if (!series.isCollecting) return 'ไม่ได้เก็บสะสม';
-              return cLog ? `มีแล้ว ${cOwnedCount}${cTotal}` : 'ยังไม่มีเล่ม';
+              return cLog ? `มีแล้ว ${cOwnedCount}${cTotal}${series.isCollectingStopped ? ' (เลิกตามแล้ว)' : ''}` : 'ยังไม่มีเล่ม';
             }
             if (col.key === 'readRangesDetail') {
               return `[${rRangesText}]`;

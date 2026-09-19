@@ -162,6 +162,7 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
             <FilterChip label="ทั้งหมด" active={filter.collectStatus.length === 0} onClick={() => setFilter({ collectStatus: [] })} />
             <FilterChip icon={<Icons.Sparkles />} label="ครบถ้วน" active={filter.collectStatus.includes('complete')} onClick={() => toggleArr('collectStatus', 'complete')} />
             <FilterChip icon={<Icons.Cart />} label="ยังขาดอยู่" active={filter.collectStatus.includes('missing')} onClick={() => toggleArr('collectStatus', 'missing')} />
+            <FilterChip icon={<Icons.Pause />} label="เลิกตามแล้ว" active={filter.collectStatus.includes('stopped')} onClick={() => toggleArr('collectStatus', 'stopped')} />
             <FilterChip icon={<Icons.Ban />} label="ไม่สะสม" active={filter.collectStatus.includes('not_collecting')} onClick={() => toggleArr('collectStatus', 'not_collecting')} />
           </div>
         </FilterSection>
@@ -208,10 +209,11 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
         {publishers.length > 0 && (
           <FilterSection title="สำนักพิมพ์">
             <PublisherDropdown
-              selectedPublisher={filter.publisher || 'all'}
-              onSelectPublisher={(pub) => setFilter({ publisher: pub === 'all' ? '' : pub })}
+              selectedPublisher={Array.isArray(filter.publisher) ? filter.publisher : (filter.publisher ? [filter.publisher] : [])}
+              onSelectPublisher={(pub) => setFilter({ publisher: pub })}
               publisherOptions={publishers}
               fullWidth
+              multiSelect
             />
           </FilterSection>
         )}

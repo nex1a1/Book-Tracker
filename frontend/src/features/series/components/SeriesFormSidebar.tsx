@@ -19,6 +19,7 @@ interface SeriesFormSidebarProps {
     readingLogs: BookLog[];
     collectionLogs: BookLog[];
     isCollecting: boolean;
+    isCollectingStopped?: boolean;
   };
   stats: SeriesDerivedStats;
   malOpen: boolean;

@@ -53,6 +53,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
               {stats.totalReadCount > 0 && stats.n.isCollecting && <span className="badge badge--both">ทั้งอ่านทั้งเก็บ</span>}
               {stats.totalReadCount > 0 && !stats.n.isCollecting && <span className="badge badge--read-only">อ่านอย่างเดียว</span>}
               {stats.isUnread && stats.n.isCollecting && <span className="badge badge--collect-only">สายดอง</span>}
+              {stats.n.isCollectingStopped && <span className="badge badge--stopped">เลิกตามแล้ว</span>}
             </div>
             
             {/* Sleek Action Buttons (Accessible Cluster) */}
@@ -102,16 +103,23 @@ export function SeriesCard({ series }: SeriesCardProps) {
           specific volumes are missing, per collection format. */}
       {stats.n.isCollecting && (
         <div className="card__summary">
-          {stats.n.collectionLogs.map(log => {
-            const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
-            const isComplete = missingText === 'ครบถ้วน';
-            return (
-              <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icons.Cart /> <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
-                <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
-              </p>
-            );
-          })}
+          {stats.n.isCollectingStopped ? (
+            <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Icons.Cart /> <strong>เลิกตามแล้ว :</strong>
+              <span className="summary-status-pill stopped">เลิกตามแล้ว</span>
+            </p>
+          ) : (
+            stats.n.collectionLogs.map(log => {
+              const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
+              const isComplete = missingText === 'ครบถ้วน';
+              return (
+                <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icons.Cart /> <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
+                  <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
+                </p>
+              );
+            })
+          )}
         </div>
       )}
 

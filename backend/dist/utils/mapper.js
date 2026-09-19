@@ -35,6 +35,7 @@ export const mapSeries = (s) => {
             ...s,
             _id: s.id.toString(),
             isCollecting: s.isCollecting === 1,
+            isCollectingStopped: s.isCollectingStopped === 1,
             author: s.author_name || '',
             publisher: s.publisher_name || '',
             readingLogs,

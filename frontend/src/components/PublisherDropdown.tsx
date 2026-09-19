@@ -4,11 +4,12 @@ import { Icons } from './Icons';
 import './PublisherDropdown.css';
 
 export interface PublisherDropdownProps {
-  selectedPublisher: string;
-  onSelectPublisher: (pub: string) => void;
+  selectedPublisher: string | string[];
+  onSelectPublisher: (pub: any) => void;
   publisherOptions: string[];
   placeholder?: string;
   fullWidth?: boolean;
+  multiSelect?: boolean;
 }
 
 export function PublisherDropdown({
@@ -16,12 +17,13 @@ export function PublisherDropdown({
   onSelectPublisher,
   publisherOptions,
   fullWidth = false,
+  multiSelect = false,
 }: PublisherDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  
+
   const [menuPos, setMenuPos] = useState<{
     top: number | 'auto';
     bottom: number | 'auto';
@@ -31,8 +33,25 @@ export function PublisherDropdown({
     dropUp: boolean;
   } | null>(null);
 
-  const isFiltered = selectedPublisher !== 'all' && selectedPublisher !== '';
-  const displayLabel = isFiltered ? selectedPublisher : 'ทุกสำนักพิมพ์';
+  // Normalize selected publishers into an array
+  const selectedValues = useMemo<string[]>(() => {
+    if (Array.isArray(selectedPublisher)) {
+      return selectedPublisher;
+    }
+    if (selectedPublisher && selectedPublisher !== 'all') {
+      return [selectedPublisher];
+    }
+    return [];
+  }, [selectedPublisher]);
+
+  const isFiltered = selectedValues.length > 0;
+
+  // Trigger button label
+  const displayLabel = useMemo(() => {
+    if (selectedValues.length === 0) return 'ทุกสำนักพิมพ์';
+    if (selectedValues.length === 1) return selectedValues[0];
+    return `${selectedValues.length} สำนักพิมพ์`;
+  }, [selectedValues]);
 
   // Calculate menu position
   const calculatePosition = useCallback(() => {
@@ -41,10 +60,9 @@ export function PublisherDropdown({
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
 
-    // If space below is less than 260px and there is more space above, open upwards!
     const dropUp = spaceBelow < 260 && spaceAbove > spaceBelow;
     const availableHeight = dropUp ? spaceAbove - 16 : spaceBelow - 16;
-    const maxHeight = Math.max(160, Math.min(availableHeight, 320));
+    const maxHeight = Math.max(180, Math.min(availableHeight, 360));
     const width = fullWidth ? rect.width : Math.max(rect.width, 220);
 
     return {
@@ -109,6 +127,34 @@ export function PublisherDropdown({
     return publisherOptions.filter(p => p.toLowerCase().includes(q));
   }, [publisherOptions, searchFilter]);
 
+  // Handlers for single vs multi-select
+  const handleSelect = (pub: string) => {
+    if (multiSelect) {
+      if (selectedValues.includes(pub)) {
+        onSelectPublisher(selectedValues.filter(p => p !== pub));
+      } else {
+        onSelectPublisher([...selectedValues, pub]);
+      }
+    } else {
+      onSelectPublisher(pub);
+      setIsOpen(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (multiSelect) {
+      onSelectPublisher([...publisherOptions]);
+    }
+  };
+
+  const handleClear = () => {
+    if (multiSelect) {
+      onSelectPublisher([]);
+    } else {
+      onSelectPublisher('all');
+    }
+  };
+
   return (
     <div className={`publisher-dropdown-container ${fullWidth ? 'full-width' : ''}`}>
       <button
@@ -116,7 +162,7 @@ export function PublisherDropdown({
         type="button"
         className={`publisher-dropdown-trigger ${isFiltered ? 'active' : ''} ${fullWidth ? 'full-width' : ''}`}
         onClick={toggleOpen}
-        title="เลือกสำนักพิมพ์"
+        title={isFiltered ? selectedValues.join(', ') : 'เลือกสำนักพิมพ์'}
       >
         <span className="publisher-dropdown-trigger__icon">
           <Icons.Book />
@@ -124,12 +170,17 @@ export function PublisherDropdown({
         <span className="publisher-dropdown-trigger__label">
           {displayLabel}
         </span>
+        {multiSelect && isFiltered && (
+          <span className="publisher-count-badge">
+            {selectedValues.length}
+          </span>
+        )}
         {isFiltered && (
           <span
             className="publisher-dropdown-clear"
             onClick={(e) => {
               e.stopPropagation();
-              onSelectPublisher('all');
+              handleClear();
             }}
             title="ล้างการเลือกสำนักพิมพ์"
           >
@@ -179,30 +230,51 @@ export function PublisherDropdown({
             </div>
           )}
 
+          {multiSelect && (
+            <div className="publisher-dropdown-actions">
+              <button
+                type="button"
+                className="publisher-dropdown-action-btn"
+                onClick={handleSelectAll}
+              >
+                เลือกทั้งหมด ({publisherOptions.length})
+              </button>
+              <button
+                type="button"
+                className="publisher-dropdown-action-btn muted"
+                onClick={handleClear}
+              >
+                ล้างทั้งหมด
+              </button>
+            </div>
+          )}
+
           <div
             className="publisher-dropdown-list"
             style={{
-              maxHeight: menuPos.maxHeight - (publisherOptions.length > 5 ? 46 : 0),
+              maxHeight: menuPos.maxHeight - (publisherOptions.length > 5 ? 46 : 0) - (multiSelect ? 74 : 0),
             }}
           >
-            <button
-              type="button"
-              className={`publisher-dropdown-item ${!isFiltered ? 'active' : ''}`}
-              onClick={() => {
-                onSelectPublisher('all');
-                setIsOpen(false);
-              }}
-            >
-              <div className="publisher-dropdown-item__content">
-                <Icons.Book />
-                <span>ทุกสำนักพิมพ์</span>
-              </div>
-              {!isFiltered && (
-                <span className="publisher-dropdown-item__check">
-                  <Icons.CheckCircle />
-                </span>
-              )}
-            </button>
+            {!multiSelect && (
+              <button
+                type="button"
+                className={`publisher-dropdown-item ${!isFiltered ? 'active' : ''}`}
+                onClick={() => {
+                  onSelectPublisher('all');
+                  setIsOpen(false);
+                }}
+              >
+                <div className="publisher-dropdown-item__content">
+                  <Icons.Book />
+                  <span>ทุกสำนักพิมพ์</span>
+                </div>
+                {!isFiltered && (
+                  <span className="publisher-dropdown-item__check">
+                    <Icons.CheckCircle />
+                  </span>
+                )}
+              </button>
+            )}
 
             {filteredOptions.length === 0 ? (
               <div className="publisher-dropdown-empty">
@@ -210,22 +282,29 @@ export function PublisherDropdown({
               </div>
             ) : (
               filteredOptions.map((pub) => {
-                const isSelected = selectedPublisher === pub;
+                const isSelected = selectedValues.includes(pub);
                 return (
                   <button
                     key={pub}
                     type="button"
                     className={`publisher-dropdown-item ${isSelected ? 'active' : ''}`}
-                    onClick={() => {
-                      onSelectPublisher(pub);
-                      setIsOpen(false);
-                    }}
+                    onClick={() => handleSelect(pub)}
                   >
                     <div className="publisher-dropdown-item__content">
-                      <Icons.Book />
+                      {multiSelect ? (
+                        <div className="publisher-checkbox">
+                          {isSelected && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                      ) : (
+                        <Icons.Book />
+                      )}
                       <span>{pub}</span>
                     </div>
-                    {isSelected && (
+                    {!multiSelect && isSelected && (
                       <span className="publisher-dropdown-item__check">
                         <Icons.CheckCircle />
                       </span>
@@ -235,6 +314,23 @@ export function PublisherDropdown({
               })
             )}
           </div>
+
+          {multiSelect && (
+            <div className="publisher-dropdown-footer">
+              <span>
+                {selectedValues.length === 0
+                  ? 'ทุกสำนักพิมพ์'
+                  : `เลือกแล้ว ${selectedValues.length}/${publisherOptions.length}`}
+              </span>
+              <button
+                type="button"
+                className="publisher-dropdown-done-btn"
+                onClick={() => setIsOpen(false)}
+              >
+                ตกลง
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}

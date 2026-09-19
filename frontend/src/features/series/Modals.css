@@ -1041,3 +1041,146 @@
   background: rgba(255, 123, 0, 0.05);
 }
 
+/* Collection Section Header & Toggle */
+.collection-header-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 2px;
+}
+
+.collection-header-toggle__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.collection-header-toggle__desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Modern Switch Toggle */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.switch-toggle__slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--paper);
+  border: 1px solid var(--border);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+}
+
+.switch-toggle__slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--muted);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+}
+
+.switch-toggle:hover .switch-toggle__slider {
+  border-color: var(--accent);
+}
+
+.switch-toggle input:checked + .switch-toggle__slider {
+  background-color: rgba(255, 123, 0, 0.2);
+  border-color: var(--accent);
+}
+
+.switch-toggle input:checked + .switch-toggle__slider:before {
+  transform: translateX(20px);
+  background-color: var(--accent);
+}
+
+.switch-toggle input:focus-visible + .switch-toggle__slider {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Buying Status Segmented Control */
+.buying-status-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.buying-status-control__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.buying-status-control__pills {
+  display: flex;
+  background: var(--cream);
+  padding: 3px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  gap: 3px;
+}
+
+.buying-status-pill {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.buying-status-pill:hover {
+  color: var(--ink);
+}
+
+.buying-status-pill.active--buying {
+  background: rgba(255, 123, 0, 0.15);
+  color: var(--accent);
+  border-color: rgba(255, 123, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.buying-status-pill.active--stopped {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--ink-secondary);
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.buying-status-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+

@@ -8,6 +8,7 @@ export interface DbSeriesRow {
   endYear: number | null;
   status: 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
   isCollecting: number;
+  isCollectingStopped?: number;
   rating: number;
   imageUrl: string;
   notes: string | null;
@@ -46,6 +47,7 @@ export interface MappedSeries {
   endYear: number | null;
   status: 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
   isCollecting: boolean;
+  isCollectingStopped: boolean;
   rating: number;
   imageUrl: string;
   notes: string | null;
@@ -99,6 +101,7 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
       ...s, 
       _id: s.id.toString(), 
       isCollecting: s.isCollecting === 1, 
+      isCollectingStopped: s.isCollectingStopped === 1,
       author: s.author_name || '',
       publisher: s.publisher_name || '',
       readingLogs, 

@@ -15,6 +15,7 @@ export const createSeriesSchema = z.object({
   endYear: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(['ongoing', 'completed', 'hiatus', 'cancelled']).default('ongoing'),
   isCollecting: z.boolean().default(true),
+  isCollectingStopped: z.boolean().default(false),
   rating: z.number().min(0).max(5).default(0),
   imageUrl: z.string().url().or(z.literal('')).optional().default(''),
   notes: z.string().optional().default(''),

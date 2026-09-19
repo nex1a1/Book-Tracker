@@ -147,6 +147,7 @@ export function ExportFilterPopover({
             {[
               { id: 'complete', label: 'ครบถ้วน' },
               { id: 'missing', label: 'ยังขาดอยู่' },
+              { id: 'stopped', label: 'เลิกตามแล้ว' },
               { id: 'not_collecting', label: 'ไม่สะสม' },
             ].map(cs => (
               <button
@@ -190,10 +191,11 @@ export function ExportFilterPopover({
           <div className="filter-field">
             <label className="field-label">สำนักพิมพ์:</label>
             <PublisherDropdown
-              selectedPublisher={filter.publisher || 'all'}
-              onSelectPublisher={(pub) => onUpdate({ publisher: pub === 'all' ? '' : pub })}
+              selectedPublisher={Array.isArray(filter.publisher) ? filter.publisher : (filter.publisher ? [filter.publisher] : [])}
+              onSelectPublisher={(pub) => onUpdate({ publisher: pub })}
               publisherOptions={publisherList}
               fullWidth
+              multiSelect
             />
           </div>
         )}
