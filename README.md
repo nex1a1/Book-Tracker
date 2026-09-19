@@ -10,6 +10,7 @@
 ระบบแยกการติดตามหนังสือออกเป็น 2 ชั้นอย่างอิสระเพื่อให้สะท้อนสถานะจริงอย่างละเอียดที่สุด:
 - **ประวัติการอ่าน (Reading Logs):** บันทึกช่วงเล่มที่อ่านแล้ว เช่น "เนื้อเรื่องหลัก (Main Story)" และ "ภาคแยก (Side Stories)"
 - **คลังหนังสือสะสม (Collection Logs):** บันทึกจำนวนเล่มที่มีในครอบครอง โดยรองรับการแยกรูปแบบการสะสม (เล่มปกติ, Special Edition, E-Book) เพื่อไม่ให้สับสนในการเช็คชั้นหนังสือ
+- **ระบบหยุดตามซื้อ ("เลิกตามแล้ว"):** สำหรับซีรีส์ที่ตัดสินใจหยุดสะสมต่อ สามารถเลือกสถานะ "เลิกตามแล้ว" ได้ โดยระบบจะยังคงเก็บบันทึกประวัติเล่มที่มีอยู่ในครอบครองไว้อย่างถูกต้อง แต่จะไม่นำซีรีส์นี้ไปแสดงใน "เช็กลิสต์หนังสือที่ยังขาด" และไม่นำไปนับรวมในตัวนับเล่มที่ยังขาด
 
 ### 2. ค้นหาข้อมูลอัตโนมัติผ่าน MyAnimeList API Proxy
 - **Automated Metadata:** ค้นหาชื่อมังงะ/นิยายเพื่อดึงรูปปก, ชื่อผู้แต่ง (Authors), ปีที่ตีพิมพ์ และสถานะจาก MyAnimeList มาใส่ในฟอร์มโดยอัตโนมัติ
@@ -24,25 +25,31 @@
 - **Auto-Consolidation:** ระบบจะจัดเรียงและย่อยช่วงเล่มที่กรอกซ้ำซ้อนหรือติดกันให้อยู่ในรูปแบบที่สั้นที่สุดโดยอัตโนมัติ (เช่น หากกรอกเล่ม `[1-5]`, `[6-10]` และ `[9-12]` ระบบจะรวมเป็นช่วง `[1-12]` ให้ทันที)
 - **Symmetric Merge:** อัลกอริทึมทำงานอย่างสอดคล้องกันทั้งฝั่ง Frontend (เพื่อการแสดงผลและโต้ตอบที่ลื่นไหล) และฝั่ง Backend (เพื่อให้มั่นใจเรื่องความถูกต้องก่อนบันทึกลงฐานข้อมูล)
 
-### 5. การตรวจสอบข้อมูลอย่างเข้มงวดด้วย Zod & ความปลอดภัย
+### 5. ระบบส่งออกข้อมูล CSV (Configurable CSV Export)
+- **Flexible Export:** เลือกลำดับและคอลัมน์ที่ต้องการส่งออกได้อย่างอิสระ พร้อมหน้าพรีวิวข้อมูลแบบเรียลไทม์
+- **Dual Layout Modes:** รองรับทั้งแบบ 1 แถวต่อ 1 ซีรีส์ (`series`) และแบบแยกแถวย่อยตามกลุ่มเล่มอ่าน/สะสม (`split_logs`)
+- **Excel Thai Support:** เข้ารหัส UTF-8 พร้อม BOM (`\uFEFF`) เพื่อให้เปิดไฟล์ภาษาไทยใน Microsoft Excel ได้อย่างถูกต้องทันที
+
+### 6. การตรวจสอบข้อมูลอย่างเข้มงวดด้วย Zod & TypeScript Strict Mode
+- **Zero any TypeScript:** พัฒนาด้วย TypeScript ทั้ง Frontend และ Backend (`strict: true`) ไร้การใช้ `any`
 - **Zod Schema Validation:** ตรวจสอบโครงสร้างและชนิดของข้อมูลในทุก ๆ API Request (ทั้ง `POST` และ `PATCH`) เพื่อป้องกันไม่ให้ข้อมูลผิดพลาดถูกบันทึกลงใน Database
-- **Premium UI/UX:** หน้าเว็บที่พัฒนาด้วย React 18 และ Vanilla CSS ที่จัดแต่งสีสันและรูปแบบอย่างประณีต (Harmony Theme) รองรับการแสดงผลแบบ Grid และ List, มี Sidebar ค้นหาและกรองที่ทำงานแบบตอบสนองทันที และระบบช่วยเติมคำอัติโนมัติ (Autocomplete) 
+- **Premium UI/UX:** หน้าเว็บที่พัฒนาด้วย React 18 และ Vanilla CSS ที่จัดแต่งสีสันและรูปแบบอย่างประณีต รองรับการแสดงผลแบบ Grid และ List, มี Sidebar ค้นหาและกรอง (ประเภทรวมถึง "เลิกตามแล้ว") ที่ทำงานแบบตอบสนองทันที และระบบช่วยเติมคำอัตโนมัติ (Autocomplete) 
 
 ---
 
 ## 🏗️ เทคโนโลยีที่เลือกใช้ (Technical Stack)
 
 - **Frontend:**
-  - React 18 (Vite)
+  - React 18 (Vite) - ทั้งหมดเขียนด้วย TypeScript (`strict: true`)
   - Zustand (State Management ประสิทธิภาพสูง ไร้ Boilerplate)
   - Axios (Client API Layer)
   - Vanilla CSS (เขียน CSS ควบคุมโครงสร้างด้วยตัวแปรร่วมและการแบ่งสัดส่วนตาม Feature)
 - **Backend:**
-  - Node.js (Express)
-  - `better-sqlite3` (SQLite Driver ภาษา JavaScript ที่ทำงานแบบ Synchronous และเร็วที่สุด)
-  - Zod (ระบบตรวจสอบ Schema และ Validation)
+  - Node.js (Express) - ทั้งหมดเขียนด้วย TypeScript (`strict: true`, คอมไพล์ด้วย `tsc`)
+  - `better-sqlite3` (SQLite Driver ภาษา C/C++ เร็วที่สุดแบบ Synchronous)
+  - Zod (ระบบตรวจสอบ Schema และ Validation อย่างเข้มงวด)
 - **Database:**
-  - SQLite (Normalized relational database)
+  - SQLite (Normalized relational database พร้อม Foreign Key Cascade และ Indexing)
 - **DevOps:**
   - Docker & Docker Compose (พร้อมสำหรับการรันแอปพลิเคชันอย่างเป็นระเบียบ)
 
@@ -54,36 +61,39 @@
 ├── backend/
 │   ├── data/                 # ที่เก็บไฟล์ฐานข้อมูล SQLite (เช่น manga.db)
 │   ├── src/
-│   │   ├── config/           # db.js (เชื่อมต่อ DB), env.js (ดึงค่า Env)
+│   │   ├── config/           # db.ts (เชื่อมต่อ DB & Migration), env.ts (ดึงค่า Env)
 │   │   ├── controllers/      # ควบคุม Logic (seriesController, metadataController, malController)
-│   │   ├── middleware/       # validate.js (Middleware ตรวจ Zod Payload)
-│   │   ├── routes/           # ประกาศเส้นทาง API (index.js)
-│   │   ├── utils/            # mapper.js (SQL Hydration/Merge), validation.js (Zod Schema), migration.js
-│   │   └── index.js          # จุดเริ่มต้นการทำงานของ Express Server
+│   │   ├── middleware/       # validate.ts (Middleware ตรวจ Zod Payload)
+│   │   ├── routes/           # ประกาศเส้นทาง API (index.ts)
+│   │   ├── utils/            # mapper.ts, validation.ts, migration.ts, errors.ts
+│   │   └── index.ts          # จุดเริ่มต้นการทำงานของ Express Server
 │   ├── Dockerfile
-│   ├── package.json          # สคริปต์รันระบบฝั่ง Server ("dev", "seed", "start")
+│   ├── package.json          # สคริปต์รันระบบฝั่ง Server ("dev", "build", "start", "seed")
 │   └── .env                  # การตั้งค่าพอร์ต, คีย์ MAL และเส้นทางไฟล์ DB
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── api/              # Axios config และตัวเรียกฝั่ง Backend (seriesApi.js)
-│   │   ├── components/       # Icons.jsx, SharedUI.jsx, SharedUI.css (UI พื้นฐานและตัวเลือกดาว)
+│   │   ├── api/              # Axios config และตัวเรียกฝั่ง Backend (seriesApi.ts)
+│   │   ├── components/       # Icons.tsx, StarRating.tsx, RangeEditor.tsx, SortDropdown.tsx
 │   │   ├── features/         # จัดกลุ่มโมดูลของ UI
-│   │   │   ├── series/       # การแสดงการ์ดซีรีส์ (SeriesCard.jsx, SeriesCard.css)
-│   │   │   ├── filters/      # แถบตัวกรองและกล่องค้นหา (FilterSidebar.jsx, FilterSidebar.css)
-│   │   │   └── modals/       # หน้าต่างเพิ่ม/แก้ไขซีรีส์และรายละเอียด (Modals.jsx, Modals.css)
-│   │   ├── hooks/            # useFilteredSeries.js (สกัดการคำนวณและกรองข้อมูลการค้นหา)
-│   │   ├── store/            # useSeriesStore.js (Zustand Global State)
-│   │   ├── utils.js          # อัลกอริทึมช่วงเล่ม, คำนวณสถิติ และการแปลงเป็นภาษาไทย
-│   │   ├── App.jsx           # โครงสร้างหน้าหลักและจัดวาง Sidebar
-│   │   └── main.jsx          # จุดติดตั้ง React App
+│   │   │   ├── series/       # การแสดงการ์ดซีรีส์, รายการ, โมดัล และฮุกส์
+│   │   │   │   ├── components/ # SeriesCard, SeriesListItem, SeriesInfoModal, ExportCsvModal, ฯลฯ
+│   │   │   │   ├── hooks/      # useFilteredSeries.ts, useMissingVolumes.ts
+│   │   │   │   └── Series.css
+│   │   │   └── filters/      # แถบตัวกรองและกล่องค้นหา (FilterSidebar.tsx, FilterSidebar.css)
+│   │   ├── store/            # useSeriesStore.ts (Zustand Global State)
+│   │   ├── types/            # รวม Type ทั้งหมดของระบบ (index.ts, css.d.ts)
+│   │   ├── utils/            # helpers.ts (อัลกอริทึมช่วงเล่ม), csvHelper.ts, constants.ts
+│   │   ├── App.tsx           # โครงสร้างหน้าหลักและจัดวาง Sidebar / Toolbar
+│   │   └── main.tsx          # จุดติดตั้ง React App
 │   ├── Dockerfile
 │   ├── package.json          # สคริปต์รันระบบฝั่ง Client ("dev", "build", "preview")
-│   └── vite.config.js
+│   └── vite.config.ts
 │
 ├── docker-compose.yml        # ตัวประสาน Containers ทั้ง Full-Stack
 ├── README.md                 # คู่มือแนะนำการใช้งานระบบและการติดตั้ง [ไฟล์นี้]
-└── Skill.md                  # คู่มือสเปกแบบเจาะลึกสำหรับการรันคำสั่งและการแก้ไขโครงสร้างโค้ด
+├── GEMINI.md                 # คู่มือสเปกและข้อกำหนดสำหรับ Gemini AI
+└── CLAUDE.md                 # คู่มือสเปกและข้อกำหนดสำหรับ Claude AI
 ```
 
 ---
@@ -117,6 +127,7 @@ erDiagram
         int endYear
         text status "ongoing/completed/hiatus/cancelled"
         int isCollecting "0 or 1"
+        int isCollectingStopped "0 or 1"
         real rating
         text imageUrl
         text notes
@@ -228,10 +239,10 @@ docker-compose up --build
 
 ---
 
-## 🎯 แผนงานในอนาคต (Roadmap)
-- [ ] **Dashboard / Analytics:** หน้าวิเคราะห์ข้อมูลสรุปแบบกราฟิกสวยงาม แสดงแนวโน้มการอ่านรายเดือน อัตราการสะสมหนังสือ และงบประมาณ/เล่มที่สะสม
-- [ ] **Batch Import & Export:** ความสามารถในการอัปโหลดไฟล์ Excel / CSV หรือ JSON เพื่อนำเข้าห้องสมุดของคุณอย่างรวดเร็ว หรือดาวน์โหลดเก็บไว้เป็น Backup
-- [ ] **Multi-User Accounts:** พัฒนาระบบลงทะเบียนผู้ใช้และเข้าสู่ระบบด้วย JWT เพื่อรองรับการสะสมแยกบัญชีกัน
+## 🎯 สถานะแผนงาน (Roadmap Status)
+ปัจจุบันฟีเจอร์หลักทั้งหมดของระบบเสร็จสมบูรณ์แล้ว รวมถึงระบบจัดการช่วงเล่ม, ระบบเช็กลิสต์เล่มขาด, ระบบเลิกตามซื้อ ("เลิกตามแล้ว") และระบบส่งออกข้อมูล (CSV Export)
+- ฟีเจอร์ **Batch Import** และ **Multi-User** ถูกพิจารณาและตัดออก เนื่องจากเกินขอบเขตการใช้งานส่วนบุคคล
+- ส่วน **Dashboard / Analytics** ถูกนำออกเพื่อให้ระบบโฟกัสเฉพาะการติดตามความคืบหน้าการอ่านและสถานะการสะสมเล่มจริงอย่างมีประสิทธิภาพสูงสุด
 
 ---
 
