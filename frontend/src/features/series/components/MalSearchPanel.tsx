@@ -82,9 +82,10 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }: MalSearchPa
             <button 
               type="button"
               className="btn-icon" 
-              onClick={() => setMalResults([])} 
-              style={{ width: '18px', height: '18px' }} 
+              onClick={() => setMalResults([])}
+              style={{ width: '18px', height: '18px' }}
               title="ปิดกล่องค้นหา"
+              aria-label="ปิดกล่องค้นหา"
             >
               <Icons.X />
             </button>
@@ -93,10 +94,15 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }: MalSearchPa
             const coverUrl = m.node.main_picture?.large || m.node.main_picture?.medium || "";
             const isSelected = imageUrl === coverUrl;
             return (
-              <div 
-                key={m.node.id} 
+              <div
+                key={m.node.id}
                 className={`sidebar-mal-item ${isSelected ? 'is-selected' : ''}`}
                 onClick={() => onSelectMalItem(m)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectMalItem(m); } }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                aria-label={`เลือกข้อมูลจาก MAL: ${m.node.title}`}
               >
                 <img src={m.node.main_picture?.medium || ""} alt="" className="sidebar-mal-thumb" />
                 <div className="sidebar-mal-info">

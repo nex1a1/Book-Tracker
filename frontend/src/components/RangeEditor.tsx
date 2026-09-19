@@ -35,34 +35,40 @@ export function RangeEditor({ ranges = [], onChange, label = "ช่วงเล
   return (
     <div className="range-editor">
       <div className="range-list">
-        {ranges.map((r, i) => (
-          <span key={i} className="range-tag">
-            <span className="badge badge--novel">{r[0] === r[1] ? r[0] : `${r[0]}-${r[1]}`}</span>
-            <button 
-              type="button" 
-              className="btn-icon btn-icon--danger" 
-              onClick={() => onChange(ranges.filter((_, idx) => idx !== i))}
-            >
-              ✕
-            </button>
-          </span>
-        ))}
+        {ranges.map((r, i) => {
+          const rangeText = r[0] === r[1] ? `${r[0]}` : `${r[0]}-${r[1]}`;
+          return (
+            <span key={i} className="range-tag">
+              <span className="badge badge--novel">{rangeText}</span>
+              <button
+                type="button"
+                className="btn-icon btn-icon--danger"
+                onClick={() => onChange(ranges.filter((_, idx) => idx !== i))}
+                aria-label={`ลบช่วงเล่ม ${rangeText}`}
+              >
+                ✕
+              </button>
+            </span>
+          );
+        })}
       </div>
       <div className="range-inputs field-row" style={{ marginTop: '6px' }}>
-        <input 
-          className="input input--num" 
-          type="number" 
-          value={s} 
-          onChange={x => setS(x.target.value)} 
-          placeholder="เริ่ม" 
+        <input
+          className="input input--num"
+          type="number"
+          value={s}
+          onChange={x => setS(x.target.value)}
+          placeholder="เริ่ม"
+          aria-label={`${label} เริ่ม`}
         />
         <span className="range-row__sep">–</span>
-        <input 
-          className="input input--num" 
-          type="number" 
-          value={e} 
-          onChange={x => setE(x.target.value)} 
-          placeholder="จบ" 
+        <input
+          className="input input--num"
+          type="number"
+          value={e}
+          onChange={x => setE(x.target.value)}
+          placeholder="จบ"
+          aria-label={`${label} จบ`}
         />
         <button type="button" className="btn btn--sm btn--ghost" onClick={add}>เพิ่ม</button>
       </div>

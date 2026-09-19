@@ -127,11 +127,12 @@
   --border-hover: #ff7b00;
   --shadow:    0 4px 12px rgba(0,0,0,0.6);
   --shadow-lg: 0 8px 24px rgba(255, 123, 0, 0.15);
-  --sidebar-w: 240px;
+  --sidebar-w: 280px;
 
   --read-color:    #ff7b00;
   --buy-color:     #e0e0e0;
   --special-color: #ba0c0c;
+  --danger-text:   #ff6b6b;
   --cell-empty:    #2a2a2a;
 
   --star-color:      #facc15;
@@ -352,9 +353,11 @@ body {
 /* ── Buttons & Inputs (Global) ───────────────────────────── */
 .input { font-family: var(--font-body); font-size: .875rem; background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; color: var(--ink); outline: none; transition: border-color .15s; width: 100%; }
 .input:focus { border-color: var(--accent); }
+.input:disabled { opacity: 0.45; cursor: not-allowed; }
 .input--sm { padding: 6px 10px; font-size: .8rem; width: auto; }
 
 .btn { font-family: var(--font-body); font-size: .8rem; font-weight: 600; padding: 8px 16px; border-radius: 0px; border: none; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 .btn--primary { background: linear-gradient(135deg, var(--accent) 0%, #ff5100 100%); color: #0d0d0d; font-weight: 700; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); }
 .btn--primary:hover { transform: translateY(-1.5px) scale(1.02); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); filter: brightness(1.1); color: #000000; }
 .btn--primary:active { transform: translateY(0) scale(0.98); }
@@ -413,7 +416,7 @@ body {
 
 /* ── Responsive Layout (Global) ──────────────────────────── */
 @media (max-width: 1200px) {
-  :root { --sidebar-w: 210px; }
+  :root { --sidebar-w: 240px; }
   .top-header__stats { gap: 8px; }
   .stat-card { padding: 6px 12px; gap: 8px; min-width: auto; }
   .stat-card__value { font-size: 1.05rem; }

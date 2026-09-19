@@ -1,19 +1,19 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
-import { StarRating } from "../../../components/StarRating";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { seriesApi } from "../../../api/seriesApi";
 import { normalizeSeriesData, getSeriesDerivedStats } from "../../../utils/helpers";
-import { FORMAT_LABEL, RATING_LABEL } from "../../../utils/constants";
+import { FORMAT_LABEL } from "../../../utils/constants";
 import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
 import type { CreateSeriesInput } from "../../../../../backend/src/utils/validation";
 
 // Sub-components
-import { LiveCardPreview } from "./LiveCardPreview";
-import { MalSearchPanel, MalItem } from "./MalSearchPanel";
-import { LogEditorBox } from "./LogEditorBox";
+import { SeriesFormSidebar } from "./SeriesFormSidebar";
+import { SeriesBasicInfoCard } from "./SeriesBasicInfoCard";
+import { SeriesLogsSection } from "./SeriesLogsSection";
+import { MalItem } from "./MalSearchPanel";
 import '../Series.css';
 
 interface SeriesInfoModalProps {
@@ -37,28 +37,103 @@ interface FormState {
   collectionLogs: BookLog[];
 }
 
+type RequiredFieldKey = 'title' | 'author' | 'publisher' | 'publishYear' | 'endYear';
+
 export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const isEdit = !!series;
   const normSeries = normalizeSeriesData(series);
-  
+
   const initialState: FormState = {
-    title: normSeries?.title || "", 
-    author: normSeries?.author || "", 
+    title: normSeries?.title || "",
+    author: normSeries?.author || "",
     publisher: normSeries?.publisher || "",
-    publishYear: normSeries?.publishYear || "", 
+    publishYear: normSeries?.publishYear || "",
     endYear: normSeries?.endYear || "",
-    type: normSeries?.type || "manga", 
+    type: normSeries?.type || "manga",
     status: normSeries?.status || "ongoing",
     isCollecting: normSeries?.isCollecting ?? true,
     rating: normSeries?.rating || 0,
-    imageUrl: normSeries?.imageUrl || "", 
+    imageUrl: normSeries?.imageUrl || "",
     notes: normSeries?.notes || "",
     readingLogs: normSeries?.readingLogs || [{ id: Date.now().toString(), title: "ภาคหลัก", totalVolumes: null, ranges: [] }],
     collectionLogs: normSeries?.collectionLogs || [{ id: Date.now().toString(), format: "normal", title: "เล่มปกติ", totalVolumes: null, ranges: [] }]
   };
-  
+
   const [form, setForm] = useState<FormState>(initialState);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<RequiredFieldKey, string>>>({});
   const { fetchSeries, fetchStats, fetchMetadata, authors, publishers } = useSeriesStore();
+
+  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) =>
+    setForm(prev => ({ ...prev, [field]: value }));
+
+  const clearFieldError = (key: RequiredFieldKey) => {
+    setFieldErrors(prev => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  // Snapshot taken once on mount; compared against `form` to know whether closing would discard something.
+  const initialSnapshotRef = useRef(JSON.stringify(initialState));
+  const isDirty = JSON.stringify(form) !== initialSnapshotRef.current;
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const discardConfirmRef = useRef<HTMLDivElement>(null);
+
+  const requestClose = () => {
+    if (isDirty) setShowDiscardConfirm(true);
+    else onClose();
+  };
+
+  // Focus the primary field on open instead of leaving focus stranded on the trigger button.
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, []);
+
+  // Move focus into the discard-confirm dialog when it appears, onto the non-destructive option.
+  useEffect(() => {
+    if (showDiscardConfirm) {
+      discardConfirmRef.current?.querySelector<HTMLElement>(".btn--ghost")?.focus();
+    }
+  }, [showDiscardConfirm]);
+
+  // Escape-to-close and a Tab focus trap, since this dialog is portaled outside the normal DOM flow.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        if (showDiscardConfirm) setShowDiscardConfirm(false);
+        else requestClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        const container = showDiscardConfirm ? discardConfirmRef.current : modalRef.current;
+        if (!container) return;
+        const focusables = Array.from(
+          container.querySelectorAll<HTMLElement>(
+            'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(el => el.offsetParent !== null);
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showDiscardConfirm, isDirty, onClose]);
 
   // New entries default to a focused "basic info first" view; editing keeps everything open
   // since the user came here specifically to work with existing logs/search.
@@ -66,29 +141,18 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const toggleSection = (key: keyof typeof openSections) =>
     setOpenSections(s => ({ ...s, [key]: !s[key] }));
 
-  const authorDatalistId = "author-list";
-  const publisherDatalistId = "publisher-list";
-
   // Reactive Stats for Live Preview
   const stats = useMemo(() => {
+    const tempSeries: Series = {
+      _id: series?._id || "",
+      id: series?.id || 0,
+      ...form,
+      publishYear: form.publishYear ? Number(form.publishYear) : null,
+      endYear: form.endYear ? Number(form.endYear) : null,
+    };
     try {
-      // Create a temporary Series object for the derived stats helper
-      const tempSeries: Series = {
-        _id: series?._id || "",
-        id: series?.id || 0,
-        ...form,
-        publishYear: form.publishYear ? Number(form.publishYear) : null,
-        endYear: form.endYear ? Number(form.endYear) : null,
-      };
       return getSeriesDerivedStats(tempSeries);
-    } catch (e) {
-      const tempSeries: Series = {
-        _id: series?._id || "",
-        id: series?.id || 0,
-        ...form,
-        publishYear: form.publishYear ? Number(form.publishYear) : null,
-        endYear: form.endYear ? Number(form.endYear) : null,
-      };
+    } catch {
       return {
         n: tempSeries,
         totalReadJP: 0,
@@ -108,7 +172,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const handleSelectMalItem = (m: MalItem) => {
     const node = m.node;
     const coverUrl = node.main_picture?.large || node.main_picture?.medium || "";
-    
+
     // 1. Author mapping
     let authorStr = form.author;
     if (node.authors && node.authors.length > 0) {
@@ -122,7 +186,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     // 2. Publish year mapping
     let pYear: number | string = form.publishYear;
     if (node.start_date) pYear = node.start_date.substring(0, 4);
-    
+
     // 3. Status mapping
     let st: SeriesStatus = form.status;
     let eYear: number | string = form.endYear;
@@ -140,7 +204,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     // 4. Volumes mapping
     const newReadingLogs = [...form.readingLogs];
     const newCollectionLogs = [...form.collectionLogs];
-    
+
     if (node.num_volumes && node.num_volumes > 0) {
       newReadingLogs[0] = { ...newReadingLogs[0], totalVolumes: node.num_volumes };
       newCollectionLogs[0] = { ...newCollectionLogs[0], totalVolumes: node.num_volumes };
@@ -156,7 +220,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
       readingLogs: newReadingLogs,
       collectionLogs: newCollectionLogs
     });
-    
+
     toast.success("ดึงข้อมูลอัตโนมัติเรียบร้อย! (ตรวจสอบและแก้ไขได้เลย)");
   };
 
@@ -173,22 +237,41 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     newList[idx] = { ...log, [field]: val };
     setForm({ ...form, [key]: newList });
   };
-  
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value as SeriesStatus;
-    if (val === 'ongoing' || val === 'hiatus') {
-      setForm({ ...form, status: val, endYear: "" });
+
+  const handleStatusChange = (val: string) => {
+    const status = val as SeriesStatus;
+    if (status === 'ongoing' || status === 'hiatus') {
+      setForm({ ...form, status, endYear: "" });
     } else {
-      setForm({ ...form, status: val });
+      setForm({ ...form, status });
     }
   };
-  
+
   const save = async () => {
-    if (!form.title || form.title.toString().trim() === "") return toast.error("กรุณากรอกชื่อเรื่อง");
-    if (!form.author || form.author.toString().trim() === "") return toast.error("กรุณากรอกผู้แต่ง");
-    if (!form.publisher || form.publisher.toString().trim() === "") return toast.error("กรุณากรอกสำนักพิมพ์");
-    if (!form.publishYear) return toast.error("กรุณากรอกปีที่พิมพ์");
-    if ((form.status === 'completed' || form.status === 'cancelled') && !form.endYear) return toast.error("กรุณากรอกปีที่จบด้วยครับ");
+    if (isSaving) return;
+
+    const errors: Partial<Record<RequiredFieldKey, string>> = {};
+    if (!form.title || form.title.toString().trim() === "") errors.title = "กรุณากรอกชื่อเรื่อง";
+    if (!form.author || form.author.toString().trim() === "") errors.author = "กรุณากรอกผู้แต่ง";
+    if (!form.publisher || form.publisher.toString().trim() === "") errors.publisher = "กรุณากรอกสำนักพิมพ์";
+    if (!form.publishYear) errors.publishYear = "กรุณากรอกปีที่พิมพ์";
+    if ((form.status === 'completed' || form.status === 'cancelled') && !form.endYear) errors.endYear = "กรุณากรอกปีที่จบ";
+
+    const errorKeys = Object.keys(errors) as RequiredFieldKey[];
+    if (errorKeys.length > 0) {
+      setFieldErrors(errors);
+      toast.error(
+        errorKeys.length === 1
+          ? errors[errorKeys[0]]!
+          : `กรุณากรอกข้อมูลให้ครบถ้วน (${errorKeys.length} ช่องที่ไฮไลต์)`
+      );
+      const firstInvalid = modalRef.current?.querySelector<HTMLElement>(`[data-field="${errorKeys[0]}"]`);
+      firstInvalid?.focus();
+      firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setFieldErrors({});
+    setIsSaving(true);
     try {
       const payload: Partial<Series> = {
         ...form,
@@ -203,218 +286,93 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
         await seriesApi.create(payload as CreateSeriesInput);
       }
       await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
-      toast.success("บันทึกสำเร็จ"); 
+      toast.success("บันทึกสำเร็จ");
       onClose();
-    } catch { 
-      toast.error("เกิดข้อผิดพลาดในการบันทึก"); 
+    } catch {
+      toast.error("เกิดข้อผิดพลาดในการบันทึก");
+      setIsSaving(false);
     }
   };
 
   return createPortal(
     <div className="modal-overlay">
-      <div className={`modal modal--large ${isEdit ? "modal--edit" : "modal--add"}`}>
+      <div
+        className={`modal modal--large ${isEdit ? "modal--edit" : "modal--add"}`}
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="series-modal-title"
+      >
         <div className="modal__header">
-          <h2 className="modal__title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {isEdit ? <Icons.Edit /> : <Icons.Plus />} 
+          <h2 id="series-modal-title" className="modal__title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isEdit ? <Icons.Edit /> : <Icons.Plus />}
             {isEdit ? `แก้ไขข้อมูลเรื่อง: ${series?.title}` : "เพิ่มเรื่องใหม่เข้าระบบ"}
           </h2>
-          <button type="button" className="modal__close" onClick={onClose}>✕</button>
+          <button type="button" className="modal__close" onClick={requestClose} aria-label="ปิด">✕</button>
         </div>
-        
+
         <div className="modal__grid-container">
-          
-          {/* ── Left Sidebar: Live Preview & MAL Suggestions ── */}
-          <div className="modal__sidebar">
-            <LiveCardPreview form={form} stats={stats} />
 
-            <div>
-              <div className="checklist-publisher-header" onClick={() => toggleSection('mal')}>
-                <div className="checklist-publisher-title" style={{ fontSize: '0.8rem' }}>
-                  <span style={{ transform: openSections.mal ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
-                  <Icons.Search /> ค้นหาจาก MyAnimeList (ดึงข้อมูลอัตโนมัติ)
-                </div>
-              </div>
-              {openSections.mal && (
-                <MalSearchPanel
-                  title={form.title}
-                  imageUrl={form.imageUrl}
-                  onSelectMalItem={handleSelectMalItem}
-                />
-              )}
-            </div>
+          <SeriesFormSidebar
+            form={form}
+            stats={stats}
+            malOpen={openSections.mal}
+            onToggleMal={() => toggleSection('mal')}
+            onSelectMalItem={handleSelectMalItem}
+            onNotesChange={notes => setField('notes', notes)}
+          />
 
-            {/* Sidebar Notes area */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-              <span className="sidebar-mal-title">บันทึกช่วยจำ / ข้อมูลเพิ่มเติม</span>
-              <textarea 
-                className="textarea" 
-                value={form.notes} 
-                onChange={e => setForm({ ...form, notes: e.target.value })} 
-                placeholder="คำวิจารณ์ย่อๆ, ชั้นที่เก็บหนังสือ, หรือบันทึกความทรงจำอื่นๆ..."
-                style={{ flex: 1, minHeight: '100px' }}
-              />
-            </div>
-          </div>
-          
           {/* ── Right Content Form Area ── */}
           <div className="modal__form-content">
-            
-            {/* Card 1: ข้อมูลพื้นฐาน */}
-            <div className="form-section-card">
-              <h3 className="form-section-card__title"><Icons.Info /> ข้อมูลพื้นฐานของเรื่อง</h3>
-              
-              <div className="field">
-                <span>ชื่อเรื่องภาษาไทย / ชื่อเรื่องหลัก <span className="danger">*</span></span>
-                <input className="input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="กรอกชื่อเรื่องภาษาไทย..." />
-              </div>
 
-              <div className="field">
-                <span>ลิงก์รูปภาพหน้าปกหนังสือ (URL)</span>
-                <input className="input" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="วาง URL ลิงก์รูปปกตรงนี้ หรือคลิกดึงปกจาก MAL ในแถบด้านซ้าย..." />
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <span>ผู้แต่ง / ผู้แต่งเรื่อง <span className="danger">*</span></span>
-                  <input className="input" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} list={authorDatalistId} placeholder="พิมพ์ชื่อผู้แต่ง..." />
-                  <datalist id={authorDatalistId}>
-                    {authors.map(a => <option key={a.id} value={a.name} />)}
-                  </datalist>
-                </div>
-                <div className="field">
-                  <span>สำนักพิมพ์แปลไทย <span className="danger">*</span></span>
-                  <input className="input" value={form.publisher} onChange={e => setForm({ ...form, publisher: e.target.value })} list={publisherDatalistId} placeholder="พิมพ์ชื่อสำนักพิมพ์..." />
-                  <datalist id={publisherDatalistId}>
-                    {publishers.map(p => <option key={p.id} value={p.name} />)}
-                  </datalist>
-                </div>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <span>ประเภทสื่อ</span>
-                  <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as SeriesType })}>
-                    <option value="manga">Manga (การ์ตูน)</option>
-                    <option value="novel">Novel (นิยาย)</option>
-                    <option value="light_novel">Light Novel (ไลท์โนเวล)</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <span>สถานะความคืบหน้าเรื่อง</span>
-                  <select className="input" value={form.status} onChange={handleStatusChange}>
-                    <option value="ongoing">ยังไม่จบ (Ongoing)</option>
-                    <option value="completed">จบแล้ว (Completed)</option>
-                    <option value="hiatus">หยุดตีพิมพ์ชั่วคราว (On Hiatus)</option>
-                    <option value="cancelled">โดนตัดจบ (Cancelled)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <span>ปีที่พิมพ์ครั้งแรก (ค.ศ.) <span className="danger">*</span></span>
-                  <input type="number" className="input" value={form.publishYear} onChange={e => setForm({ ...form, publishYear: e.target.value })} placeholder="เช่น 2019" />
-                </div>
-                {(form.status === 'completed' || form.status === 'cancelled') && (
-                  <div className="field">
-                    <span>ปีที่พิมพ์เสร็จสิ้น (ค.ศ.) <span className="danger">*</span></span>
-                    <input type="number" className="input" value={form.endYear} onChange={e => setForm({ ...form, endYear: e.target.value })} placeholder="เช่น 2024" />
-                  </div>
-                )}
-              </div>
-
-              <div className="field">
-                <span>คะแนนความชื่นชอบส่วนตัว</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
-                  <StarRating rating={form.rating} onRate={(r) => setForm({ ...form, rating: r })} size="lg" />
-                  {form.rating > 0 && <span style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>{RATING_LABEL[form.rating]}</span>}
-                </div>
-              </div>
-            </div>
+            <SeriesBasicInfoCard
+              form={form}
+              fieldErrors={fieldErrors}
+              authors={authors}
+              publishers={publishers}
+              titleInputRef={titleInputRef}
+              onFieldChange={patch => setForm(prev => ({ ...prev, ...patch }))}
+              onStatusChange={handleStatusChange}
+              clearFieldError={clearFieldError}
+            />
 
             {/* Card 2: บันทึกการอ่าน */}
             <div className="form-section-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                <h3
-                  className="form-section-card__title"
-                  style={{ border: 'none', padding: 0, margin: 0, cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => toggleSection('reading')}
-                >
-                  <span style={{ transform: openSections.reading ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
-                  <Icons.Book /> บันทึกความคืบหน้าการอ่าน
-                  {!openSections.reading && <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.75rem' }}> ({form.readingLogs.length} ชุด)</span>}
-                </h3>
-                <button
-                  type="button"
-                  className="btn btn--sm btn--ghost"
-                  style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }}
-                  onClick={() => { setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, reading: true })); }}
-                >
-                  + เพิ่มชุด/ภาคใหม่
-                </button>
-              </div>
-
-              {openSections.reading && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {form.readingLogs.map((log, idx) => (
-                    <LogEditorBox
-                      key={log.id}
-                      log={log}
-                      idx={idx}
-                      type="reading"
-                      showRemove={form.readingLogs.length > 1}
-                      onRemove={() => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })}
-                      onUpdate={(field, val) => updateLog('readingLogs', idx, field, val)}
-                    />
-                  ))}
-                </div>
-              )}
+              <SeriesLogsSection
+                type="reading"
+                logs={form.readingLogs}
+                isOpen={openSections.reading}
+                onToggleOpen={() => toggleSection('reading')}
+                onAdd={() => { setForm({ ...form, readingLogs: [...form.readingLogs, { id: Date.now().toString(), title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, reading: true })); }}
+                onRemove={idx => setForm({ ...form, readingLogs: form.readingLogs.filter((_, i) => i !== idx) })}
+                onUpdate={(idx, field, val) => updateLog('readingLogs', idx, field, val)}
+              />
             </div>
 
             {/* Card 3: ข้อมูลการสะสม */}
             <div className="form-section-card">
-              <div className="modal-checkbox-wrapper" onClick={() => setForm({ ...form, isCollecting: !form.isCollecting })}>
-                <input type="checkbox" checked={form.isCollecting} readOnly style={{ cursor: 'pointer' }} />
+              <label className="modal-checkbox-wrapper">
+                <input
+                  type="checkbox"
+                  checked={form.isCollecting}
+                  onChange={() => setField('isCollecting', !form.isCollecting)}
+                  style={{ cursor: 'pointer' }}
+                />
                 <strong style={{ fontSize: '0.88rem', color: 'var(--ink)' }}>เปิดเก็บสะสมคอลเลกชันสำหรับเรื่องนี้ (ตามเล่มแปลไทย)</strong>
-              </div>
-              
+              </label>
+
               {form.isCollecting && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                    <h3
-                      className="form-section-card__title"
-                      style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.88rem', cursor: 'pointer', userSelect: 'none' }}
-                      onClick={() => toggleSection('collection')}
-                    >
-                      <span style={{ transform: openSections.collection ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.15s', fontSize: '0.7rem' }}>▼</span>
-                      <Icons.Cart /> รูปแบบรูปเล่มสะสม (Physical / E-Book)
-                      {!openSections.collection && <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.75rem' }}> ({form.collectionLogs.length} รูปแบบ)</span>}
-                    </h3>
-                    <button
-                      type="button"
-                      className="btn btn--sm btn--ghost"
-                      style={{ borderColor: 'rgba(255,123,0,0.4)', color: 'var(--accent)' }}
-                      onClick={() => { setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, collection: true })); }}
-                    >
-                      + เพิ่มรูปแบบสะสม
-                    </button>
-                  </div>
-
-                  {openSections.collection && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {form.collectionLogs.map((log, idx) => (
-                        <LogEditorBox
-                          key={log.id}
-                          log={log}
-                          idx={idx}
-                          type="collection"
-                          showRemove={form.collectionLogs.length > 1}
-                          onRemove={() => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })}
-                          onUpdate={(field, val) => updateLog('collectionLogs', idx, field, val)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <SeriesLogsSection
+                    type="collection"
+                    logs={form.collectionLogs}
+                    isOpen={openSections.collection}
+                    onToggleOpen={() => toggleSection('collection')}
+                    onAdd={() => { setForm({ ...form, collectionLogs: [...form.collectionLogs, { id: Date.now().toString(), format: "normal", title: "", totalVolumes: null, ranges: [] }] }); setOpenSections(s => ({ ...s, collection: true })); }}
+                    onRemove={idx => setForm({ ...form, collectionLogs: form.collectionLogs.filter((_, i) => i !== idx) })}
+                    onUpdate={(idx, field, val) => updateLog('collectionLogs', idx, field, val)}
+                    compactTitle
+                  />
                 </div>
               )}
             </div>
@@ -422,12 +380,36 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
           </div>
 
         </div>
-        
+
         <div className="modal__footer">
-          <button type="button" className="btn btn--ghost" onClick={onClose}>ยกเลิก</button>
-          <button type="button" className="btn btn--save" style={{ background: 'var(--accent)', color: '#111' }} onClick={save}>บันทึกข้อมูลซีรีส์ทั้งหมด</button>
+          <button type="button" className="btn btn--ghost" onClick={requestClose}>ยกเลิก</button>
+          <button
+            type="button"
+            className="btn btn--save"
+            onClick={save}
+            disabled={isSaving}
+          >
+            {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูลซีรีส์ทั้งหมด"}
+          </button>
         </div>
       </div>
+
+      {showDiscardConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 1001 }}>
+          <div className="modal" style={{ maxWidth: '420px' }} ref={discardConfirmRef} role="dialog" aria-modal="true" aria-labelledby="discard-confirm-title">
+            <div className="modal__header">
+              <h2 id="discard-confirm-title" className="modal__title">ทิ้งการเปลี่ยนแปลงที่ยังไม่ได้บันทึก?</h2>
+            </div>
+            <div className="modal__body">
+              <p>ข้อมูลที่กรอกไว้ (รวมถึงข้อมูลที่ดึงมาจาก MAL) จะหายไปทั้งหมดถ้าปิดตอนนี้</p>
+            </div>
+            <div className="modal__footer">
+              <button type="button" className="btn btn--ghost" onClick={() => setShowDiscardConfirm(false)}>กลับไปแก้ไขต่อ</button>
+              <button type="button" className="btn btn--danger" onClick={onClose}>ทิ้งการเปลี่ยนแปลง</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>, document.body
   );
 }

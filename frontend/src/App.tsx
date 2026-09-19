@@ -174,6 +174,9 @@ export default function App() {
                 displaySeries={displaySeries}
                 activeFilterCount={activeFilterCount}
                 onResetFilter={resetFilter}
+                sortBy={filter.sortBy}
+                sortOrder={filter.sortOrder}
+                onSortChange={(sortBy, sortOrder) => setFilter({ sortBy, sortOrder })}
               />
             )
           )}

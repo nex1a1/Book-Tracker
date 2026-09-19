@@ -1,8 +1,11 @@
 import React from "react";
 import { Icons } from "../../../components/Icons";
 import { RangeEditor } from "../../../components/RangeEditor";
+import { Dropdown } from "../../../components/Dropdown";
 import { FORMAT_LABEL } from "../../../utils/constants";
 import { BookLog } from "../../../types";
+
+const FORMAT_OPTIONS = Object.entries(FORMAT_LABEL).map(([value, label]) => ({ value, label }));
 
 interface LogEditorBoxProps {
   log: BookLog;
@@ -36,28 +39,28 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
         // Reading Log Editor Fields
         <>
           <div className="field-row" style={{ marginBottom: '8px', paddingRight: showRemove ? '32px' : '0' }}>
-            <div className="field" style={{ flex: 3 }}>
+            <label className="field" style={{ flex: 3 }}>
               <span>ชื่อชุด / ภาคเรื่อง (อ่านเล่มญี่ปุ่น/เล่มแปล)</span>
-              <input 
-                className="input" 
-                value={log.title || ""} 
-                onChange={e => onUpdate('title', e.target.value)} 
-                placeholder="เช่น ภาคหลัก, ภาคต้น, ภาคสมทบ..." 
+              <input
+                className="input"
+                value={log.title || ""}
+                onChange={e => onUpdate('title', e.target.value)}
+                placeholder="เช่น ภาคหลัก, ภาคต้น, ภาคสมทบ..."
               />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
+            </label>
+            <label className="field" style={{ flex: 1 }}>
               <span>ทั้งหมด (เล่ม)</span>
-              <input 
-                type="number" 
-                className="input" 
-                value={log.totalVolumes || ""} 
+              <input
+                type="number"
+                className="input"
+                value={log.totalVolumes || ""}
                 onChange={e => {
                   const val = e.target.value;
                   onUpdate('totalVolumes', val === "" ? null : Number(val));
-                }} 
-                placeholder="ระบุเล่มรวม" 
+                }}
+                placeholder="ระบุเล่มรวม"
               />
-            </div>
+            </label>
           </div>
           <div className="field">
             <span>ช่วงเล่มที่อ่านเสร็จแล้ว</span>
@@ -68,40 +71,36 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
         // Collection Log Editor Fields
         <>
           <div className="field-row" style={{ marginBottom: '8px', paddingRight: showRemove ? '32px' : '0' }}>
-            <div className="field" style={{ flex: 1.5 }}>
+            <label className="field" style={{ flex: 1.5 }}>
               <span>รูปแบบจัดเก็บ</span>
-              <select 
-                className="input" 
-                value={log.format || "normal"} 
-                onChange={e => onUpdate('format', e.target.value)}
-              >
-                {Object.entries(FORMAT_LABEL).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ flex: 2 }}>
-              <span>ชื่อเรียกคอลเลกชัน / หมายเหตุย่อ</span>
-              <input 
-                className="input" 
-                value={log.title || ""} 
-                onChange={e => onUpdate('title', e.target.value)} 
-                placeholder="เช่น เล่มปกติ, ฉบับพิเศษ..." 
+              <Dropdown
+                value={log.format || "normal"}
+                options={FORMAT_OPTIONS}
+                onChange={val => onUpdate('format', val)}
               />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
+            </label>
+            <label className="field" style={{ flex: 2 }}>
+              <span>ชื่อเรียกคอลเลกชัน / หมายเหตุย่อ</span>
+              <input
+                className="input"
+                value={log.title || ""}
+                onChange={e => onUpdate('title', e.target.value)}
+                placeholder="เช่น เล่มปกติ, ฉบับพิเศษ..."
+              />
+            </label>
+            <label className="field" style={{ flex: 1 }}>
               <span>มีทั้งหมด (เล่ม)</span>
-              <input 
-                type="number" 
-                className="input" 
-                value={log.totalVolumes || ""} 
+              <input
+                type="number"
+                className="input"
+                value={log.totalVolumes || ""}
                 onChange={e => {
                   const val = e.target.value;
                   onUpdate('totalVolumes', val === "" ? null : Number(val));
-                }} 
-                placeholder="เช่น 23" 
+                }}
+                placeholder="เช่น 23"
               />
-            </div>
+            </label>
           </div>
           <div className="field">
             <span>ช่วงเล่มที่มีอยู่ในครอบครอง (สะสมแล้ว)</span>

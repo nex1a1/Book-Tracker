@@ -67,24 +67,38 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
         {stats.n.isCollecting && <AggregatedVolumeBar logs={stats.n.collectionLogs} type="buy" icon={Icons.Cart} titleLabel="สะสม" isMini />}
       </div>
 
-      {/* Column 5: Stock/Missing Volumes Status */}
+      {/* Column 5: Stock/Missing Volumes Status — capped to one pill so multi-format
+          series don't stretch the row taller than its neighbors; the rest are one click away. */}
       <div className="list-row__missing">
-        {stats.n.isCollecting ? (
-          stats.n.collectionLogs.map(log => {
-            const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
-            const isComplete = missingText === 'ครบถ้วน';
-            return (
-              <div key={log.id} className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>
+        {stats.n.isCollecting ? (() => {
+          const logs = stats.n.collectionLogs;
+          const primaryLog = logs.find(log => getMissingVolumesText(log.ranges, log.totalVolumes) !== 'ครบถ้วน') || logs[0];
+          const missingText = getMissingVolumesText(primaryLog.ranges, primaryLog.totalVolumes);
+          const isComplete = missingText === 'ครบถ้วน';
+          const extraCount = logs.length - 1;
+          return (
+            <>
+              <div className={`list-row__missing-pill ${isComplete ? 'complete' : 'missing'}`}>
                 <span className="list-row__missing-label">
-                  {isComplete ? 'สะสมครบ' : 'ขาด'} {log.title ? `(${log.title})` : `(${FORMAT_LABEL[log.format || 'normal']})`}
+                  {isComplete ? 'สะสมครบ' : 'ขาด'} {primaryLog.title ? `(${primaryLog.title})` : `(${FORMAT_LABEL[primaryLog.format || 'normal']})`}
                 </span>
                 <span className="list-row__missing-value" title={missingText}>
                   {missingText}
                 </span>
               </div>
-            );
-          })
-        ) : (
+              {extraCount > 0 && (
+                <button
+                  type="button"
+                  className="list-row__missing-more"
+                  onClick={() => setShowEdit(true)}
+                  title="ดูรูปแบบสะสมทั้งหมดในหน้าต่างแก้ไข"
+                >
+                  +{extraCount} รูปแบบ
+                </button>
+              )}
+            </>
+          );
+        })() : (
           <span className="list-row__missing-read-only">อ่านอย่างเดียว</span>
         )}
       </div>

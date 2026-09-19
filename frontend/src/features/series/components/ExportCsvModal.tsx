@@ -2,9 +2,11 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { Icons } from '../../../components/Icons';
-import { Series, FilterState, SeriesType, SeriesStatus } from '../../../types';
+import { Series, FilterState } from '../../../types';
 import { CSV_COLUMNS, generateCsvData, downloadCsvFile, ExportLayoutMode } from '../../../utils/csvHelper';
 import { useFilteredSeries } from '../hooks/useFilteredSeries';
+import { ExportFilterPopover } from './ExportFilterPopover';
+import { ExportColumnPopover } from './ExportColumnPopover';
 import '../Series.css';
 
 interface ExportCsvModalProps {
@@ -257,197 +259,17 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
 
             {/* Comprehensive Series Filter Popover */}
             {showFilterPopover && (
-              <div ref={filterPopoverRef} className="export-columns-popover filter-data-popover detailed">
-                <div className="popover-header">
-                  <div className="popover-title">
-                    <Icons.Filter /> ตัวกรองข้อมูลซีรีส์แบบละเอียด
-                  </div>
-                  {localFilterCount > 0 && (
-                    <button type="button" className="btn-link danger" onClick={resetExportFilters}>
-                      ล้างตัวกรอง ({localFilterCount})
-                    </button>
-                  )}
-                </div>
-
-                <div className="filter-popover-body">
-                  {/* Search Input */}
-                  <div className="filter-field">
-                    <label className="field-label">ค้นหาข้อความ:</label>
-                    <div className="search-input-wrapper">
-                      <Icons.Search />
-                      <input
-                        type="text"
-                        placeholder="ค้นหาชื่อเรื่อง, ผู้แต่ง, สำนักพิมพ์..."
-                        value={exportFilter.search || ''}
-                        onChange={e => updateFilter({ search: e.target.value })}
-                        className="input-text"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Series Type */}
-                  <div className="filter-field">
-                    <label className="field-label">ประเภทหนังสือ:</label>
-                    <div className="filter-pill-group">
-                      <button
-                        type="button"
-                        className={`mini-pill ${exportFilter.type.length === 0 ? 'active' : ''}`}
-                        onClick={() => updateFilter({ type: [] })}
-                      >
-                        ทั้งหมด
-                      </button>
-                      {[
-                        { id: 'manga', label: 'Manga' },
-                        { id: 'novel', label: 'Novel' },
-                        { id: 'light_novel', label: 'Light Novel' },
-                      ].map(t => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          className={`mini-pill ${exportFilter.type.includes(t.id as SeriesType) ? 'active' : ''}`}
-                          onClick={() => toggleArrayFilter('type', t.id)}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Series Status */}
-                  <div className="filter-field">
-                    <label className="field-label">สถานะการตีพิมพ์:</label>
-                    <div className="filter-pill-group">
-                      <button
-                        type="button"
-                        className={`mini-pill ${exportFilter.status.length === 0 ? 'active' : ''}`}
-                        onClick={() => updateFilter({ status: [] })}
-                      >
-                        ทั้งหมด
-                      </button>
-                      {[
-                        { id: 'ongoing', label: 'ยังไม่จบ' },
-                        { id: 'completed', label: 'จบแล้ว' },
-                        { id: 'hiatus', label: 'หยุดชั่วคราว' },
-                        { id: 'cancelled', label: 'โดนตัดจบ' },
-                      ].map(s => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          className={`mini-pill ${exportFilter.status.includes(s.id as SeriesStatus) ? 'active' : ''}`}
-                          onClick={() => toggleArrayFilter('status', s.id)}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Read Status */}
-                  <div className="filter-field">
-                    <label className="field-label">สถานะการอ่าน:</label>
-                    <div className="filter-pill-group">
-                      <button
-                        type="button"
-                        className={`mini-pill ${exportFilter.readStatus.length === 0 ? 'active' : ''}`}
-                        onClick={() => updateFilter({ readStatus: [] })}
-                      >
-                        ทั้งหมด
-                      </button>
-                      {[
-                        { id: 'finished', label: 'อ่านจบสมบูรณ์' },
-                        { id: 'caughtup', label: 'ทันปัจจุบัน' },
-                        { id: 'reading', label: 'กำลังอ่าน' },
-                        { id: 'unread', label: 'สายดอง' },
-                      ].map(rs => (
-                        <button
-                          key={rs.id}
-                          type="button"
-                          className={`mini-pill ${exportFilter.readStatus.includes(rs.id) ? 'active' : ''}`}
-                          onClick={() => toggleArrayFilter('readStatus', rs.id)}
-                        >
-                          {rs.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Collection Status */}
-                  <div className="filter-field">
-                    <label className="field-label">สถานะการสะสม:</label>
-                    <div className="filter-pill-group">
-                      <button
-                        type="button"
-                        className={`mini-pill ${exportFilter.collectStatus.length === 0 ? 'active' : ''}`}
-                        onClick={() => updateFilter({ collectStatus: [] })}
-                      >
-                        ทั้งหมด
-                      </button>
-                      {[
-                        { id: 'complete', label: 'ครบถ้วน' },
-                        { id: 'missing', label: 'ยังขาดอยู่' },
-                        { id: 'not_collecting', label: 'ไม่สะสม' },
-                      ].map(cs => (
-                        <button
-                          key={cs.id}
-                          type="button"
-                          className={`mini-pill ${exportFilter.collectStatus.includes(cs.id) ? 'active' : ''}`}
-                          onClick={() => toggleArrayFilter('collectStatus', cs.id)}
-                        >
-                          {cs.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Min Rating */}
-                  <div className="filter-field">
-                    <label className="field-label">คะแนนขั้นต่ำ:</label>
-                    <div className="filter-pill-group">
-                      <button
-                        type="button"
-                        className={`mini-pill ${!exportFilter.minRating ? 'active' : ''}`}
-                        onClick={() => updateFilter({ minRating: 0 })}
-                      >
-                        ทั้งหมด
-                      </button>
-                      {[1, 2, 3, 4, 5].map(r => (
-                        <button
-                          key={r}
-                          type="button"
-                          className={`mini-pill ${exportFilter.minRating === r ? 'active' : ''}`}
-                          onClick={() => updateFilter({ minRating: exportFilter.minRating === r ? 0 : r })}
-                        >
-                          {'★'.repeat(r)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Publisher Select */}
-                  {publisherList.length > 0 && (
-                    <div className="filter-field">
-                      <label className="field-label">สำนักพิมพ์:</label>
-                      <select
-                        value={exportFilter.publisher || ''}
-                        onChange={e => updateFilter({ publisher: e.target.value })}
-                        className="select-input"
-                      >
-                        <option value="">ทุกสำนักพิมพ์</option>
-                        {publisherList.map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                <div className="popover-footer">
-                  <span>กรองได้ <strong>{modalFilteredSeries.length}</strong> เรื่อง</span>
-                  <button type="button" className="btn btn--sm btn--primary" onClick={() => setShowFilterPopover(false)}>
-                    ตกลง
-                  </button>
-                </div>
-              </div>
+              <ExportFilterPopover
+                popoverRef={filterPopoverRef}
+                filter={exportFilter}
+                publisherList={publisherList}
+                matchedCount={modalFilteredSeries.length}
+                localFilterCount={localFilterCount}
+                onUpdate={updateFilter}
+                onToggleArray={toggleArrayFilter}
+                onReset={resetExportFilters}
+                onDone={() => setShowFilterPopover(false)}
+              />
             )}
           </div>
 
@@ -494,95 +316,17 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
 
             {/* Floating Column Selector Popover with Reordering */}
             {showColumnPopover && (
-              <div ref={columnPopoverRef} className="export-columns-popover reorder-popover">
-                <div className="popover-header">
-                  <div className="popover-title">
-                    <Icons.Sliders /> เลือกและจัดลำดับคอลัมน์
-                  </div>
-                  <div className="export-column-actions">
-                    <button type="button" className="btn-link" onClick={selectAllColumns}>
-                      เลือกทั้งหมด
-                    </button>
-                    <span className="divider-dot">•</span>
-                    <button type="button" className="btn-link" onClick={deselectAllColumns}>
-                      ที่จำเป็น
-                    </button>
-                  </div>
-                </div>
-
-                <div className="popover-reorder-container">
-                  <label className="field-label" style={{ marginBottom: '6px', display: 'block' }}>
-                    คอลัมน์ที่เลือกส่งออก (กด ▲/▼ เพื่อสลับลำดับ):
-                  </label>
-                  <div className="reorder-list">
-                    {selectedKeys.map((key, idx) => {
-                      const col = CSV_COLUMNS.find(c => c.key === key);
-                      if (!col) return null;
-                      return (
-                        <div key={key} className="reorder-item">
-                          <div className="reorder-btn-group">
-                            <button
-                              type="button"
-                              className="btn-order"
-                              disabled={idx === 0}
-                              onClick={() => moveColumn(idx, 'up')}
-                              title="เลื่อนขึ้น / สลับไปซ้าย"
-                            >
-                              ▲
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-order"
-                              disabled={idx === selectedKeys.length - 1}
-                              onClick={() => moveColumn(idx, 'down')}
-                              title="เลื่อนลง / สลับไปขวา"
-                            >
-                              ▼
-                            </button>
-                          </div>
-                          <span className="order-idx">{idx + 1}.</span>
-                          <span className="column-label">{col.label}</span>
-                          <button
-                            type="button"
-                            className="btn-remove-col"
-                            onClick={() => toggleColumn(key)}
-                            title="เอาคอลัมน์นี้ออก"
-                          >
-                            <Icons.X />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {unselectedColumns.length > 0 && (
-                    <>
-                      <label className="field-label" style={{ marginTop: '12px', marginBottom: '6px', display: 'block' }}>
-                        คอลัมน์อื่นๆ ที่ยังไม่ได้เลือก:
-                      </label>
-                      <div className="unselected-columns-grid">
-                        {unselectedColumns.map(col => (
-                          <button
-                            key={col.key}
-                            type="button"
-                            className="btn-add-col"
-                            onClick={() => toggleColumn(col.key)}
-                          >
-                            <Icons.Plus /> {col.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="popover-footer">
-                  <span>เลือกแล้ว {selectedKeys.length} คอลัมน์</span>
-                  <button type="button" className="btn btn--sm btn--primary" onClick={() => setShowColumnPopover(false)}>
-                    ตกลง
-                  </button>
-                </div>
-              </div>
+              <ExportColumnPopover
+                popoverRef={columnPopoverRef}
+                columns={CSV_COLUMNS}
+                selectedKeys={selectedKeys}
+                unselectedColumns={unselectedColumns}
+                onSelectAll={selectAllColumns}
+                onDeselectAll={deselectAllColumns}
+                onMoveColumn={moveColumn}
+                onToggleColumn={toggleColumn}
+                onDone={() => setShowColumnPopover(false)}
+              />
             )}
           </div>
 

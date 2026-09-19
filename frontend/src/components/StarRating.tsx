@@ -41,14 +41,15 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
             type="button"
             className={`star-btn ${isFilled || isHalf ? 'filled' : ''}`}
             onMouseMove={(e) => handleMouseMove(e, n)}
-            onClick={(e) => { 
-              if (!readOnly && onRate) { 
-                e.stopPropagation(); 
+            onClick={(e) => {
+              if (!readOnly && onRate) {
+                e.stopPropagation();
                 const val = display;
-                onRate(val === rating ? 0 : val); 
-              } 
+                onRate(val === rating ? 0 : val);
+              }
             }}
-            title={readOnly ? `${rating} ดาว` : `ให้ ${display} ดาว`}
+            title={readOnly ? `ให้ ${rating} ดาว` : `ให้ ${display} ดาว`}
+            aria-label={readOnly ? `ให้ ${rating} ดาว` : `ให้ ${display} ดาว`}
           >
             <Icons.Star filled={isFilled} half={isHalf} />
           </button>

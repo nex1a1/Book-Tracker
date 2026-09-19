@@ -1,6 +1,24 @@
 import { useMemo } from "react";
-import { getSeriesDerivedStats } from "../../../utils/helpers";
+import { getSeriesDerivedStats, getSetFromRanges } from "../../../utils/helpers";
 import { Series, FilterState } from "../../../types";
+
+// Total volumes still missing across every collection log — undefined when not collecting,
+// so it can sort consistently to one end regardless of ASC/DESC.
+function getMissingCount(s: Series): number | undefined {
+  const stats = getSeriesDerivedStats(s);
+  if (!stats.n.isCollecting) return undefined;
+  return stats.n.collectionLogs.reduce((sum, log) => {
+    const owned = getSetFromRanges(log.ranges).size;
+    const limit = Number(log.totalVolumes) || 0;
+    return sum + Math.max(0, limit - owned);
+  }, 0);
+}
+
+// Reading progress as a 0-1 ratio; undefined when the series has no known volume count yet.
+function getReadProgress(s: Series): number | undefined {
+  const stats = getSeriesDerivedStats(s);
+  return stats.totalReadJP > 0 ? stats.totalReadCount / stats.totalReadJP : undefined;
+}
 
 export function useFilteredSeries(series: Series[], filter: FilterState) {
   const displaySeries = useMemo(() => {
@@ -64,6 +82,14 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
       if (filter.sortBy === 'rating') {
         valA = a.rating || 0;
         valB = b.rating || 0;
+      }
+      if (filter.sortBy === 'readProgress') {
+        valA = getReadProgress(a);
+        valB = getReadProgress(b);
+      }
+      if (filter.sortBy === 'missingCount') {
+        valA = getMissingCount(a);
+        valB = getMissingCount(b);
       }
       if (valA === undefined || valA === null) return 1;
       if (valB === undefined || valB === null) return -1;
