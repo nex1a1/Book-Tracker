@@ -34,18 +34,11 @@ function loadCheckedItems(): Set<string> {
   }
 }
 
-export function useMissingVolumes() {
-  const { series } = useSeriesStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPublisher, setSelectedPublisher] = useState<string | string[]>("all");
-  const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
-  // Persisted across closing/reopening the modal — a shopping trip is rarely one
-  // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(loadCheckedItems);
-  const [collapsedPubs, setCollapsedPubs] = useState<Set<string>>(new Set());
-
-  // 1. Gather all series that have missing volumes
-  const missingList = useMemo(() => {
+// Pure derivation of the missing-volume checklist from store data. No persisted state, so it is
+// safe to call from several places (e.g. the header counter) without duplicating checklist state.
+export function useMissingList(): MissingSeriesItem[] {
+  const series = useSeriesStore(s => s.series);
+  return useMemo(() => {
     const list: MissingSeriesItem[] = [];
     series.forEach(s => {
       const stats = getSeriesDerivedStats(s);
@@ -83,6 +76,19 @@ export function useMissingVolumes() {
     });
     return list;
   }, [series]);
+}
+
+export function useMissingVolumes() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPublisher, setSelectedPublisher] = useState<string | string[]>("all");
+  const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
+  // Persisted across closing/reopening the modal — a shopping trip is rarely one
+  // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(loadCheckedItems);
+  const [collapsedPubs, setCollapsedPubs] = useState<Set<string>>(new Set());
+
+  // 1. Gather all series that have missing volumes
+  const missingList = useMissingList();
 
   // 2. Filter list based on search and selected publisher
   const filteredList = useMemo(() => {

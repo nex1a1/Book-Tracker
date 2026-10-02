@@ -2,6 +2,7 @@ import express from 'express';
 import * as seriesController from '../controllers/seriesController.js';
 import * as metadataController from '../controllers/metadataController.js';
 import * as malController from '../controllers/malController.js';
+import * as coverController from '../controllers/coverController.js';
 import { validate } from '../middleware/validate.js';
 import { createSeriesSchema, updateSeriesSchema } from '../utils/validation.js';
 
@@ -20,5 +21,8 @@ router.get('/publishers', metadataController.getPublishers);
 
 // MAL Routes
 router.get('/mal/search', malController.searchMAL);
+
+// Cover cache (works offline for covers already seen once)
+router.get('/cover', coverController.getCover);
 
 export default router;

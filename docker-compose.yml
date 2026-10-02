@@ -29,7 +29,6 @@ services:
       - backend
     environment:
       VITE_BACKEND_TARGET: http://backend:3001
-      VITE_API_URL: http://localhost:3001/api
     ports:
       - "5174:5174"
     volumes:

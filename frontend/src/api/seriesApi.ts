@@ -4,6 +4,10 @@ import type { CreateSeriesInput, UpdateSeriesInput } from "../../../backend/src/
 
 const API_BASE = "/api";
 
+// Remote covers go through the backend cache so they keep working offline once seen
+export const coverSrc = (url: string): string =>
+  /^https?:\/\//i.test(url) ? `${API_BASE}/cover?url=${encodeURIComponent(url)}` : url;
+
 export interface ApiResponse<T> {
   data: T;
   success?: boolean;

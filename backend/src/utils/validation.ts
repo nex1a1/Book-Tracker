@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const logSchema = z.object({
   title: z.string().trim().optional(),
   totalVolumes: z.number().int().nonnegative().nullable().optional(),
+  format: z.string().trim().max(32).optional(), // collection logs only; reading logs ignore it
   ranges: z.array(z.array(z.number().int().nonnegative()).length(2)).optional().default([])
 });
 

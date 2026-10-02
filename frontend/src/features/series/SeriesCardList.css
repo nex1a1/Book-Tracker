@@ -2,9 +2,9 @@
    ── SeriesCard & SeriesListItem Layouts (Original SeriesCard.css)
    ========================================================================== */
 /* ── Cards (Grid View) ──────────────────────────────────── */
-/* align-items: start keeps each card at its own natural height instead of the grid's
-   default stretch, which forced every card in a row to match its tallest neighbor. */
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+/* Default stretch: every card in a row matches its tallest neighbor; any extra space
+   collects at the bottom of the shorter cards. */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
 .card {
   background: linear-gradient(135deg, rgba(23, 23, 23, 0.7) 0%, rgba(13, 13, 13, 0.95) 100%);
@@ -25,7 +25,6 @@
 }
 
 .card__top { display: flex; gap: 16px; }
-
 /* Frame and zoom animations for cover image */
 .card__cover-wrapper {
   position: relative;

@@ -5,6 +5,7 @@ import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { SeriesInfoModal } from "./SeriesInfoModal";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
+import { coverSrc } from "../../../api/seriesApi";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
 import { Series } from "../../../types";
@@ -33,7 +34,7 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
       {/* Column 1: cover wrapper */}
       <div className="list-row__cover-wrapper">
         {stats.n.imageUrl ? (
-          <img src={stats.n.imageUrl} alt={stats.n.title} className="list-row__cover" />
+          <img src={coverSrc(stats.n.imageUrl)} alt={stats.n.title} className="list-row__cover" />
         ) : (
           <div className="list-row__cover--empty">ไม่มีรูป</div>
         )}

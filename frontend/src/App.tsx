@@ -10,7 +10,7 @@ import {
   MissingVolumesModal,
   ExportCsvModal,
   useFilteredSeries,
-  useMissingVolumes
+  useMissingList
 } from "./features/series";
 import { SortDropdown } from "./components/SortDropdown";
 
@@ -25,7 +25,9 @@ export default function App() {
   const [showMissing, setShowMissing] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  const missing = useMissingVolumes();
+  const missingVolumeCount = useMissingList().reduce(
+    (sum, item) => sum + item.formats.reduce((s, f) => s + f.missingCount, 0), 0
+  );
 
   useEffect(() => {
     fetchSeries();
@@ -111,7 +113,7 @@ export default function App() {
                   <span className="telemetry-item__action-hint" aria-hidden="true">↗</span>
                 </span>
                 <span className="telemetry-item__value telemetry-item__value--highlight">
-                  {missing.stats.totalVolumes.toLocaleString()}
+                  {missingVolumeCount.toLocaleString()}
                 </span>
               </div>
             </button>

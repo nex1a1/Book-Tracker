@@ -24,6 +24,7 @@ interface DbGroupRow {
   id: number;
   title: string | null;
   totalVolumes: number | null;
+  format?: string | null;
 }
 
 interface DbRangeRow {
@@ -35,6 +36,7 @@ export interface MappedBookLog {
   id: string;
   title: string;
   totalVolumes: number | null;
+  format?: string;
   ranges: [number, number][];
 }
 
@@ -83,7 +85,7 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
 
     // 2. Fetch Collection Groups and their Ranges
     const collectionLogs: MappedBookLog[] = (db.prepare(`
-      SELECT id, title, totalVolumes FROM collection_groups WHERE series_id = ?
+      SELECT id, title, totalVolumes, format FROM collection_groups WHERE series_id = ?
     `).all(s.id) as DbGroupRow[]).map((cg) => {
       const ranges = (db.prepare(`
         SELECT startVol, endVol FROM collection_ranges WHERE group_id = ? ORDER BY startVol ASC
@@ -93,6 +95,7 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
         id: cg.id.toString(),
         title: cg.title || '',
         totalVolumes: cg.totalVolumes,
+        format: cg.format || 'normal',
         ranges
       };
     });

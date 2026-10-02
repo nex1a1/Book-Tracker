@@ -78,6 +78,8 @@ export function RatingFilter({ minRating, maxRating, unratedOnly, onChange }: Ra
 
   const switchMode = (newMode: RatingMode) => {
     setMode(newMode);
+    // Browsing the tabs shouldn't filter by itself; only re-apply an already-active rating.
+    if (!minRating && !maxRating) return;
     if (newMode === "exact") {
       const target = currentMin > 0 ? currentMin : 4.0;
       onChange({ minRating: target, maxRating: target, unratedOnly: false });

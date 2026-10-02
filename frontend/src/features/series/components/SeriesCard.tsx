@@ -5,6 +5,7 @@ import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { SeriesInfoModal } from "./SeriesInfoModal";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
+import { coverSrc } from "../../../api/seriesApi";
 import { getSeriesDerivedStats, getMissingVolumesText } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL, FORMAT_LABEL } from "../../../utils/constants";
 import { Series } from "../../../types";
@@ -35,7 +36,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
         <div className="card__cover-wrapper">
           {/* เช็กว่ามีลิงก์รูปไหม ถ้ามีโชว์รูป ถ้าไม่มีโชว์กล่องว่างๆ */}
           {stats.n.imageUrl ? (
-            <img src={stats.n.imageUrl} alt={stats.n.title} className="card__cover" />
+            <img src={coverSrc(stats.n.imageUrl)} alt={stats.n.title} className="card__cover" />
           ) : (
             <div className="card__cover-empty">
               <span>ไม่มีรูป</span>

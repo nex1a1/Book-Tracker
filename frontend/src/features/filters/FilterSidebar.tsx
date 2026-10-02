@@ -236,8 +236,8 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
         {publishers.length > 0 && (
           <FilterSection title="สำนักพิมพ์">
             <PublisherDropdown
-              selectedPublisher={Array.isArray(filter.publisher) ? filter.publisher : (filter.publisher ? [filter.publisher] : [])}
-              onSelectPublisher={(pub) => setFilter({ publisher: pub })}
+              selectedPublisher={filter.publisher}
+              onSelectPublisher={(pub) => setFilter({ publisher: [pub].flat() })}
               publisherOptions={publishers}
               fullWidth
               multiSelect

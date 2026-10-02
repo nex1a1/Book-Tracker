@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Icons } from "./Icons";
 import "./Dropdown.css";
 
@@ -23,27 +24,64 @@ interface DropdownProps {
 
 // Themed replacement for a native <select> — the OS-rendered option list is the one
 // piece of the form that couldn't be reached by CSS, so this reimplements it in-theme.
+// The menu is portaled with fixed positioning (same approach as PublisherDropdown) so the
+// modal's overflow-y:auto form area can't clip it, and it flips upward when space below is short.
 export function Dropdown({ value, options, onChange, id, disabled }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number | "auto"; bottom: number | "auto"; left: number; width: number; dropUp: boolean } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const selectedIndex = Math.max(0, options.findIndex(o => o.value === value));
   const selected = options[selectedIndex];
 
+  const calculatePosition = useCallback(() => {
+    if (!triggerRef.current) return null;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const menuHeight = Math.min(260, options.length * 36 + 12);
+    const dropUp = spaceBelow < menuHeight + 12 && spaceAbove > spaceBelow;
+    return {
+      top: dropUp ? ("auto" as const) : rect.bottom + 6,
+      bottom: dropUp ? window.innerHeight - rect.top + 6 : ("auto" as const),
+      left: rect.left,
+      width: rect.width,
+      dropUp,
+    };
+  }, [options.length]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fixed positioning doesn't follow the trigger, so re-measure when anything scrolls or resizes.
+  useEffect(() => {
+    if (!isOpen) return;
+    const reposition = () => {
+      const pos = calculatePosition();
+      if (pos) setMenuPos(pos);
+    };
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [isOpen, calculatePosition]);
+
   const openMenu = (focusIndex?: number) => {
     if (disabled) return;
+    const pos = calculatePosition();
+    if (pos) setMenuPos(pos);
     setIsOpen(true);
     const idx = focusIndex ?? selectedIndex;
     requestAnimationFrame(() => itemRefs.current[idx]?.focus());
@@ -118,27 +156,35 @@ export function Dropdown({ value, options, onChange, id, disabled }: DropdownPro
         <span className="dropdown-trigger__chevron"><Icons.ChevronDown /></span>
       </button>
 
-      <div className={`dropdown-menu ${isOpen ? "dropdown-menu--open" : ""}`} role="listbox">
-        {options.map((opt, idx) => {
-          const isActive = opt.value === value;
-          return (
-            <button
-              key={opt.value}
-              ref={el => { itemRefs.current[idx] = el; }}
-              type="button"
-              role="option"
-              aria-selected={isActive}
-              tabIndex={-1}
-              className={`dropdown-item ${isActive ? "dropdown-item--active" : ""}`}
-              onClick={() => selectOption(opt)}
-              onKeyDown={(e) => handleItemKeyDown(e, idx)}
-            >
-              <span>{opt.label}</span>
-              {isActive && <span className="dropdown-item__checkmark"><CheckIcon /></span>}
-            </button>
-          );
-        })}
-      </div>
+      {isOpen && menuPos && createPortal(
+        <div
+          ref={menuRef}
+          className={`dropdown-menu dropdown-menu--open dropdown-menu--fixed ${menuPos.dropUp ? "dropdown-menu--up" : ""}`}
+          role="listbox"
+          style={{ top: menuPos.top, bottom: menuPos.bottom, left: menuPos.left, width: menuPos.width }}
+        >
+          {options.map((opt, idx) => {
+            const isActive = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                ref={el => { itemRefs.current[idx] = el; }}
+                type="button"
+                role="option"
+                aria-selected={isActive}
+                tabIndex={-1}
+                className={`dropdown-item ${isActive ? "dropdown-item--active" : ""}`}
+                onClick={() => selectOption(opt)}
+                onKeyDown={(e) => handleItemKeyDown(e, idx)}
+              >
+                <span>{opt.label}</span>
+                {isActive && <span className="dropdown-item__checkmark"><CheckIcon /></span>}
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

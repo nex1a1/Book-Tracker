@@ -40,14 +40,8 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
       filtered = filtered.filter(s => filter.status.includes(s.status));
     }
     
-    if (filter.publisher) {
-      if (Array.isArray(filter.publisher)) {
-        if (filter.publisher.length > 0) {
-          filtered = filtered.filter(s => (filter.publisher as string[]).includes(s.publisher));
-        }
-      } else if (filter.publisher !== 'all') {
-        filtered = filtered.filter(s => s.publisher === filter.publisher);
-      }
+    if (filter.publisher.length > 0) {
+      filtered = filtered.filter(s => filter.publisher.includes(s.publisher));
     }
     if (filter.yearFrom) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear >= Number(filter.yearFrom));
     if (filter.yearTo) filtered = filtered.filter(s => s.publishYear !== undefined && s.publishYear !== null && s.publishYear <= Number(filter.yearTo));
@@ -64,7 +58,7 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
       
       if (filter.readStatus && filter.readStatus.length > 0) {
         let matchRead = false;
-        const rs = Array.isArray(filter.readStatus) ? filter.readStatus : [filter.readStatus];
+        const rs = filter.readStatus;
         if (rs.includes('finished') && st.isFinishedReading) matchRead = true;
         if (rs.includes('caughtup') && st.isCaughtUp) matchRead = true;
         if (rs.includes('reading') && st.isReading) matchRead = true;
@@ -74,7 +68,7 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
 
       if (filter.collectStatus && filter.collectStatus.length > 0) {
         let matchCollect = false;
-        const cs = Array.isArray(filter.collectStatus) ? filter.collectStatus : [filter.collectStatus];
+        const cs = filter.collectStatus;
         if (cs.includes('complete') && st.isCollectComplete) matchCollect = true;
         if (cs.includes('missing') && st.isCollectMissing) matchCollect = true;
         if (cs.includes('stopped') && st.isCollectStopped) matchCollect = true;
@@ -119,17 +113,10 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     if (filter.search) c++;
     if (filter.type && filter.type.length > 0) c++;
     if (filter.status && filter.status.length > 0) c++;
-    if (filter.publisher) {
-      if (Array.isArray(filter.publisher) ? filter.publisher.length > 0 : Boolean(filter.publisher && filter.publisher !== 'all')) c++;
-    }
+    if (filter.publisher.length > 0) c++;
     if (filter.readStatus && filter.readStatus.length > 0) c++;
     if (filter.collectStatus && filter.collectStatus.length > 0) c++;
-    if (filter.unratedOnly) {
-      c++;
-    } else {
-      if (filter.minRating) c++;
-      if (filter.maxRating) c++;
-    }
+    if (filter.unratedOnly || filter.minRating || filter.maxRating) c++;
     if (filter.yearFrom) c++;
     if (filter.yearTo) c++;
     return c;

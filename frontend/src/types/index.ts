@@ -53,7 +53,7 @@ export interface FilterState {
   search: string;
   type: SeriesType[];
   status: SeriesStatus[];
-  publisher: string | string[];
+  publisher: string[];
   readStatus: string[];
   collectStatus: string[];
   minRating: number;

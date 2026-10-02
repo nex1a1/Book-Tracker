@@ -191,8 +191,8 @@ export function ExportFilterPopover({
           <div className="filter-field">
             <label className="field-label">สำนักพิมพ์:</label>
             <PublisherDropdown
-              selectedPublisher={Array.isArray(filter.publisher) ? filter.publisher : (filter.publisher ? [filter.publisher] : [])}
-              onSelectPublisher={(pub) => onUpdate({ publisher: pub })}
+              selectedPublisher={filter.publisher}
+              onSelectPublisher={(pub) => onUpdate({ publisher: [pub].flat() })}
               publisherOptions={publisherList}
               fullWidth
               multiSelect

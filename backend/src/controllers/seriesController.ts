@@ -19,7 +19,7 @@ export const getSeries = (req: Request, res: Response) => {
     
     // Robust parsing and sanitization of pagination params
     const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const limitNum = Math.max(1, parseInt(limit as string) || 24);
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit as string) || 24));
     const offset = (pageNum - 1) * limitNum;
 
     let baseQuery = `
@@ -173,8 +173,8 @@ export const createSeries = (req: Request, res: Response) => {
 
       // 5. Insert Collection Logs
       (b.collectionLogs || []).forEach(log => {
-        const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes) VALUES (?, ?, ?)")
-          .run(seriesId, log.title || null, log.totalVolumes || null);
+        const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes, format) VALUES (?, ?, ?, ?)")
+          .run(seriesId, log.title || null, log.totalVolumes || null, log.format || null);
         const groupId = cInfo.lastInsertRowid;
 
         // ✅ Merge overlapping ranges before saving
@@ -204,6 +204,11 @@ export const updateSeries = (req: Request, res: Response) => {
   try {
     const b = { ...req.body } as UpdateSeriesInput;
     const id = req.params.id;
+
+    if (!db.prepare("SELECT 1 FROM series WHERE id = ?").get(id)) {
+      res.status(404).json({ error: 'ไม่พบซีรีส์นี้' });
+      return;
+    }
 
     db.transaction(() => {
       if (b.author !== undefined) {
@@ -244,8 +249,8 @@ export const updateSeries = (req: Request, res: Response) => {
       if (b.collectionLogs) {
         db.prepare("DELETE FROM collection_groups WHERE series_id = ?").run(id);
         b.collectionLogs.forEach(log => {
-          const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes) VALUES (?, ?, ?)")
-            .run(id, log.title || null, log.totalVolumes || null);
+          const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes, format) VALUES (?, ?, ?, ?)")
+            .run(id, log.title || null, log.totalVolumes || null, log.format || null);
           const groupId = cInfo.lastInsertRowid;
           
           // ✅ Merge overlapping ranges before saving
@@ -267,8 +272,8 @@ export const updateSeries = (req: Request, res: Response) => {
         else data[key] = value as string | number | null;
       }
 
-      if (data.status === 'completed') data.endYear = (data.endYear && data.endYear !== "") ? Number(data.endYear) : null;
-      else if (data.status) data.endYear = null;
+      // Only series still running have no end year; completed/cancelled keep whatever the client sent.
+      if (data.status === 'ongoing' || data.status === 'hiatus') data.endYear = null;
 
       const fields: string[] = [];
       const params: (string | number | null)[] = [];
@@ -302,8 +307,12 @@ export const updateSeries = (req: Request, res: Response) => {
 
 export const deleteSeries = (req: Request, res: Response) => {
   try { 
-    db.prepare("DELETE FROM series WHERE id = ?").run(req.params.id); 
-    res.json({ message: 'Deleted' }); 
+    const { changes } = db.prepare("DELETE FROM series WHERE id = ?").run(req.params.id);
+    if (changes === 0) {
+      res.status(404).json({ error: 'ไม่พบซีรีส์นี้' });
+      return;
+    }
+    res.json({ message: 'Deleted' });
   } catch (error) {
     console.error("[deleteSeries] Error:", error);
     res.status(500).json({ error: getErrorMessage(error) });

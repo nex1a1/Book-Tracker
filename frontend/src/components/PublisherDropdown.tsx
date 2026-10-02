@@ -5,7 +5,7 @@ import './PublisherDropdown.css';
 
 export interface PublisherDropdownProps {
   selectedPublisher: string | string[];
-  onSelectPublisher: (pub: any) => void;
+  onSelectPublisher: (pub: string | string[]) => void;
   publisherOptions: string[];
   placeholder?: string;
   fullWidth?: boolean;

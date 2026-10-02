@@ -7,7 +7,7 @@ export const EMPTY_FILTER: FilterState = {
   search: '',
   type: [],
   status: [],
-  publisher: '',
+  publisher: [],
   readStatus: [],
   collectStatus: [],
   minRating: 0,

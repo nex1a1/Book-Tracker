@@ -68,7 +68,7 @@
 │   │   ├── utils/            # mapper.ts, validation.ts, migration.ts, errors.ts
 │   │   └── index.ts          # จุดเริ่มต้นการทำงานของ Express Server
 │   ├── Dockerfile
-│   ├── package.json          # สคริปต์รันระบบฝั่ง Server ("dev", "build", "start", "seed")
+│   ├── package.json          # สคริปต์รันระบบฝั่ง Server ("dev", "build", "start", "smoke")
 │   └── .env                  # การตั้งค่าพอร์ต, คีย์ MAL และเส้นทางไฟล์ DB
 │
 ├── frontend/
@@ -91,9 +91,7 @@
 │   └── vite.config.ts
 │
 ├── docker-compose.yml        # ตัวประสาน Containers ทั้ง Full-Stack
-├── README.md                 # คู่มือแนะนำการใช้งานระบบและการติดตั้ง [ไฟล์นี้]
-├── GEMINI.md                 # คู่มือสเปกและข้อกำหนดสำหรับ Gemini AI
-└── CLAUDE.md                 # คู่มือสเปกและข้อกำหนดสำหรับ Claude AI
+└── README.md                 # คู่มือแนะนำการใช้งานระบบและการติดตั้ง [ไฟล์นี้]
 ```
 
 ---
@@ -153,6 +151,7 @@ erDiagram
         int series_id FK
         text title
         int totalVolumes
+        text format "normal/bigbook/pocket/digital/omnibus"
     }
     collection_ranges {
         int id PK
@@ -182,6 +181,7 @@ erDiagram
 | **GET** | `/api/authors` | ดึงรายชื่อผู้แต่งที่มีทั้งหมดในระบบ (ไม่มีชื่อซ้ำ) |
 | **GET** | `/api/publishers` | ดึงรายชื่อสำนักพิมพ์ที่มีทั้งหมดในระบบ (ไม่มีชื่อซ้ำ) |
 | **GET** | `/api/mal/search` | ค้นหาข้อมูลและดาวน์โหลดรูปหน้าปกจาก MyAnimeList API ผ่าน Proxy ฝั่ง Server |
+| **GET** | `/api/cover?url=` | แคชรูปปก: ครั้งแรกดาวน์โหลดรูปจากเว็บภายนอกมาเก็บใน `backend/data/covers/` ครั้งต่อไปใช้ไฟล์ในเครื่อง ทำให้ปกที่เคยเปิดดูแล้วแสดงได้แม้ไม่มีอินเทอร์เน็ต |
 
 ---
 
@@ -216,11 +216,7 @@ docker-compose up --build
    cd backend
    npm install
    ```
-2. ใส่ข้อมูลทดสอบเริ่มต้นเข้าระบบเพื่อตรวจสอบคุณสมบัติ (Optional):
-   ```bash
-   npm run seed
-   ```
-3. สั่งรัน Server สำหรับงานพัฒนา (ทำงานร่วมกับ `nodemon` คอยตรวจจับเมื่อโค้ดเปลี่ยนเพื่อรีสตาร์ท):
+2. สั่งรัน Server สำหรับงานพัฒนา (ทำงานร่วมกับ `tsx watch` คอยตรวจจับเมื่อโค้ดเปลี่ยนเพื่อรีสตาร์ท):
    ```bash
    npm run dev
    ```
