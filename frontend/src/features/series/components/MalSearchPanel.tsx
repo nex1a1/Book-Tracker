@@ -38,14 +38,26 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }: MalSearchPa
   const [isSearching, setIsSearching] = useState(false);
 
   const searchMAL = async () => {
-    if (!title || title.trim() === "") {
+    const query = title.trim();
+    if (!query) {
       toast.error("กรุณากรอกชื่อเรื่องก่อนค้นหา");
+      return;
+    }
+    // MAL rejects anything shorter than 3 characters ("invalid q").
+    if (query.length < 3) {
+      toast.error("MAL ค้นหาได้เมื่อชื่อเรื่องยาวอย่างน้อย 3 ตัวอักษร");
       return;
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/mal/search?q=${encodeURIComponent(title)}`);
-      const data = await res.json();
+      const res = await fetch(`/api/mal/search?q=${encodeURIComponent(query)}`);
+      const data: { data?: MalItem[]; message?: string; error?: string } = await res.json();
+      if (!res.ok) {
+        // A real MAL/proxy failure (bad client id, rate limit, ...) is not "no results".
+        toast.error(`ค้นหา MAL ไม่สำเร็จ: ${data.message || data.error || res.status}`);
+        setMalResults([]);
+        return;
+      }
       if (data.data && data.data.length > 0) {
         setMalResults(data.data);
         toast.success(`พบข้อมูล ${data.data.length} เรื่องใน MAL!`);

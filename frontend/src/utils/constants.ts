@@ -1,4 +1,4 @@
-import { SeriesType, SeriesStatus } from "../types";
+import { SeriesType, SeriesStatus, LogLanguage } from "../types";
 
 export const TYPE_LABEL: Record<SeriesType, string> = {
   manga: "Manga",
@@ -21,11 +21,16 @@ export const FORMAT_LABEL: Record<string, string> = {
   omnibus: "Omnibus"
 };
 
-export const RATING_LABEL: Record<number, string> = {
-  0: "—",
-  1: "★ แย่",
-  2: "★★ พอใช้",
-  3: "★★★ ดี",
-  4: "★★★★ ดีมาก",
-  5: "★★★★★ ยอดเยี่ยม"
+export const LANGUAGE_LABEL: Record<LogLanguage, string> = {
+  th: "ไทย",
+  jp: "ญี่ปุ่น (JP)",
+  en: "อังกฤษ (EN)",
+  other: "ภาษาอื่น"
+};
+
+export const LANGUAGE_SHORT: Record<LogLanguage, string> = {
+  th: "TH",
+  jp: "JP",
+  en: "EN",
+  other: "อื่นๆ"
 };

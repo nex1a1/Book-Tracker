@@ -1,4 +1,5 @@
-import { VolumeRange, Series, SeriesDerivedStats } from "../types";
+import { VolumeRange, Series, SeriesDerivedStats, BookLog } from "../types";
+import { FORMAT_LABEL, LANGUAGE_SHORT } from "./constants";
 
 export function getSetFromRanges(ranges: VolumeRange[] | undefined | null): Set<number> {
   const set = new Set<number>();
@@ -41,6 +42,26 @@ export function mergeRanges(ranges: VolumeRange[] | undefined | null): VolumeRan
   return merged;
 }
 
+/**
+ * Formats VolumeRange array to human readable range string (e.g. [[1, 20], [21, 21]] -> "1-20, 21")
+ */
+export function formatVolumeRangesString(ranges: VolumeRange[] | undefined | null): string {
+  if (!ranges || ranges.length === 0) return 'ไม่มี';
+  return ranges.map(([s, e]) => s === e ? `${s}` : `${s}-${e}`).join(', ');
+}
+
+/** Collection logs without a language predate the field and are Thai editions. */
+export function getLogLanguage(log: BookLog) {
+  return log.language ?? 'th';
+}
+
+/** Collection log name for display; non-Thai logs get a language tag, e.g. "JP · ปกพิเศษ". */
+export function getCollectionLogLabel(log: BookLog): string {
+  const lang = getLogLanguage(log);
+  const name = log.title || FORMAT_LABEL[log.format || 'normal'];
+  return lang === 'th' ? name : `${LANGUAGE_SHORT[lang]} · ${name}`;
+}
+
 export function getMissingVolumesText(ranges: VolumeRange[] | undefined | null, limitVolume: number | null | undefined): string {
   if (!limitVolume || limitVolume <= 0) return "-";
   const boughtSet = getSetFromRanges(ranges);
@@ -62,6 +83,13 @@ export function getMissingVolumesText(ranges: VolumeRange[] | undefined | null, 
   }
   grouped.push(start === end ? `${start}` : `${start}-${end}`);
   return grouped.join(", ");
+}
+
+/** How one collection log stands. "Keep some volumes" logs and logs with no total yet can't be judged. */
+export function getLogState(log: BookLog): 'partial' | 'unknown' | 'complete' | 'missing' {
+  if (log.isPartial) return 'partial';
+  const text = getMissingVolumesText(log.ranges, log.totalVolumes);
+  return text === '-' ? 'unknown' : text === 'ครบถ้วน' ? 'complete' : 'missing';
 }
 
 export function normalizeSeriesData(series: Series | null | undefined): Series | null {
@@ -107,9 +135,12 @@ export function getSeriesDerivedStats(series: Series): SeriesDerivedStats {
   const isNotCollecting = !n.isCollecting;
   
   if (n.isCollecting) {
-    const hasMissing = n.collectionLogs.some(log => getMissingVolumesText(log.ranges, log.totalVolumes) !== 'ครบถ้วน');
+    // Logs that can't be judged never count as missing (the checklist skips them too), and a series with
+    // nothing judgeable is neither missing nor complete.
+    const states = n.collectionLogs.map(getLogState);
+    const hasMissing = states.includes('missing');
     isCollectMissing = !isCollectStopped && hasMissing;
-    isCollectComplete = !hasMissing;
+    isCollectComplete = !hasMissing && states.includes('complete');
   }
   
   return {

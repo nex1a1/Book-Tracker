@@ -23,6 +23,8 @@
 .field-error-msg { font-size: .7rem; color: var(--danger-text); margin-top: 2px; }
 .field--inactive > span { opacity: 0.5; }
 
+.duplicate-warning { position: sticky; top: 0; z-index: 2; padding: 10px 14px; font-size: .8rem; color: var(--accent); background: #2a1a08; border: 1px solid var(--accent); }
+
 .log-editor-box { background: var(--paper); padding: 14px; border-radius: 4px; border: 1px solid var(--border); position: relative; }
 .log-editor-box--alt { background: rgba(224, 224, 224, 0.03); border-color: rgba(224, 224, 224, 0.15); }
 .log-editor-box__remove { position: absolute; top: 8px; right: 8px; }

@@ -13,7 +13,7 @@
   --border-hover: #ff7b00;
   --shadow:    0 4px 12px rgba(0,0,0,0.6);
   --shadow-lg: 0 8px 24px rgba(255, 123, 0, 0.15);
-  --sidebar-w: 280px;
+  --sidebar-w: 440px;
 
   --read-color:      #ff7b00;
   --read-color-alt:  #b35400; /* secondary reading sub-log: same hue family, deeper */
@@ -394,7 +394,7 @@ body {
 
 /* ── Responsive Layout (Global) ──────────────────────────── */
 @media (max-width: 1200px) {
-  :root { --sidebar-w: 240px; }
+  :root { --sidebar-w: 340px; }
   .telemetry-item { padding: 0 12px; gap: 8px; }
   .telemetry-item__value { font-size: 0.9rem; }
   .telemetry-item__label { font-size: 0.62rem; }

@@ -1,5 +1,5 @@
 import React from "react";
-import { getSetFromRanges } from "../../../utils/helpers";
+import { getSetFromRanges, getLogLanguage } from "../../../utils/helpers";
 import { BookLog } from "../../../types";
 
 interface AggregatedVolumeBarProps {
@@ -17,8 +17,10 @@ interface GridCell {
   logIndex: number;
 }
 
-export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini = false }: AggregatedVolumeBarProps) {
-  if (!logs || logs.length === 0) return null;
+export function AggregatedVolumeBar({ logs: allLogs, type, icon: Icon, titleLabel, isMini = false }: AggregatedVolumeBarProps) {
+  // Partial and foreign-language collection logs are shown as their own rows, so they don't skew this bar.
+  const logs = (allLogs || []).filter(log => !log.isPartial && getLogLanguage(log) === 'th');
+  if (logs.length === 0) return null;
   const totalVolumes = logs.reduce((sum, log) => sum + (Number(log.totalVolumes) || 0), 0);
   let count = 0;
   const gridCells: GridCell[] = [];
@@ -32,13 +34,13 @@ export function AggregatedVolumeBar({ logs, type, icon: Icon, titleLabel, isMini
   const percent = totalVolumes > 0 ? Math.min(Math.round((count / totalVolumes) * 100), 100) : 0;
   const progressColor = type === 'read' ? 'var(--read-color)' : 'var(--buy-color)';
   return (
-    <div className={`progress-item ${isMini ? 'progress-item--mini' : ''}`} style={!isMini ? { marginTop: type === 'buy' ? '8px' : '0', paddingTop: type === 'buy' ? '8px' : '0', borderTop: type === 'buy' ? '1px dashed var(--border)' : 'none' } : {}}>
+    <div className={`progress-item ${isMini ? 'progress-item--mini' : ''} ${percent === 100 ? 'progress-item--full' : ''}`} style={!isMini ? { marginTop: type === 'buy' ? '8px' : '0', paddingTop: type === 'buy' ? '8px' : '0', borderTop: type === 'buy' ? '1px dashed var(--border)' : 'none' } : {}}>
       <div className="progress-info">
         <span className="progress-label"><Icon /> {titleLabel}: {count}/{totalVolumes || '?'}</span>
         <span className="progress-percent">{percent}%</span>
       </div>
       <div className="progress-track">
-        <div className="progress-fill" style={{ transform: `scaleX(${percent / 100})`, background: progressColor }}></div>
+        <div className="progress-fill" style={{ transform: `scaleX(${percent / 100})`, background: `var(--bar-fill, ${progressColor})` }}></div>
       </div>
       <div className="vbar-mini-grid">
         {gridCells.map((cell, idx) => {

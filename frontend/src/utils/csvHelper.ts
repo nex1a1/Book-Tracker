@@ -1,11 +1,11 @@
-import { Series } from "../types";
-import { TYPE_LABEL, STATUS_LABEL } from "./constants";
-import { normalizeSeriesData, getSetFromRanges } from "./helpers";
+import { Series, BookLog } from "../types";
+import { TYPE_LABEL, STATUS_LABEL, LANGUAGE_SHORT } from "./constants";
+import { normalizeSeriesData, getSetFromRanges, formatVolumeRangesString, getCollectionLogLabel, getLogLanguage } from "./helpers";
 
 export type ExportLayoutMode = 'series' | 'split_logs';
 
 export interface CsvColumnOption {
-  key: keyof Series | 'publishPeriod' | 'subLogTitle' | 'readProgress' | 'collectionProgress' | 'totalReadCount' | 'totalReadMax' | 'totalOwnedCount' | 'readRangesDetail' | 'collectionRangesDetail';
+  key: keyof Series | 'publishPeriod' | 'subLogTitle' | 'readProgress' | 'collectionProgress' | 'totalReadCount' | 'totalReadMax' | 'totalOwnedCount' | 'totalOwnedOtherLanguage' | 'collectionLanguage' | 'readRangesDetail' | 'collectionRangesDetail';
   label: string;
   defaultSelected: boolean;
   getValue: (item: Series) => string | number;
@@ -27,11 +27,28 @@ export function formatYearRange(publishYear?: number | null, endYear?: number | 
 }
 
 /**
- * Formats VolumeRange array to human readable range string (e.g. [[1, 20], [21, 21]] -> "1-20, 21")
+ * One collection log's progress: "มีแล้ว 3/10 เล่ม", or the owned ranges for "keep only some volumes" logs.
  */
-export function formatVolumeRangesString(ranges: [number, number][] | undefined | null): string {
-  if (!ranges || ranges.length === 0) return 'ไม่มี';
-  return ranges.map(([s, e]) => s === e ? `${s}` : `${s}-${e}`).join(', ');
+function formatLogProgress(log: BookLog, suffix = ''): string {
+  if (log.isPartial) return `เก็บบางเล่ม [${formatVolumeRangesString(log.ranges)}]${suffix}`;
+  const ownedCount = getSetFromRanges(log.ranges).size;
+  const totalText = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
+  return `มีแล้ว ${ownedCount}${totalText}${suffix}`;
+}
+
+/** One collection log's owned ranges, e.g. "เล่มปกติ: [1-25]". */
+function formatLogRanges(log: BookLog): string {
+  return `${getCollectionLogLabel(log)}: [${formatVolumeRangesString(log.ranges)}]`;
+}
+
+/** Owned volumes split into Thai editions and every other language. */
+function countOwnedByLanguage(logs: BookLog[]): { thai: number; other: number } {
+  let thai = 0, other = 0;
+  logs.forEach(log => {
+    const n = getSetFromRanges(log.ranges).size;
+    if (getLogLanguage(log) === 'th') thai += n; else other += n;
+  });
+  return { thai, other };
 }
 
 /**
@@ -48,10 +65,8 @@ export function formatCollectionProgress(series: Series, logTitle?: string): str
 
   const suffix = series.isCollectingStopped ? ' (เลิกตามแล้ว)' : '';
   return normalized.collectionLogs.map(log => {
-    const ownedCount = getSetFromRanges(log.ranges).size;
-    const totalText = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
-    const prefix = logTitle ? '' : `${log.title}: `;
-    return `${prefix}มีแล้ว ${ownedCount}${totalText}${suffix}`;
+    const prefix = logTitle ? '' : `${getCollectionLogLabel(log)}: `;
+    return `${prefix}${formatLogProgress(log, suffix)}`;
   }).join(' | ');
 }
 
@@ -122,13 +137,35 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
   },
   {
     key: 'totalOwnedCount',
-    label: 'จำนวนเล่มที่มีรวม',
+    label: 'จำนวนเล่มที่มีรวม (ไทย)',
     defaultSelected: false,
     getValue: (item) => {
       if (!item.isCollecting) return 0;
       const normalized = normalizeSeriesData(item);
       if (!normalized || !normalized.collectionLogs) return 0;
-      return normalized.collectionLogs.reduce((sum, log) => sum + getSetFromRanges(log.ranges).size, 0);
+      return countOwnedByLanguage(normalized.collectionLogs).thai;
+    }
+  },
+  {
+    key: 'totalOwnedOtherLanguage',
+    label: 'จำนวนเล่มต่างภาษาที่มี',
+    defaultSelected: false,
+    getValue: (item) => {
+      if (!item.isCollecting) return 0;
+      const normalized = normalizeSeriesData(item);
+      if (!normalized || !normalized.collectionLogs) return 0;
+      return countOwnedByLanguage(normalized.collectionLogs).other;
+    }
+  },
+  {
+    key: 'collectionLanguage',
+    label: 'ภาษาของเล่มที่มี',
+    defaultSelected: true,
+    getValue: (item) => {
+      if (!item.isCollecting) return '-';
+      const normalized = normalizeSeriesData(item);
+      const langs = new Set((normalized?.collectionLogs || []).filter(log => log.ranges.length > 0).map(getLogLanguage));
+      return langs.size > 0 ? [...langs].map(l => LANGUAGE_SHORT[l]).join(', ') : '-';
     }
   },
   {
@@ -149,7 +186,7 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
       if (!item.isCollecting) return 'ไม่ได้เก็บสะสม';
       const normalized = normalizeSeriesData(item);
       if (!normalized || !normalized.collectionLogs) return '-';
-      return normalized.collectionLogs.map(log => `${log.title}: [${formatVolumeRangesString(log.ranges)}]`).join(' | ');
+      return normalized.collectionLogs.map(formatLogRanges).join(' | ');
     }
   },
   { key: 'publishYear', label: 'ปีเริ่มตีพิมพ์ (เดี่ยว)', defaultSelected: false, getValue: (item) => item.publishYear || '' },
@@ -211,9 +248,11 @@ export function generateCsvData(
             if (!series.isCollecting) return 'ไม่ได้เก็บสะสม';
             const log = collectionLogs[0];
             if (!log) return 'ยังไม่มีเล่ม';
-            const count = getSetFromRanges(log.ranges).size;
-            const total = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
-            return `มีแล้ว ${count}${total}${series.isCollectingStopped ? ' (เลิกตามแล้ว)' : ''}`;
+            return formatLogProgress(log, series.isCollectingStopped ? ' (เลิกตามแล้ว)' : '');
+          }
+          if (col.key === 'collectionLanguage') {
+            const log = collectionLogs[0];
+            return series.isCollecting && log?.ranges.length ? LANGUAGE_SHORT[getLogLanguage(log)] : '-';
           }
           return String(col.getValue(series));
         });
@@ -223,40 +262,54 @@ export function generateCsvData(
         const maxLogsCount = Math.max(readingLogs.length, collectionLogs.length, 1);
 
         for (let i = 0; i < maxLogsCount; i++) {
-          const rLog = readingLogs[i] || readingLogs[0];
-          const cLog = collectionLogs[i] || collectionLogs[0];
+          // Rows past the last log of one kind exist only for extra logs of the other kind (a prequel, a JP
+          // edition); they must not repeat the main log's reading or collection data.
+          const rLog = readingLogs[i];
+          const cLog = collectionLogs[i];
 
           const rReadCount = rLog ? getSetFromRanges(rLog.ranges).size : 0;
           const rTotal = rLog?.totalVolumes && rLog.totalVolumes > 0 ? `/${rLog.totalVolumes} เล่ม` : ' เล่ม';
           const rRangesText = rLog ? formatVolumeRangesString(rLog.ranges) : 'ไม่มี';
 
           const cOwnedCount = cLog ? getSetFromRanges(cLog.ranges).size : 0;
-          const cTotal = cLog?.totalVolumes && cLog.totalVolumes > 0 ? `/${cLog.totalVolumes} เล่ม` : ' เล่ม';
+          const cIsThai = !cLog || getLogLanguage(cLog) === 'th';
 
-          const subTitle = rLog?.title || cLog?.title || `ภาคที่ ${i + 1}`;
+          const subTitle = rLog?.title || (cLog ? getCollectionLogLabel(cLog) : `ภาคที่ ${i + 1}`);
 
           const row = activeCols.map(col => {
             if (col.key === 'subLogTitle') {
               return subTitle;
             }
             if (col.key === 'readProgress') {
-              return rLog ? `อ่านแล้ว ${rReadCount}${rTotal}` : 'ยังไม่ได้อ่าน';
+              return rLog ? `อ่านแล้ว ${rReadCount}${rTotal}` : '-';
             }
             if (col.key === 'collectionProgress') {
               if (!series.isCollecting) return 'ไม่ได้เก็บสะสม';
-              return cLog ? `มีแล้ว ${cOwnedCount}${cTotal}${series.isCollectingStopped ? ' (เลิกตามแล้ว)' : ''}` : 'ยังไม่มีเล่ม';
+              return cLog ? formatLogProgress(cLog, series.isCollectingStopped ? ' (เลิกตามแล้ว)' : '') : '-';
+            }
+            if (col.key === 'collectionRangesDetail') {
+              if (!series.isCollecting) return 'ไม่ได้เก็บสะสม';
+              return cLog ? formatLogRanges(cLog) : '-';
+            }
+            if (col.key === 'collectionLanguage') {
+              return series.isCollecting && cLog?.ranges.length ? LANGUAGE_SHORT[getLogLanguage(cLog)] : '-';
             }
             if (col.key === 'readRangesDetail') {
-              return `[${rRangesText}]`;
+              return rLog ? `[${rRangesText}]` : '-';
             }
             if (col.key === 'totalReadCount') {
-              return String(rReadCount);
+              return rLog ? String(rReadCount) : '-';
             }
             if (col.key === 'totalReadMax') {
-              return String(rLog?.totalVolumes || 0);
+              return rLog ? String(rLog.totalVolumes || 0) : '-';
             }
             if (col.key === 'totalOwnedCount') {
-              return String(series.isCollecting ? cOwnedCount : 0);
+              if (series.isCollecting && !cLog) return '-';
+              return String(series.isCollecting && cIsThai ? cOwnedCount : 0);
+            }
+            if (col.key === 'totalOwnedOtherLanguage') {
+              if (series.isCollecting && !cLog) return '-';
+              return String(series.isCollecting && !cIsThai ? cOwnedCount : 0);
             }
             return String(col.getValue(series));
           });

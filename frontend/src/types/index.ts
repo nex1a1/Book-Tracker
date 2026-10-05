@@ -1,11 +1,15 @@
 export type VolumeRange = [number, number];
 
+export type LogLanguage = 'th' | 'jp' | 'en' | 'other';
+
 export interface BookLog {
   id: string;
   title: string;
   totalVolumes: number | null;
   ranges: VolumeRange[];
   format?: string; // Specific to collection logs in UI
+  language?: LogLanguage; // Collection logs only; missing = 'th'
+  isPartial?: boolean; // Collection logs only: selective keep, never counted as missing
 }
 
 export type SeriesType = 'manga' | 'novel' | 'light_novel';
@@ -56,6 +60,7 @@ export interface FilterState {
   publisher: string[];
   readStatus: string[];
   collectStatus: string[];
+  language: LogLanguage[]; // series owning at least one volume in any of these collection languages
   minRating: number;
   maxRating: number;
   unratedOnly?: boolean;

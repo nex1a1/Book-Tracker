@@ -23,6 +23,7 @@ const INITIAL_EXPORT_FILTER: FilterState = {
   publisher: [],
   readStatus: [],
   collectStatus: [],
+  language: [],
   minRating: 0,
   maxRating: 0,
   yearFrom: '',
@@ -107,7 +108,7 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
     setScope('filtered');
   };
 
-  const toggleArrayFilter = (key: 'type' | 'status' | 'readStatus' | 'collectStatus', val: string) => {
+  const toggleArrayFilter = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => {
     const arr = (exportFilter[key] as string[]) || [];
     const nextArr = arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
     updateFilter({ [key]: nextArr });
@@ -172,13 +173,18 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
     toast.success(`ดาวน์โหลดไฟล์ ${filename} สำเร็จแล้ว!`);
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (targetSeriesList.length === 0) {
       toast.error('ไม่มีรายการข้อมูลสำหรับ Copy');
       return;
     }
-    navigator.clipboard.writeText(csvString);
-    toast.success('คัดลอกข้อความ CSV เข้า Clipboard แล้ว!');
+    // try/catch (not .catch) because navigator.clipboard itself is missing on a non-HTTPS origin
+    try {
+      await navigator.clipboard.writeText(csvString);
+      toast.success('คัดลอกข้อความ CSV เข้า Clipboard แล้ว!');
+    } catch {
+      toast.error('ไม่สามารถคัดลอกได้');
+    }
   };
 
   const unselectedColumns = useMemo(() => {

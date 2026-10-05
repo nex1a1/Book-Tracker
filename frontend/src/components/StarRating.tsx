@@ -13,11 +13,15 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
   const [hover, setHover] = useState(0);
   const display = hover || rating;
 
+  // The left half of a star is a half star.
+  const valueAt = (e: React.MouseEvent<HTMLButtonElement>, n: number) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return e.clientX - rect.left < rect.width / 2 ? n - 0.5 : n;
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>, n: number) => {
     if (readOnly) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const isHalf = e.clientX - rect.left < rect.width / 2;
-    setHover(isHalf ? n - 0.5 : n);
+    setHover(valueAt(e, n));
   };
 
   const getRatingText = (r: number): string => {
@@ -31,7 +35,9 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
 
   return (
     <div className={`star-rating star-rating--${size} ${readOnly ? 'star-rating--readonly' : ''}`}
-      onMouseLeave={() => !readOnly && setHover(0)}>
+      onMouseLeave={() => !readOnly && setHover(0)}
+      role={readOnly ? 'img' : undefined}
+      aria-label={readOnly ? `ให้ ${rating} ดาว` : undefined}>
       {[1, 2, 3, 4, 5].map(n => {
         const isFilled = display >= n;
         const isHalf = display === n - 0.5;
@@ -44,12 +50,15 @@ export function StarRating({ rating = 0, onRate, size = 'sm', readOnly = false }
             onClick={(e) => {
               if (!readOnly && onRate) {
                 e.stopPropagation();
-                const val = display;
+                // Taken from the click itself, not from the last hover, so keyboard activation works too.
+                // A keyboard click has no pointer position (detail 0): it means the whole star.
+                const val = e.detail === 0 ? n : valueAt(e, n);
                 onRate(val === rating ? 0 : val);
               }
             }}
             title={readOnly ? `ให้ ${rating} ดาว` : `ให้ ${display} ดาว`}
-            aria-label={readOnly ? `ให้ ${rating} ดาว` : `ให้ ${display} ดาว`}
+            aria-label={`ให้ ${n} ดาว`}
+            tabIndex={readOnly ? -1 : undefined}
           >
             <Icons.Star filled={isFilled} half={isHalf} />
           </button>

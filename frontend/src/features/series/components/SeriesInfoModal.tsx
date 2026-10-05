@@ -3,11 +3,10 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
 import { useSeriesStore } from "../../../store/useSeriesStore";
-import { seriesApi } from "../../../api/seriesApi";
+import { seriesApi, apiErrorMessage } from "../../../api/seriesApi";
 import { normalizeSeriesData, getSeriesDerivedStats } from "../../../utils/helpers";
 import { FORMAT_LABEL } from "../../../utils/constants";
 import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
-import type { CreateSeriesInput } from "../../../../../backend/src/utils/validation";
 
 // Sub-components
 import { SeriesFormSidebar } from "./SeriesFormSidebar";
@@ -65,7 +64,15 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<RequiredFieldKey, string>>>({});
-  const { fetchSeries, fetchStats, fetchMetadata, authors, publishers } = useSeriesStore();
+  const { fetchSeries, fetchStats, fetchMetadata, authors, publishers, series: allSeries } = useSeriesStore();
+
+  // Warn (don't block) when adding something already in the library: same title, or the same MAL cover
+  // (a cover URL we already stored means this MAL entry was fetched before). Exact match only.
+  const duplicate = useMemo(() => {
+    if (isEdit) return undefined;
+    const t = form.title.trim().toLowerCase();
+    return allSeries.find(s => (t && s.title.trim().toLowerCase() === t) || (form.imageUrl && s.imageUrl === form.imageUrl));
+  }, [isEdit, allSeries, form.title, form.imageUrl]);
 
   const setField = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm(prev => ({ ...prev, [field]: value }));
@@ -195,14 +202,11 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     let eYear: number | string = form.endYear;
     if (node.status === "finished") {
        st = "completed";
-       if (node.start_date) eYear = node.start_date.substring(0, 4);
+       // Only MAL's own end date counts: falling back to the start year would silently put a wrong year in the form.
+       if (node.end_date) eYear = node.end_date.substring(0, 4);
     } else if (node.status === "currently_publishing") st = "ongoing";
     else if (node.status === "on_hiatus") st = "hiatus";
     else if (node.status === "discontinued") st = "cancelled";
-
-    if (node.status === "finished" && node.end_date) {
-      eYear = node.end_date.substring(0, 4);
-    }
 
     // 4. Volumes mapping
     const newReadingLogs = [...form.readingLogs];
@@ -286,13 +290,13 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
       if (isEdit && series) {
         await seriesApi.update(series._id, payload);
       } else {
-        await seriesApi.create(payload as CreateSeriesInput);
+        await seriesApi.create(payload);
       }
       await Promise.all([fetchSeries(), fetchStats(), fetchMetadata()]);
       toast.success("บันทึกสำเร็จ");
       onClose();
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการบันทึก");
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "เกิดข้อผิดพลาดในการบันทึก"));
       setIsSaving(false);
     }
   };
@@ -327,6 +331,12 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
 
           {/* ── Right Content Form Area ── */}
           <div className="modal__form-content">
+
+            {duplicate && (
+              <div className="duplicate-warning" role="alert">
+                ⚠️ มี "{duplicate.title}" อยู่ในระบบแล้ว — ถ้าบันทึกจะกลายเป็นซีรีส์ซ้ำอีกเรื่อง (ถ้าเป็นคนละฉบับ/ภาษา ให้เพิ่มเป็น log สะสมในเรื่องเดิมแทน)
+              </div>
+            )}
 
             <SeriesBasicInfoCard
               form={form}

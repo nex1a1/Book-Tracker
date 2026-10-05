@@ -10,6 +10,7 @@ export const EMPTY_FILTER: FilterState = {
   publisher: [],
   readStatus: [],
   collectStatus: [],
+  language: [],
   minRating: 0,
   maxRating: 0,
   unratedOnly: false,

@@ -20,7 +20,12 @@ export function RangeEditor({ ranges = [], onChange, label = "ช่วงเล
     if (startVal || endVal) {
       const start = startVal ? Number(startVal) : Number(endVal);
       const end = endVal ? Number(endVal) : Number(startVal);
-      if (start > end) { 
+      // The server only accepts whole volume numbers from 0 up, so say so here instead of failing on save.
+      if (![start, end].every(v => Number.isInteger(v) && v >= 0)) {
+        toast.error("ระบุเล่มเป็นเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป");
+        return;
+      }
+      if (start > end) {
         toast.error("เล่มเริ่มต้นต้องน้อยกว่าเล่มจบ"); 
         return; 
       }

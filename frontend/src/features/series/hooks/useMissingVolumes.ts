@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSeriesStore } from "../../../store/useSeriesStore";
-import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges } from "../../../utils/helpers";
-import { FORMAT_LABEL, TYPE_LABEL } from "../../../utils/constants";
+import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, getCollectionLogLabel } from "../../../utils/helpers";
+import { TYPE_LABEL } from "../../../utils/constants";
 import { Series } from "../../../types";
 
 export interface MissingLogItem {
@@ -45,6 +45,7 @@ export function useMissingList(): MissingSeriesItem[] {
       if (stats.n.isCollecting && !stats.n.isCollectingStopped && stats.isCollectMissing) {
         const formats: MissingLogItem[] = [];
         stats.n.collectionLogs.forEach(log => {
+          if (log.isPartial) return;
           const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
           if (missingText !== 'ครบถ้วน' && missingText !== '-') {
             const boughtCount = getSetFromRanges(log.ranges).size;
@@ -54,7 +55,7 @@ export function useMissingList(): MissingSeriesItem[] {
             formats.push({ 
               id: log.id,
               format: log.format,
-              title: log.title || FORMAT_LABEL[log.format || 'normal'] || 'เล่มปกติ', 
+              title: getCollectionLogLabel(log), 
               missingText,
               missingCount: count
             });

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getSeriesDerivedStats, getSetFromRanges } from "../../../utils/helpers";
+import { getSeriesDerivedStats, getSetFromRanges, getLogLanguage } from "../../../utils/helpers";
 import { Series, FilterState } from "../../../types";
 
 // Total volumes still missing across every collection log — undefined when not collecting,
@@ -8,6 +8,7 @@ function getMissingCount(s: Series): number | undefined {
   const stats = getSeriesDerivedStats(s);
   if (!stats.n.isCollecting || stats.n.isCollectingStopped) return undefined;
   return stats.n.collectionLogs.reduce((sum, log) => {
+    if (log.isPartial) return sum;
     const owned = getSetFromRanges(log.ranges).size;
     const limit = Number(log.totalVolumes) || 0;
     return sum + Math.max(0, limit - owned);
@@ -55,6 +56,12 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
 
     filtered = filtered.filter(s => {
       const st = getSeriesDerivedStats(s);
+
+      if (filter.language && filter.language.length > 0) {
+        const ownsLanguage = st.n.isCollecting && st.n.collectionLogs.some(log =>
+          log.ranges.length > 0 && filter.language.includes(getLogLanguage(log)));
+        if (!ownsLanguage) return false;
+      }
       
       if (filter.readStatus && filter.readStatus.length > 0) {
         let matchRead = false;
@@ -98,7 +105,8 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
         valA = getMissingCount(a);
         valB = getMissingCount(b);
       }
-      if (valA === undefined || valA === null) return 1;
+      // No value sorts last, and two of them tie (returning 1 both ways is not a valid comparator).
+      if (valA === undefined || valA === null) return valB === undefined || valB === null ? 0 : 1;
       if (valB === undefined || valB === null) return -1;
       if (valA < valB) return filter.sortOrder === 'ASC' ? -1 : 1;
       if (valA > valB) return filter.sortOrder === 'ASC' ? 1 : -1;
@@ -116,6 +124,7 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     if (filter.publisher.length > 0) c++;
     if (filter.readStatus && filter.readStatus.length > 0) c++;
     if (filter.collectStatus && filter.collectStatus.length > 0) c++;
+    if (filter.language && filter.language.length > 0) c++;
     if (filter.unratedOnly || filter.minRating || filter.maxRating) c++;
     if (filter.yearFrom) c++;
     if (filter.yearTo) c++;

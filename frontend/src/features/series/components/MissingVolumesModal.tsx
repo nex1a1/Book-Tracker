@@ -37,7 +37,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
   } = useMissingVolumes();
 
   // Copy items to clipboard (excluding checked ones)
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const itemsToCopy = filteredList.map(item => {
       const remainingFormats = item.formats.filter(f => !checkedItems.has(`${item._id}-${f.id}`));
       if (remainingFormats.length === 0) return null;
@@ -60,12 +60,16 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
       textToCopy += "\n";
     });
     
-    navigator.clipboard.writeText(textToCopy.trim())
-      .then(() => toast.success("คัดลอกรายการที่เหลือลงคลิปบอร์ดแล้ว!"))
-      .catch(() => toast.error("ไม่สามารถคัดลอกได้"));
+    // try/catch (not .catch) because navigator.clipboard itself is missing on a non-HTTPS origin
+    try {
+      await navigator.clipboard.writeText(textToCopy.trim());
+      toast.success("คัดลอกรายการที่เหลือลงคลิปบอร์ดแล้ว!");
+    } catch {
+      toast.error("ไม่สามารถคัดลอกได้");
+    }
   };
 
-  const handleCopySingle = (item: MissingSeriesItem) => {
+  const handleCopySingle = async (item: MissingSeriesItem) => {
     let textToCopy = `📚 ${item.title}\n`;
     const details = [];
     if (item.author) details.push(`แต่ง: ${item.author}`);
@@ -73,9 +77,12 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     if (details.length > 0) textToCopy += `(${details.join(' | ')})\n`;
     item.formats.forEach(f => { textToCopy += `👉 ขาด (${f.title}): เล่ม ${f.missingText}\n`; });
     
-    navigator.clipboard.writeText(textToCopy.trim())
-      .then(() => toast.success(`คัดลอก "${item.title}" แล้ว!`))
-      .catch(() => toast.error("ไม่สามารถคัดลอกได้"));
+    try {
+      await navigator.clipboard.writeText(textToCopy.trim());
+      toast.success(`คัดลอก "${item.title}" แล้ว!`);
+    } catch {
+      toast.error("ไม่สามารถคัดลอกได้");
+    }
   };
 
   return createPortal(

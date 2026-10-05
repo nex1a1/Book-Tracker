@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from '../../../components/Icons';
-import { FilterState, SeriesType, SeriesStatus } from '../../../types';
+import { FilterState, SeriesType, SeriesStatus, LogLanguage } from '../../../types';
+import { LANGUAGE_LABEL } from '../../../utils/constants';
 import { PublisherDropdown } from './PublisherDropdown';
 
 interface ExportFilterPopoverProps {
@@ -10,7 +11,7 @@ interface ExportFilterPopoverProps {
   matchedCount: number;
   localFilterCount: number;
   onUpdate: (f: Partial<FilterState>) => void;
-  onToggleArray: (key: 'type' | 'status' | 'readStatus' | 'collectStatus', val: string) => void;
+  onToggleArray: (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => void;
   onReset: () => void;
   onDone: () => void;
 }
@@ -157,6 +158,30 @@ export function ExportFilterPopover({
                 onClick={() => onToggleArray('collectStatus', cs.id)}
               >
                 {cs.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Collection Language */}
+        <div className="filter-field">
+          <label className="field-label">ภาษาของเล่มที่มี:</label>
+          <div className="filter-pill-group">
+            <button
+              type="button"
+              className={`mini-pill ${filter.language.length === 0 ? 'active' : ''}`}
+              onClick={() => onUpdate({ language: [] })}
+            >
+              ทั้งหมด
+            </button>
+            {(Object.keys(LANGUAGE_LABEL) as LogLanguage[]).map(lang => (
+              <button
+                key={lang}
+                type="button"
+                className={`mini-pill ${filter.language.includes(lang) ? 'active' : ''}`}
+                onClick={() => onToggleArray('language', lang)}
+              >
+                {LANGUAGE_LABEL[lang]}
               </button>
             ))}
           </div>

@@ -3,7 +3,6 @@ import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { Dropdown } from "../../../components/Dropdown";
 import { Autocomplete } from "../../../components/Autocomplete";
-import { RATING_LABEL } from "../../../utils/constants";
 import { SeriesType, SeriesStatus } from "../../../types";
 
 const TYPE_OPTIONS = [
@@ -171,7 +170,6 @@ export function SeriesBasicInfoCard({
         <span>คะแนนความชื่นชอบส่วนตัว</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
           <StarRating rating={form.rating} onRate={(r) => onFieldChange({ rating: r })} size="lg" />
-          {form.rating > 0 && <span style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>{RATING_LABEL[form.rating]}</span>}
         </div>
       </div>
     </div>

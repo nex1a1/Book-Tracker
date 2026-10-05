@@ -2,10 +2,11 @@ import React from "react";
 import { Icons } from "../../../components/Icons";
 import { RangeEditor } from "../../../components/RangeEditor";
 import { Dropdown } from "../../../components/Dropdown";
-import { FORMAT_LABEL } from "../../../utils/constants";
+import { FORMAT_LABEL, LANGUAGE_LABEL } from "../../../utils/constants";
 import { BookLog } from "../../../types";
 
 const FORMAT_OPTIONS = Object.entries(FORMAT_LABEL).map(([value, label]) => ({ value, label }));
+const LANGUAGE_OPTIONS = Object.entries(LANGUAGE_LABEL).map(([value, label]) => ({ value, label }));
 
 interface LogEditorBoxProps {
   log: BookLog;
@@ -88,18 +89,38 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
                 placeholder="เช่น เล่มปกติ, ฉบับพิเศษ..."
               />
             </label>
-            <label className="field" style={{ flex: 1 }}>
-              <span>มีทั้งหมด (เล่ม)</span>
-              <input
-                type="number"
-                className="input"
-                value={log.totalVolumes || ""}
-                onChange={e => {
-                  const val = e.target.value;
-                  onUpdate('totalVolumes', val === "" ? null : Number(val));
-                }}
-                placeholder="เช่น 23"
+            {!log.isPartial && (
+              <label className="field" style={{ flex: 1 }}>
+                <span>มีทั้งหมด (เล่ม)</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={log.totalVolumes || ""}
+                  onChange={e => {
+                    const val = e.target.value;
+                    onUpdate('totalVolumes', val === "" ? null : Number(val));
+                  }}
+                  placeholder="เช่น 23"
+                />
+              </label>
+            )}
+          </div>
+          <div className="field-row" style={{ marginBottom: '8px', alignItems: 'flex-end' }}>
+            <label className="field" style={{ flex: 1.5 }}>
+              <span>ภาษา</span>
+              <Dropdown
+                value={log.language || "th"}
+                options={LANGUAGE_OPTIONS}
+                onChange={val => onUpdate('language', val as BookLog['language'])}
               />
+            </label>
+            <label className="field-checkbox" style={{ flex: 3, paddingBottom: '8px' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(log.isPartial)}
+                onChange={e => onUpdate('isPartial', e.target.checked)}
+              />
+              เก็บเฉพาะบางเล่ม/บางปก (ไม่นับเป็นเล่มที่ขาด)
             </label>
           </div>
           <div className="field">

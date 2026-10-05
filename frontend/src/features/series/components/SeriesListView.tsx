@@ -65,10 +65,9 @@ export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter
         <>
           <div className="list-table-header">
             <div className="list-header-col">ปก</div>
-            <SortableCol label="ชื่อเรื่อง & ผู้เขียน" sortKey="title" defaultOrder="ASC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
-            <div className="list-header-col">ประเภท & สถานะ</div>
-            <SortableCol label="ความคืบหน้า" sortKey="readProgress" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
-            <SortableCol label="การสะสม / เล่มขาด" sortKey="missingCount" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
+            <SortableCol label="ชื่อเรื่อง" sortKey="title" defaultOrder="ASC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
+            <SortableCol label="การอ่าน" sortKey="readProgress" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
+            <SortableCol label="การสะสม & เล่มขาด" sortKey="missingCount" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} />
             <SortableCol label="คะแนน" sortKey="rating" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={onSortChange} className="list-header-col--center" />
             <div className="list-header-col list-header-col--right">จัดการ</div>
           </div>

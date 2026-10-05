@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
 export const logSchema = z.object({
+  id: z.string().optional(), // lets a save keep the identity of a log the series already owns
   title: z.string().trim().optional(),
   totalVolumes: z.number().int().nonnegative().nullable().optional(),
   format: z.string().trim().max(32).optional(), // collection logs only; reading logs ignore it
+  language: z.enum(['th', 'jp', 'en', 'other']).optional(), // collection logs only
+  isPartial: z.boolean().optional(), // collection logs only: selective keep, never counted as missing
   ranges: z.array(z.array(z.number().int().nonnegative()).length(2)).optional().default([])
 });
 

@@ -57,6 +57,9 @@ const SORT_OPTIONS: SortOption[] = [
   { value: "publishYear", label: "ปีที่พิมพ์", icon: CalendarIcon },
   { value: "rating", label: "คะแนนรีวิว", icon: StarIcon },
   { value: "createdAt", label: "วันที่เพิ่มระบบ", icon: PlusIcon },
+  // The list view's column headers can also sort by these, so the toolbar must be able to name them.
+  { value: "readProgress", label: "ความคืบหน้าการอ่าน", icon: Icons.BookOpen },
+  { value: "missingCount", label: "เล่มที่ยังขาด", icon: Icons.Cart },
 ];
 
 interface SortDropdownProps {

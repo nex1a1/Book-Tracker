@@ -2,8 +2,8 @@ import React from "react";
 import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
-import { getMissingVolumesText } from "../../../utils/helpers";
-import { FORMAT_LABEL, TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
+import { CollectionLogSummary } from "../../../components/CollectionLogSummary";
+import { TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
 import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
 
 interface LiveCardPreviewProps {
@@ -98,17 +98,7 @@ export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
                   <span className="summary-status-pill stopped">เลิกตามแล้ว</span>
                 </p>
               ) : (
-                form.collectionLogs.map(log => {
-                  const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
-                  const isComplete = missingText === 'ครบถ้วน';
-                  return (
-                    <p key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
-                      <Icons.Cart /> 
-                      <strong>{isComplete ? 'สะสมครบ' : 'ขาด'} ({log.title || FORMAT_LABEL[log.format || 'normal']}):</strong>
-                      <span className={`summary-status-pill ${isComplete ? 'complete' : 'missing'}`}>{missingText}</span>
-                    </p>
-                  );
-                })
+                form.collectionLogs.map(log => <CollectionLogSummary key={log.id} log={log} style={{ margin: '2px 0 0 0' }} />)
               )
             ) : (
               <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>

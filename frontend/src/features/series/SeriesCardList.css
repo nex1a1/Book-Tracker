@@ -2,9 +2,14 @@
    ── SeriesCard & SeriesListItem Layouts (Original SeriesCard.css)
    ========================================================================== */
 /* ── Cards (Grid View) ──────────────────────────────────── */
-/* Default stretch: every card in a row matches its tallest neighbor; any extra space
-   collects at the bottom of the shorter cards. */
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+/* Every card spans 3 grid rows (header / progress panel / missing summary) and lays its
+   children on them via subgrid, so the same section starts at the same y across a row even
+   when one card's title wraps to 2 lines. Spacing is margins, not gaps, so a row stays
+   zero-height (and adds no space) when a card has no summary. */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); column-gap: 16px; }
+.card-grid > .card { grid-row: span 3; display: grid; grid-template-rows: subgrid; gap: 0; margin-bottom: 16px; }
+.card-grid > .card > .volume-progress { margin-top: 14px; align-self: start; }
+.card-grid > .card > .card__summary { margin-top: 14px; }
 
 .card {
   background: linear-gradient(135deg, rgba(23, 23, 23, 0.7) 0%, rgba(13, 13, 13, 0.95) 100%);
@@ -136,7 +141,13 @@
   color: var(--accent);
   border: 1px solid rgba(255, 123, 0, 0.15);
 }
-.summary-status-pill.stopped {
+.summary-status-pill.partial {
+  background: rgba(96, 165, 250, 0.08);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+.summary-status-pill.stopped,
+.summary-status-pill.unknown {
   background: rgba(148, 163, 184, 0.08);
   color: var(--ink-secondary);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -187,9 +198,10 @@
   font-size: 0.75rem;
   color: var(--muted);
   margin: 0;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   letter-spacing: 0.2px;
 }
 
@@ -255,7 +267,7 @@
   gap: 10px;
   /* Single source of truth for the header/row column split — both reference this
      instead of repeating the track list, so they can never drift out of alignment. */
-  --list-grid: 44px minmax(200px, 3fr) minmax(190px, 2.6fr) minmax(160px, 2.3fr) minmax(95px, 1.1fr) minmax(110px, 1.2fr) 68px;
+  --list-grid: 44px minmax(240px, 3fr) minmax(150px, 1.8fr) minmax(210px, 2.8fr) minmax(90px, 0.9fr) 68px;
 }
 
 /* Premium sticky table header for ListView mode */
@@ -405,23 +417,6 @@
 .list-row:hover .list-row__title {
   color: var(--accent);
 }
-.list-row__timeline {
-  /* On its own line below the title (not sharing it): a long title used to force this
-     pill down anyway via flex-wrap, which is exactly what made row heights inconsistent.
-     Giving it a fixed line means every row's info block is the same 3-line height, and
-     the title always gets the column's full width for its own ellipsis. */
-  display: inline-block;
-  align-self: flex-start;
-  font-size: 0.62rem;
-  font-weight: 700;
-  padding: 1.5px 6px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--muted);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0px;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-}
 .list-row__author {
   font-size: 0.75rem;
   color: var(--muted);
@@ -432,108 +427,95 @@
   min-width: 0;
 }
 
-/* Badges Column */
-.list-row__badges {
+/* Meta line (under the author): type · status · years. Must stay on one line — the
+   exceptional-state badges ("ทันปัจจุบัน", "สายดอง", …) live under the reading/collection
+   bar they describe instead, because stacking them here wrapped most rows to two lines.
+   The always-true ones ("ทั้งอ่านทั้งเก็บ", "อ่านจบแล้ว") are gone: the two bars and the
+   green read bar already say it. */
+.list-row__meta {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 4px 5px;
 }
-/* Slightly tighter than the global .badge (used on grid cards) so up to 4 status
-   badges have a real chance of fitting this column's one line instead of wrapping
-   and growing the row — scoped to list rows only, cards are unaffected. */
-.list-row__badges .badge {
+/* Slightly tighter than the global .badge (used on grid cards) — scoped to list rows only,
+   cards are unaffected. */
+.list-row .badge {
   font-size: 0.58rem;
   padding: 2px 5px;
 }
+.list-row__read .badge,
+.list-row__collect .badge {
+  align-self: flex-start;
+}
+.list-row__timeline {
+  margin-left: 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
 
-/* Progress Bars Column */
-.list-row__bars {
+/* Reading / Collection Columns — both top-aligned so the two bars sit on one line across
+   the row, with the collection column's missing text hanging below its bar. */
+.list-row__read,
+.list-row__collect {
+  align-self: stretch;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  /* Reserve room for two mini bars (read + collection) so a non-collecting row's
-     single bar doesn't leave that row visibly shorter than its collecting neighbors. */
-  min-height: 60px;
+  gap: 3px;
+  padding-top: 2px;
+  min-width: 0;
 }
 /* The per-volume cell grid (one tiny square per volume) is right at home in the spacious
    card view, but a 70+ volume series wraps it to several rows here and throws row height
    off far more than its neighbors. The label ("อ่าน: 20/31") and the fill bar already
    carry the same information in this denser context, so only the grid is dropped. */
-.list-row__bars .vbar-mini-grid {
+.list-row .vbar-mini-grid {
   display: none;
 }
-
-/* Stock/Missing Volumes Column */
-.list-row__missing {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Fully read: green fill + percent, so it doubles as the old "อ่านจบแล้ว" badge. */
+.list-row__read .progress-item--full {
+  --bar-fill: var(--badge-finished);
 }
-.list-row__missing-pill {
-  display: inline-flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.2s;
-}
-.list-row:hover .list-row__missing-pill {
-  background: rgba(255, 255, 255, 0.03);
-}
-.list-row__missing-pill.complete {
-  background: rgba(16, 185, 129, 0.04);
-  border-color: rgba(16, 185, 129, 0.15);
-}
-.list-row__missing-pill.missing {
-  background: rgba(255, 123, 0, 0.03);
-  border-color: rgba(255, 123, 0, 0.15);
-}
-.list-row__missing-pill.stopped {
-  background: rgba(148, 163, 184, 0.04);
-  border-color: rgba(148, 163, 184, 0.2);
-}
-.list-row__missing-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 1px;
-  /* A custom collection-format title (e.g. "Big Book Edition") had no truncation here,
-     so it wrapped to 2-3 lines and made this one row's missing-column far taller than
-     its neighbors. Full text is still one hover away via the title attribute. */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.list-row__missing-value {
-  font-size: 0.78rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.list-row__missing-pill.complete .list-row__missing-value {
+.list-row__read .progress-item--full .progress-percent {
   color: var(--badge-finished);
 }
-.list-row__missing-pill.missing .list-row__missing-value {
-  color: var(--accent);
+
+/* Missing line (inside the collection column) */
+.list-row__missing-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
 }
-.list-row__missing-pill.stopped .list-row__missing-value {
-  color: var(--ink-secondary);
+.list-row__missing {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  /* Two lines of room for a long list ("2, 4, 6, 9-12, …") without growing the row;
+     the full text is still one hover away via the title attribute. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
-.list-row__missing-read-only {
-  font-size: 0.72rem;
+.list-row__missing-label {
+  font-weight: 600;
   color: var(--muted);
-  font-style: italic;
-  letter-spacing: 0.2px;
 }
+.list-row__missing-value {
+  font-weight: 700;
+}
+.list-row__missing--missing .list-row__missing-value { color: var(--accent); }
+.list-row__missing--complete .list-row__missing-value { color: var(--badge-finished); }
+.list-row__missing--partial .list-row__missing-value { color: #60a5fa; }
+.list-row__missing--unknown .list-row__missing-value { color: var(--muted); }
 .list-row__missing-more {
-  align-self: flex-start;
+  flex: none;
   background: none;
   border: none;
   padding: 0;
@@ -541,6 +523,7 @@
   font-size: 0.68rem;
   font-weight: 600;
   color: var(--muted);
+  white-space: nowrap;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -550,28 +533,15 @@
   color: var(--accent);
 }
 
-/* Rating Column */
+/* Rating Column — stars only; the "4.5 ดาว (ยอดเยี่ยม)" caption just repeated them
+   (each star keeps its title/aria-label). */
 .list-row__rating {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-/* Rating Column styling: keeps stars inline on row 1, and wraps text to row 2 */
-.list-row__rating .star-rating {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 2px;
-  column-gap: 2px;
-}
 .list-row__rating .star-label {
-  flex-basis: 100%;
-  text-align: center;
-  margin-left: 0;
-  white-space: nowrap;
-  font-size: 0.68rem;
-  letter-spacing: 0.2px;
-  margin-top: 1px;
+  display: none;
 }
 
 /* Actions Column with Smooth slide & fade animations */
@@ -640,13 +610,8 @@
   .list-row__info {
     grid-column: 2;
   }
-  .list-row__badges {
-    grid-column: 2;
-  }
-  .list-row__bars {
-    grid-column: 1 / span 2;
-  }
-  .list-row__missing {
+  .list-row__read,
+  .list-row__collect {
     grid-column: 1 / span 2;
   }
   .list-row__rating {

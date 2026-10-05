@@ -63,6 +63,8 @@ export function Autocomplete({ value, onChange, options, className, onFocus, id,
         e.stopPropagation();
         setIsOpen(false);
       }
+    } else if (e.key === "Tab") {
+      setIsOpen(false);
     }
   };
 
@@ -85,7 +87,8 @@ export function Autocomplete({ value, onChange, options, className, onFocus, id,
         aria-activedescendant={activeIdx >= 0 ? `${listboxId}-option-${activeIdx}` : undefined}
       />
       {showMenu && (
-        <div id={listboxId} className="dropdown-menu dropdown-menu--open" role="listbox">
+        // tabIndex -1: a scrollable list is a keyboard tab stop in Chrome, which would catch Tab before the next field
+        <div id={listboxId} className="dropdown-menu dropdown-menu--open" role="listbox" tabIndex={-1}>
           {filtered.map((opt, idx) => (
             <button
               key={opt}

@@ -45,6 +45,7 @@ try {
   assert.equal(digital.format, 'digital');
   assert.deepEqual(digital.ranges, [[1, 5]]);
   assert.equal(plain.format, 'normal');
+  assert.equal(created.body.endYear, 2010);
   const id = created.body.id;
 
   // editing a cancelled series must keep its end year (it used to be nulled)
@@ -61,10 +62,52 @@ try {
   r = await call('PATCH', `/series/${id}`, { status: 'ongoing' });
   assert.equal(r.body.endYear, null);
 
+  // ...and creating one never stores an end year either
+  const hiatus = await call('POST', '/series', { ...base1, title: 'Hiatus', status: 'hiatus', endYear: 2005 });
+  assert.equal(hiatus.body.endYear, null);
+  assert.equal((await call('DELETE', `/series/${hiatus.body.id}`)).status, 200);
+
   // format persists across a fresh read
   const list = await call('GET', '/series');
   const reread = list.body.data.find(s => s.id === id);
   assert.equal(reread.collectionLogs[0].format, 'digital');
+
+  // saving again keeps the id of every collection log the series owns (the missing checklist remembers ticked
+  // items by it); an id the series doesn't own gets a fresh row instead of failing or stealing it
+  const [kept0, kept1] = reread.collectionLogs;
+  const other = await call('POST', '/series', { ...base1, title: 'Other', collectionLogs: [{ title: 'x', ranges: [] }] });
+  const foreignId = other.body.collectionLogs[0].id;
+  r = await call('PATCH', `/series/${id}`, {
+    collectionLogs: [{ ...kept1, title: 'Plain 2', ranges: [[1, 2]] }, kept0, { title: 'New', id: foreignId, ranges: [] }],
+  });
+  assert.equal(r.status, 200);
+  const byTitle = Object.fromEntries(r.body.collectionLogs.map(l => [l.title, l]));
+  assert.equal(r.body.collectionLogs.length, 3);
+  assert.equal(byTitle['Plain 2'].id, kept1.id);
+  assert.deepEqual(byTitle['Plain 2'].ranges, [[1, 2]]);
+  assert.equal(byTitle[kept0.title].id, kept0.id);
+  assert.notEqual(byTitle.New.id, foreignId);
+  r = await call('PATCH', `/series/${id}`, { collectionLogs: [kept0] });
+  assert.deepEqual(r.body.collectionLogs.map(l => l.id), [kept0.id]);
+  assert.equal((await call('DELETE', `/series/${other.body.id}`)).status, 200);
+
+  // language defaults to 'th'; a partial log keeps its language and drops totalVolumes (it is never "missing")
+  const aoashi = await call('POST', '/series', {
+    ...base1, title: 'Aoashi',
+    collectionLogs: [
+      { title: 'TH', totalVolumes: 40, ranges: [[1, 35]] },
+      { title: 'ปกพิเศษ', language: 'jp', isPartial: true, totalVolumes: 40, ranges: [[39, 39]] },
+    ],
+  });
+  assert.equal(aoashi.status, 201);
+  const [th, jp] = aoashi.body.collectionLogs;
+  assert.equal(th.language, 'th');
+  assert.equal(th.isPartial, false);
+  assert.equal(jp.language, 'jp');
+  assert.equal(jp.isPartial, true);
+  assert.equal(jp.totalVolumes, null);
+  assert.equal((await call('POST', '/series', { ...base1, title: 'Bad', collectionLogs: [{ language: 'xx', ranges: [] }] })).status, 400);
+  assert.equal((await call('DELETE', `/series/${aoashi.body.id}`)).status, 200);
 
   // unknown ids are 404, not a silent 200
   assert.equal((await call('PATCH', '/series/99999', { notes: 'x' })).status, 404);

@@ -185,7 +185,9 @@ export default function App() {
             )}
           </div>
 
-          {loading ? (
+          {/* Spinner only for the first load: a refetch (after a save or delete) updates the list in place,
+              so cards and an open edit dialog aren't torn down and rebuilt. */}
+          {loading && series.length === 0 ? (
             <div className="loading"><div className="loading__spinner" /></div>
           ) : (
             viewMode === 'grid' ? (

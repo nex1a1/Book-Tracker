@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useId } from "react";
 import { Icons } from "../../components/Icons";
 import { PublisherDropdown } from "../../components/PublisherDropdown";
-import { FilterState } from "../../types";
+import { FilterState, LogLanguage } from "../../types";
+import { LANGUAGE_LABEL } from "../../utils/constants";
 import { RatingFilter, getRatingBadgeText } from "./RatingFilter";
 import './FilterSidebar.css';
 
@@ -82,7 +83,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount }: FilterSidebarProps) {
-  const toggleArr = (key: 'type' | 'status' | 'readStatus' | 'collectStatus', val: string) => {
+  const toggleArr = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => {
     const arr = (filter[key] as string[]) || [];
     if (arr.includes(val)) {
       setFilter({ [key]: arr.filter(v => v !== val) });
@@ -185,6 +186,15 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
             <FilterChip icon={<Icons.Cart />} label="ยังขาดอยู่" active={filter.collectStatus.includes('missing')} onClick={() => toggleArr('collectStatus', 'missing')} />
             <FilterChip icon={<Icons.Pause />} label="เลิกตามแล้ว" active={filter.collectStatus.includes('stopped')} onClick={() => toggleArr('collectStatus', 'stopped')} />
             <FilterChip icon={<Icons.Ban />} label="ไม่สะสม" active={filter.collectStatus.includes('not_collecting')} onClick={() => toggleArr('collectStatus', 'not_collecting')} />
+          </div>
+        </FilterSection>
+
+        <FilterSection title="ภาษาของเล่มที่มี">
+          <div className="filter-chip-group">
+            <FilterChip label="ทั้งหมด" active={filter.language.length === 0} onClick={() => setFilter({ language: [] })} />
+            {(Object.keys(LANGUAGE_LABEL) as LogLanguage[]).map(lang => (
+              <FilterChip key={lang} label={LANGUAGE_LABEL[lang]} active={filter.language.includes(lang)} onClick={() => toggleArr('language', lang)} />
+            ))}
           </div>
         </FilterSection>
 

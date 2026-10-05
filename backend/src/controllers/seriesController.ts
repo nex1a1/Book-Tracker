@@ -4,6 +4,9 @@ import { mapSeries, mergeRanges, DbSeriesRow } from '../utils/mapper.js';
 import { CreateSeriesInput, UpdateSeriesInput } from '../utils/validation.js';
 import { getErrorMessage } from '../utils/errors.js';
 
+// Only series still running have no end year; completed/cancelled keep whatever the client sent.
+const isRunning = (status: unknown) => status === 'ongoing' || status === 'hiatus';
+
 export const getSeries = (req: Request, res: Response) => {
   try {
     const { 
@@ -152,7 +155,7 @@ export const createSeries = (req: Request, res: Response) => {
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        b.title, b.type || 'manga', b.publishYear || null, b.endYear || null, 
+        b.title, b.type || 'manga', b.publishYear || null, isRunning(b.status || 'ongoing') ? null : b.endYear || null,
         b.status || 'ongoing', b.isCollecting ? 1 : 0, b.isCollectingStopped ? 1 : 0, b.rating ? Number(b.rating) : 0, 
         b.imageUrl || '', b.notes || '', authorId, publisherId
       );
@@ -173,8 +176,8 @@ export const createSeries = (req: Request, res: Response) => {
 
       // 5. Insert Collection Logs
       (b.collectionLogs || []).forEach(log => {
-        const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes, format) VALUES (?, ?, ?, ?)")
-          .run(seriesId, log.title || null, log.totalVolumes || null, log.format || null);
+        const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes, format, language, isPartial) VALUES (?, ?, ?, ?, ?, ?)")
+          .run(seriesId, log.title || null, log.isPartial ? null : log.totalVolumes || null, log.format || null, log.language || 'th', log.isPartial ? 1 : 0);
         const groupId = cInfo.lastInsertRowid;
 
         // ✅ Merge overlapping ranges before saving
@@ -247,10 +250,14 @@ export const updateSeries = (req: Request, res: Response) => {
       }
 
       if (b.collectionLogs) {
+        // A log the series already owns keeps its id across saves (the missing checklist remembers ticked
+        // items by it); any other id from the client is ignored and the log gets a fresh one.
+        const ownIds = new Set((db.prepare("SELECT id FROM collection_groups WHERE series_id = ?").all(id) as { id: number }[]).map(r => r.id));
         db.prepare("DELETE FROM collection_groups WHERE series_id = ?").run(id);
         b.collectionLogs.forEach(log => {
-          const cInfo = db.prepare("INSERT INTO collection_groups (series_id, title, totalVolumes, format) VALUES (?, ?, ?, ?)")
-            .run(id, log.title || null, log.totalVolumes || null, log.format || null);
+          const keepId = ownIds.delete(Number(log.id)) ? Number(log.id) : null;
+          const cInfo = db.prepare("INSERT INTO collection_groups (id, series_id, title, totalVolumes, format, language, isPartial) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            .run(keepId, id, log.title || null, log.isPartial ? null : log.totalVolumes || null, log.format || null, log.language || 'th', log.isPartial ? 1 : 0);
           const groupId = cInfo.lastInsertRowid;
           
           // ✅ Merge overlapping ranges before saving
@@ -272,8 +279,7 @@ export const updateSeries = (req: Request, res: Response) => {
         else data[key] = value as string | number | null;
       }
 
-      // Only series still running have no end year; completed/cancelled keep whatever the client sent.
-      if (data.status === 'ongoing' || data.status === 'hiatus') data.endYear = null;
+      if (isRunning(data.status)) data.endYear = null;
 
       const fields: string[] = [];
       const params: (string | number | null)[] = [];

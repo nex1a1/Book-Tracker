@@ -63,6 +63,8 @@ db.exec(`
     title TEXT,
     totalVolumes INTEGER,
     format TEXT,
+    language TEXT DEFAULT 'th',
+    isPartial INTEGER DEFAULT 0,
     FOREIGN KEY (series_id) REFERENCES series(id) ON DELETE CASCADE
   );
 
@@ -86,6 +88,8 @@ try { db.exec("ALTER TABLE series ADD COLUMN author_id INTEGER REFERENCES author
 try { db.exec("ALTER TABLE series ADD COLUMN publisher_id INTEGER REFERENCES publishers(id)"); } catch (e) {}
 try { db.exec("ALTER TABLE series ADD COLUMN isCollectingStopped INTEGER DEFAULT 0"); } catch (e) {}
 try { db.exec("ALTER TABLE collection_groups ADD COLUMN format TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE collection_groups ADD COLUMN language TEXT DEFAULT 'th'"); } catch (e) {}
+try { db.exec("ALTER TABLE collection_groups ADD COLUMN isPartial INTEGER DEFAULT 0"); } catch (e) {}
 
 export default db;
 export type DatabaseInstance = typeof db;
