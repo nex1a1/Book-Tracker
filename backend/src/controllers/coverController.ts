@@ -36,7 +36,8 @@ class BadCoverUrl extends Error {}
 // ponytail: resolves DNS here and again inside fetch (rebinding window); pin the IP via a custom
 // dispatcher if this ever serves untrusted users instead of one local owner.
 const assertPublicHost = async (hostname: string): Promise<void> => {
-  const addrs = await dns.lookup(hostname, { all: true });
+  // URL keeps the brackets of an IPv6 literal ("[::1]"), which dns.lookup cannot resolve
+  const addrs = await dns.lookup(hostname.replace(/^\[(.*)\]$/, '$1'), { all: true });
   if (addrs.some(a => privateNets.check(a.address, a.family === 6 ? 'ipv6' : 'ipv4'))) {
     throw new BadCoverUrl('ไม่อนุญาตให้ดึงรูปจากที่อยู่ภายในเครือข่าย');
   }
@@ -57,6 +58,19 @@ const fetchImage = async (rawUrl: string): Promise<globalThis.Response> => {
     return res;
   }
   throw new Error('redirect มากเกินไป');
+};
+
+// Reads the body but gives up as soon as it passes the cap, so a huge reply without content-length is never
+// held in memory whole.
+export const readCapped = async (res: globalThis.Response, maxBytes = MAX_BYTES): Promise<Buffer> => {
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of res.body ?? []) {
+    size += chunk.length;
+    if (size > maxBytes) throw new Error('ไฟล์รูปใหญ่เกินไป');
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 };
 
 const findCached = (hash: string): string | undefined =>
@@ -84,8 +98,7 @@ export const getCover = async (req: Request, res: Response) => {
     if (!upstream.ok || !ext) throw new Error(`ต้นทางตอบกลับ ${upstream.status} (${type || 'ไม่ทราบชนิดไฟล์'})`);
     if (Number(upstream.headers.get('content-length')) > MAX_BYTES) throw new Error('ไฟล์รูปใหญ่เกินไป');
 
-    const body = Buffer.from(await upstream.arrayBuffer());
-    if (body.length > MAX_BYTES) throw new Error('ไฟล์รูปใหญ่เกินไป');
+    const body = await readCapped(upstream);
 
     // write-then-rename so a crash can never leave a half-written image that looks cached
     fs.mkdirSync(COVER_DIR, { recursive: true });

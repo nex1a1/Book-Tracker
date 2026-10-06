@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "check": "node check.mjs",
+    "check": "node --test tests/logic.test.mjs tests/hooks.test.mjs tests/ui-components.test.mjs tests/ui-series.test.mjs tests/ui-app.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^26.1.0",
     "typescript": "^6.0.3",
     "vite": "^5.2.13"
   }

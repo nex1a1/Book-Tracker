@@ -8,6 +8,12 @@ import { BookLog } from "../../../types";
 const FORMAT_OPTIONS = Object.entries(FORMAT_LABEL).map(([value, label]) => ({ value, label }));
 const LANGUAGE_OPTIONS = Object.entries(LANGUAGE_LABEL).map(([value, label]) => ({ value, label }));
 
+// The server only stores whole volume counts from 1 up; anything else (blank, 0, "-3", "2.5") means "unknown".
+function parseTotalVolumes(raw: string): number | null {
+  const n = Number(raw);
+  return raw !== "" && Number.isInteger(n) && n > 0 ? n : null;
+}
+
 interface LogEditorBoxProps {
   log: BookLog;
   idx: number;
@@ -55,10 +61,9 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
                 type="number"
                 className="input"
                 value={log.totalVolumes || ""}
-                onChange={e => {
-                  const val = e.target.value;
-                  onUpdate('totalVolumes', val === "" ? null : Number(val));
-                }}
+                min={1}
+                step={1}
+                onChange={e => onUpdate('totalVolumes', parseTotalVolumes(e.target.value))}
                 placeholder="ระบุเล่มรวม"
               />
             </label>
@@ -96,10 +101,9 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
                   type="number"
                   className="input"
                   value={log.totalVolumes || ""}
-                  onChange={e => {
-                    const val = e.target.value;
-                    onUpdate('totalVolumes', val === "" ? null : Number(val));
-                  }}
+                  min={1}
+                  step={1}
+                  onChange={e => onUpdate('totalVolumes', parseTotalVolumes(e.target.value))}
                   placeholder="เช่น 23"
                 />
               </label>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSeriesStore } from "../../../store/useSeriesStore";
-import { getSeriesDerivedStats, getMissingVolumesText, getSetFromRanges, getCollectionLogLabel } from "../../../utils/helpers";
+import { getSeriesDerivedStats, getMissingVolumesText, countMissingVolumes, getCollectionLogLabel } from "../../../utils/helpers";
 import { TYPE_LABEL } from "../../../utils/constants";
 import { Series } from "../../../types";
 
@@ -48,16 +48,12 @@ export function useMissingList(): MissingSeriesItem[] {
           if (log.isPartial) return;
           const missingText = getMissingVolumesText(log.ranges, log.totalVolumes);
           if (missingText !== 'ครบถ้วน' && missingText !== '-') {
-            const boughtCount = getSetFromRanges(log.ranges).size;
-            const limit = Number(log.totalVolumes) || 0;
-            const count = Math.max(0, limit - boughtCount);
-
             formats.push({ 
               id: log.id,
               format: log.format,
               title: getCollectionLogLabel(log), 
               missingText,
-              missingCount: count
+              missingCount: countMissingVolumes(log)
             });
           }
         });
@@ -81,7 +77,7 @@ export function useMissingList(): MissingSeriesItem[] {
 
 export function useMissingVolumes() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPublisher, setSelectedPublisher] = useState<string | string[]>("all");
+  const [selectedPublisher, setSelectedPublisher] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
   // Persisted across closing/reopening the modal — a shopping trip is rarely one
   // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
@@ -99,10 +95,7 @@ export function useMissingVolumes() {
         (item.author && item.author.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (item.publisher && item.publisher.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchPublisher = selectedPublisher === "all" ||
-        (Array.isArray(selectedPublisher)
-          ? selectedPublisher.length === 0 || selectedPublisher.includes(item.publisher)
-          : item.publisher === selectedPublisher);
+      const matchPublisher = selectedPublisher.length === 0 || selectedPublisher.includes(item.publisher);
       
       return matchSearch && matchPublisher;
     });

@@ -3,6 +3,7 @@ import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { CollectionLogSummary } from "../../../components/CollectionLogSummary";
+import { coverSrc } from "../../../api/seriesApi";
 import { TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
 import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
 
@@ -46,7 +47,7 @@ export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
           <div className="card__top">
             <div className="card__cover-wrapper">
               {form.imageUrl ? (
-                <img src={form.imageUrl} alt={form.title} className="card__cover" />
+                <img src={coverSrc(form.imageUrl)} alt={form.title} className="card__cover" />
               ) : (
                 <div className="card__cover-empty">
                   <span>ไม่มีรูป</span>

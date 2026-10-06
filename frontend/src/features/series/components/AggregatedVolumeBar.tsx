@@ -1,5 +1,5 @@
 import React from "react";
-import { getSetFromRanges, getLogLanguage } from "../../../utils/helpers";
+import { getSetFromRanges, getLogLanguage, countVolumesWithin } from "../../../utils/helpers";
 import { BookLog } from "../../../types";
 
 interface AggregatedVolumeBarProps {
@@ -26,7 +26,7 @@ export function AggregatedVolumeBar({ logs: allLogs, type, icon: Icon, titleLabe
   const gridCells: GridCell[] = [];
   logs.forEach((log, logIndex) => {
     const set = getSetFromRanges(log.ranges);
-    count += set.size;
+    count += countVolumesWithin(log.ranges, log.totalVolumes);
     for (let i = 1; i <= (Number(log.totalVolumes) || 0); i++) {
       gridCells.push({ id: `${logIndex}-${i}`, isFilled: set.has(i), isSpecial: logIndex > 0, logIndex });
     }

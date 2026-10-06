@@ -122,16 +122,6 @@ export const mapSeries = (s: DbSeriesRow | undefined | null): MappedSeries | nul
   }
 };
 
-export const calculateReadCount = (ranges: [number, number][] | undefined | null): number => {
-  const set = new Set<number>();
-  if (ranges && Array.isArray(ranges)) {
-    ranges.forEach(([start, end]) => {
-      for (let i = start; i <= end; i++) set.add(i);
-    });
-  }
-  return set.size;
-};
-
 export const mergeRanges = (ranges: [number, number][] | undefined | null): [number, number][] => {
   if (!ranges || ranges.length === 0) return [];
 

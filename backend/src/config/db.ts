@@ -76,11 +76,6 @@ db.exec(`
     FOREIGN KEY (group_id) REFERENCES collection_groups(id) ON DELETE CASCADE
   );
 
-  -- 2. Performance Indexes
-  CREATE INDEX IF NOT EXISTS idx_series_title ON series(title);
-  CREATE INDEX IF NOT EXISTS idx_series_type_status ON series(type, status);
-  CREATE INDEX IF NOT EXISTS idx_series_author_id ON series(author_id);
-  CREATE INDEX IF NOT EXISTS idx_series_publisher_id ON series(publisher_id);
 `);
 
 // Ensure series table has new columns (Migration support)
@@ -90,6 +85,14 @@ try { db.exec("ALTER TABLE series ADD COLUMN isCollectingStopped INTEGER DEFAULT
 try { db.exec("ALTER TABLE collection_groups ADD COLUMN format TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE collection_groups ADD COLUMN language TEXT DEFAULT 'th'"); } catch (e) {}
 try { db.exec("ALTER TABLE collection_groups ADD COLUMN isPartial INTEGER DEFAULT 0"); } catch (e) {}
+
+// 2. Performance Indexes — after the column migrations: a legacy series table has no author_id/publisher_id until then
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_series_title ON series(title);
+  CREATE INDEX IF NOT EXISTS idx_series_type_status ON series(type, status);
+  CREATE INDEX IF NOT EXISTS idx_series_author_id ON series(author_id);
+  CREATE INDEX IF NOT EXISTS idx_series_publisher_id ON series(publisher_id);
+`);
 
 export default db;
 export type DatabaseInstance = typeof db;

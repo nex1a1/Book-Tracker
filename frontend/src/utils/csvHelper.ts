@@ -1,6 +1,6 @@
 import { Series, BookLog } from "../types";
 import { TYPE_LABEL, STATUS_LABEL, LANGUAGE_SHORT } from "./constants";
-import { normalizeSeriesData, getSetFromRanges, formatVolumeRangesString, getCollectionLogLabel, getLogLanguage } from "./helpers";
+import { normalizeSeriesData, getSetFromRanges, countVolumesWithin, formatVolumeRangesString, getCollectionLogLabel, getLogLanguage } from "./helpers";
 
 export type ExportLayoutMode = 'series' | 'split_logs';
 
@@ -31,7 +31,7 @@ export function formatYearRange(publishYear?: number | null, endYear?: number | 
  */
 function formatLogProgress(log: BookLog, suffix = ''): string {
   if (log.isPartial) return `เก็บบางเล่ม [${formatVolumeRangesString(log.ranges)}]${suffix}`;
-  const ownedCount = getSetFromRanges(log.ranges).size;
+  const ownedCount = countVolumesWithin(log.ranges, log.totalVolumes);
   const totalText = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
   return `มีแล้ว ${ownedCount}${totalText}${suffix}`;
 }
@@ -103,7 +103,7 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
       const normalized = normalizeSeriesData(item);
       if (!normalized || !normalized.readingLogs || normalized.readingLogs.length === 0) return 'ยังไม่ได้อ่าน';
       return normalized.readingLogs.map(log => {
-        const readCount = getSetFromRanges(log.ranges).size;
+        const readCount = countVolumesWithin(log.ranges, log.totalVolumes);
         const total = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
         return `${log.title}: อ่านแล้ว ${readCount}${total}`;
       }).join(' | ');
@@ -122,7 +122,7 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
     getValue: (item) => {
       const normalized = normalizeSeriesData(item);
       if (!normalized || !normalized.readingLogs) return 0;
-      return normalized.readingLogs.reduce((sum, log) => sum + getSetFromRanges(log.ranges).size, 0);
+      return normalized.readingLogs.reduce((sum, log) => sum + countVolumesWithin(log.ranges, log.totalVolumes), 0);
     }
   },
   {
@@ -240,7 +240,7 @@ export function generateCsvData(
           if (col.key === 'readProgress') {
             const log = readingLogs[0];
             if (!log) return 'ยังไม่ได้อ่าน';
-            const count = getSetFromRanges(log.ranges).size;
+            const count = countVolumesWithin(log.ranges, log.totalVolumes);
             const total = log.totalVolumes && log.totalVolumes > 0 ? `/${log.totalVolumes} เล่ม` : ' เล่ม';
             return `อ่านแล้ว ${count}${total}`;
           }
@@ -267,7 +267,7 @@ export function generateCsvData(
           const rLog = readingLogs[i];
           const cLog = collectionLogs[i];
 
-          const rReadCount = rLog ? getSetFromRanges(rLog.ranges).size : 0;
+          const rReadCount = rLog ? countVolumesWithin(rLog.ranges, rLog.totalVolumes) : 0;
           const rTotal = rLog?.totalVolumes && rLog.totalVolumes > 0 ? `/${rLog.totalVolumes} เล่ม` : ' เล่ม';
           const rRangesText = rLog ? formatVolumeRangesString(rLog.ranges) : 'ไม่มี';
 

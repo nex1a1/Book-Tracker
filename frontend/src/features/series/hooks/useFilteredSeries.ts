@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getSeriesDerivedStats, getSetFromRanges, getLogLanguage } from "../../../utils/helpers";
+import { getSeriesDerivedStats, countMissingVolumes, getLogLanguage } from "../../../utils/helpers";
 import { Series, FilterState } from "../../../types";
 
 // Total volumes still missing across every collection log — undefined when not collecting,
@@ -7,12 +7,7 @@ import { Series, FilterState } from "../../../types";
 function getMissingCount(s: Series): number | undefined {
   const stats = getSeriesDerivedStats(s);
   if (!stats.n.isCollecting || stats.n.isCollectingStopped) return undefined;
-  return stats.n.collectionLogs.reduce((sum, log) => {
-    if (log.isPartial) return sum;
-    const owned = getSetFromRanges(log.ranges).size;
-    const limit = Number(log.totalVolumes) || 0;
-    return sum + Math.max(0, limit - owned);
-  }, 0);
+  return stats.n.collectionLogs.reduce((sum, log) => sum + countMissingVolumes(log), 0);
 }
 
 // Reading progress as a 0-1 ratio; undefined when the series has no known volume count yet.
@@ -108,6 +103,11 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
       // No value sorts last, and two of them tie (returning 1 both ways is not a valid comparator).
       if (valA === undefined || valA === null) return valB === undefined || valB === null ? 0 : 1;
       if (valB === undefined || valB === null) return -1;
+      // Plain `<` orders by code unit, which puts Thai titles starting with เ/แ/โ/ใ/ไ after every other letter.
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        const cmp = valA.localeCompare(valB, 'th');
+        return filter.sortOrder === 'ASC' ? cmp : -cmp;
+      }
       if (valA < valB) return filter.sortOrder === 'ASC' ? -1 : 1;
       if (valA > valB) return filter.sortOrder === 'ASC' ? 1 : -1;
       return 0;

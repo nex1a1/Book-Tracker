@@ -6,7 +6,7 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "smoke": "node smoke.mjs"
+    "smoke": "node --import tsx smoke.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",

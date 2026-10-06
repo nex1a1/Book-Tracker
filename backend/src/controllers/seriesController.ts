@@ -110,10 +110,12 @@ export const getStats = (req: Request, res: Response) => {
       GROUP BY status
     `).all();
 
-    // 4. Calculate total read volumes
+    // 4. Calculate total read volumes: with a known total only volumes 1..total count (same rule as the UI)
     const readStats = db.prepare(`
-      SELECT SUM(endVol - startVol + 1) as total 
-      FROM reading_ranges
+      SELECT SUM(MAX(0, CASE WHEN g.totalVolumes > 0
+        THEN MIN(r.endVol, g.totalVolumes) - MAX(r.startVol, 1) + 1
+        ELSE r.endVol - r.startVol + 1 END)) as total
+      FROM reading_ranges r JOIN reading_groups g ON g.id = r.group_id
     `).get() as { total: number | null } | undefined;
     const totalRead = readStats?.total || 0;
 
@@ -289,11 +291,10 @@ export const updateSeries = (req: Request, res: Response) => {
         params.push(data[key] ?? null);
       });
       
-      if (fields.length > 0) {
-        fields.push("updatedAt = CURRENT_TIMESTAMP"); 
-        params.push(id);
-        db.prepare(`UPDATE series SET ${fields.join(', ')} WHERE id = ?`).run(...params);
-      }
+      // Any accepted PATCH is an edit (logs, author and publisher too), so the "recently updated" sort sees it
+      fields.push("updatedAt = CURRENT_TIMESTAMP");
+      params.push(id);
+      db.prepare(`UPDATE series SET ${fields.join(', ')} WHERE id = ?`).run(...params);
     })();
 
     const result = db.prepare(`

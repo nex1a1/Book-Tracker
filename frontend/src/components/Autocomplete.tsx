@@ -76,7 +76,7 @@ export function Autocomplete({ value, onChange, options, className, onFocus, id,
         ref={inputRef}
         className={`input ${className || ""}`}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={e => { onChange(e.target.value); setIsOpen(true); }}
         onFocus={e => { setIsOpen(true); onFocus?.(e); }}
         onKeyDown={handleKeyDown}
         autoComplete="off"

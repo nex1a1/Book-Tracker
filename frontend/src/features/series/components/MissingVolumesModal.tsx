@@ -35,6 +35,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     groupedByPublisher,
     stats
   } = useMissingVolumes();
+  const isFiltering = searchQuery !== "" || selectedPublisher.length > 0;
 
   // Copy items to clipboard (excluding checked ones)
   const handleCopy = async () => {
@@ -136,7 +137,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
               {/* Publisher Selector */}
               <PublisherDropdown
                 selectedPublisher={selectedPublisher}
-                onSelectPublisher={setSelectedPublisher}
+                onSelectPublisher={pub => setSelectedPublisher([pub].flat())}
                 publisherOptions={publisherOptions}
                 multiSelect
               />
@@ -168,11 +169,11 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
             {filteredList.length === 0 ? (
               <div className="empty-state" style={{ padding: '40px 20px' }}>
                 <div className="empty-state__icon">
-                  {searchQuery || selectedPublisher !== "all" ? "🔍" : "🎉"}
+                  {isFiltering ? "🔍" : "🎉"}
                 </div>
-                <h3>{searchQuery || selectedPublisher !== "all" ? "ไม่พบผลลัพธ์" : "ครบถ้วนสมบูรณ์!"}</h3>
+                <h3>{isFiltering ? "ไม่พบผลลัพธ์" : "ครบถ้วนสมบูรณ์!"}</h3>
                 <p>
-                  {searchQuery || selectedPublisher !== "all"
+                  {isFiltering
                     ? "ไม่พบรายการหนังสือขาดที่ตรงกับเงื่อนไขการค้นหา/ตัวกรอง"
                     : "คุณสะสมครบทุกเล่มทุกเรื่องแล้วครับ สุดยอดเลย!"}
                 </p>

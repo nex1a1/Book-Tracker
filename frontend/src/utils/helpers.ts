@@ -14,6 +14,24 @@ export function getSetFromRanges(ranges: VolumeRange[] | undefined | null): Set<
 }
 
 /**
+ * Distinct volumes in `ranges` that count toward a log of `total` volumes: only 1..total when the total is
+ * known (a volume 0 or one past the total never fills a gap), every volume when it isn't.
+ */
+export function countVolumesWithin(ranges: VolumeRange[] | undefined | null, total: number | null | undefined): number {
+  const limit = Number(total) || 0;
+  let count = 0;
+  getSetFromRanges(ranges).forEach(v => { if (limit <= 0 || (v >= 1 && v <= limit)) count++; });
+  return count;
+}
+
+/** Volumes a collection log still lacks; 0 for "keep some volumes" logs and logs with no known total. */
+export function countMissingVolumes(log: BookLog): number {
+  const limit = Number(log.totalVolumes) || 0;
+  if (log.isPartial || limit <= 0) return 0;
+  return limit - countVolumesWithin(log.ranges, limit);
+}
+
+/**
  * Merges overlapping or contiguous ranges and sorts them.
  * Example: [[6,12], [1,5]] -> [[1,12]]
  */
@@ -122,8 +140,10 @@ export function normalizeSeriesData(series: Series | null | undefined): Series |
 export function getSeriesDerivedStats(series: Series): SeriesDerivedStats {
   const n = normalizeSeriesData(series)!;
   const totalReadJP = n.readingLogs.reduce((sum, log) => sum + (Number(log.totalVolumes) || 0), 0);
-  const totalReadCount = n.readingLogs.reduce((sum, log) => sum + getSetFromRanges(log.ranges).size, 0);
-  const isAllRead = totalReadCount >= totalReadJP && totalReadJP > 0;
+  const totalReadCount = n.readingLogs.reduce((sum, log) => sum + countVolumesWithin(log.ranges, log.totalVolumes), 0);
+  // Every log with a known total is read to its end; comparing sums would let one over-read log hide another.
+  const isAllRead = totalReadJP > 0 && n.readingLogs.every(log =>
+    !(Number(log.totalVolumes) > 0) || countVolumesWithin(log.ranges, log.totalVolumes) >= Number(log.totalVolumes));
   const isFinishedReading = n.status === 'completed' && isAllRead;
   const isCaughtUp = n.status !== 'completed' && isAllRead;
   const isReading = totalReadCount > 0 && !isAllRead;

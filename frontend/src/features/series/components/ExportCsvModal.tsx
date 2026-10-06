@@ -118,10 +118,8 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
     setExportFilter(INITIAL_EXPORT_FILTER);
   };
 
-  const targetSeriesList = useMemo(() => {
-    if (scope === 'all') return allSeries;
-    return localFilterCount > 0 ? modalFilteredSeries : initialFilteredSeries;
-  }, [scope, allSeries, initialFilteredSeries, modalFilteredSeries, localFilterCount]);
+  const filteredScopeList = localFilterCount > 0 ? modalFilteredSeries : initialFilteredSeries;
+  const targetSeriesList = scope === 'all' ? allSeries : filteredScopeList;
 
   const { csvString, headers, rows } = useMemo(() => {
     return generateCsvData(targetSeriesList, selectedKeys, false, layoutMode);
@@ -229,7 +227,7 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
               >
                 <Icons.Filter />
                 <span>รายการที่ผ่านการกรอง</span>
-                <span className="scope-pill__badge">{targetSeriesList.length}</span>
+                <span className="scope-pill__badge">{filteredScopeList.length}</span>
               </button>
 
               <button

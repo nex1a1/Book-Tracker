@@ -207,6 +207,8 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     } else if (node.status === "currently_publishing") st = "ongoing";
     else if (node.status === "on_hiatus") st = "hiatus";
     else if (node.status === "discontinued") st = "cancelled";
+    // A running series has no end year (same rule as choosing the status by hand)
+    if (st === "ongoing" || st === "hiatus") eYear = "";
 
     // 4. Volumes mapping
     const newReadingLogs = [...form.readingLogs];
@@ -223,7 +225,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
       author: authorStr || form.author,
       publishYear: pYear || form.publishYear,
       status: st,
-      endYear: eYear || form.endYear,
+      endYear: eYear,
       readingLogs: newReadingLogs,
       collectionLogs: newCollectionLogs
     });
@@ -261,8 +263,15 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
     if (!form.title || form.title.toString().trim() === "") errors.title = "กรุณากรอกชื่อเรื่อง";
     if (!form.author || form.author.toString().trim() === "") errors.author = "กรุณากรอกผู้แต่ง";
     if (!form.publisher || form.publisher.toString().trim() === "") errors.publisher = "กรุณากรอกสำนักพิมพ์";
+    // The server only takes whole years from 0 up, so "2.5" or "-1" must be caught here, not as a failed save.
+    const isYear = (v: number | string) => Number.isInteger(Number(v)) && Number(v) > 0;
     if (!form.publishYear) errors.publishYear = "กรุณากรอกปีที่พิมพ์";
-    if ((form.status === 'completed' || form.status === 'cancelled') && !form.endYear) errors.endYear = "กรุณากรอกปีที่จบ";
+    else if (!isYear(form.publishYear)) errors.publishYear = "ปีที่พิมพ์ต้องเป็นปี ค.ศ. เต็มจำนวน";
+    if (form.status === 'completed' || form.status === 'cancelled') {
+      if (!form.endYear) errors.endYear = "กรุณากรอกปีที่จบ";
+      else if (!isYear(form.endYear)) errors.endYear = "ปีที่จบต้องเป็นปี ค.ศ. เต็มจำนวน";
+      else if (isYear(form.publishYear) && Number(form.endYear) < Number(form.publishYear)) errors.endYear = "ปีที่จบต้องไม่ก่อนปีที่พิมพ์";
+    }
 
     const errorKeys = Object.keys(errors) as RequiredFieldKey[];
     if (errorKeys.length > 0) {
