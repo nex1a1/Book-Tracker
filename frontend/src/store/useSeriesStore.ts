@@ -69,9 +69,10 @@ export const useSeriesStore = create<SeriesStore>((set, get) => ({
   
   updateSeriesRating: async (id, rating) => {
     try {
-      await seriesApi.update(id, { rating });
+      // The server bumps updatedAt on every edit; take it from the reply so "recently updated" order follows.
+      const { data } = await seriesApi.update(id, { rating });
       set((s) => ({
-        series: s.series.map(item => item._id === id ? { ...item, rating } : item)
+        series: s.series.map(item => item._id === id ? { ...item, rating, updatedAt: data.updatedAt } : item)
       }));
     } catch {
       toast.error("บันทึก rating ไม่สำเร็จ");

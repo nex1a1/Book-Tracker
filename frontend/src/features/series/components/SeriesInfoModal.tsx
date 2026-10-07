@@ -221,7 +221,7 @@ export function SeriesInfoModal({ series, onClose }: SeriesInfoModalProps) {
 
     setForm({
       ...form,
-      imageUrl: coverUrl,
+      imageUrl: coverUrl || form.imageUrl, // MAL entries without a picture must not wipe the cover already there
       author: authorStr || form.author,
       publishYear: pYear || form.publishYear,
       status: st,

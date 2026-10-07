@@ -81,10 +81,12 @@ test('store: setFilter merges, resetFilter restores the defaults (keeping the 10
 test('store: updateSeriesRating saves then updates locally; a failed save changes nothing', async () => {
   store.setState({ series: [series([], [], { _id: '1', rating: 1 }), series([], [], { _id: '2', rating: 2 })] });
   let sent;
-  api.update = async (id, body) => { sent = [id, body]; };
+  api.update = async (id, body) => { sent = [id, body]; return { data: { updatedAt: '2026-10-07 09:00:00' } }; };
   await store.getState().updateSeriesRating('2', 4.5);
   assert.deepEqual(sent, ['2', { rating: 4.5 }]);
   assert.deepEqual(store.getState().series.map(s => s.rating), [1, 4.5]);
+  // the server bumps updatedAt on every edit; the list must follow or "recently updated" order lags until a reload
+  assert.deepEqual(store.getState().series.map(s => s.updatedAt), ['2026-01-01 00:00:00', '2026-10-07 09:00:00']);
   api.update = async () => { throw new Error('x'); };
   await store.getState().updateSeriesRating('1', 3);
   assert.deepEqual(store.getState().series.map(s => s.rating), [1, 4.5]);

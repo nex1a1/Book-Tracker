@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { mergeRanges } from "../utils/helpers";
 import { VolumeRange } from "../types";
+import { MAX_VOLUME } from "../utils/constants";
 import './RangeEditor.css';
 
 interface RangeEditorProps {
@@ -23,6 +24,10 @@ export function RangeEditor({ ranges = [], onChange, label = "ช่วงเล
       // The server only accepts whole volume numbers from 0 up, so say so here instead of failing on save.
       if (![start, end].every(v => Number.isInteger(v) && v >= 0)) {
         toast.error("ระบุเล่มเป็นเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป");
+        return;
+      }
+      if (Math.max(start, end) > MAX_VOLUME) {
+        toast.error(`เลขเล่มต้องไม่เกิน ${MAX_VOLUME}`);
         return;
       }
       if (start > end) {

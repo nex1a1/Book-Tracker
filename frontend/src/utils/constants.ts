@@ -1,5 +1,8 @@
 import { SeriesType, SeriesStatus, LogLanguage } from "../types";
 
+// Highest volume number / volume count the app takes (it loops over every volume). Keep in step with backend validation.ts.
+export const MAX_VOLUME = 9999;
+
 export const TYPE_LABEL: Record<SeriesType, string> = {
   manga: "Manga",
   novel: "Novel",

@@ -2,16 +2,16 @@ import React from "react";
 import { Icons } from "../../../components/Icons";
 import { RangeEditor } from "../../../components/RangeEditor";
 import { Dropdown } from "../../../components/Dropdown";
-import { FORMAT_LABEL, LANGUAGE_LABEL } from "../../../utils/constants";
+import { FORMAT_LABEL, LANGUAGE_LABEL, MAX_VOLUME } from "../../../utils/constants";
 import { BookLog } from "../../../types";
 
 const FORMAT_OPTIONS = Object.entries(FORMAT_LABEL).map(([value, label]) => ({ value, label }));
 const LANGUAGE_OPTIONS = Object.entries(LANGUAGE_LABEL).map(([value, label]) => ({ value, label }));
 
-// The server only stores whole volume counts from 1 up; anything else (blank, 0, "-3", "2.5") means "unknown".
+// The server only stores whole volume counts from 1 up to MAX_VOLUME; anything else (blank, 0, "-3", "2.5", 10000) means "unknown".
 function parseTotalVolumes(raw: string): number | null {
   const n = Number(raw);
-  return raw !== "" && Number.isInteger(n) && n > 0 ? n : null;
+  return raw !== "" && Number.isInteger(n) && n > 0 && n <= MAX_VOLUME ? n : null;
 }
 
 interface LogEditorBoxProps {
@@ -62,6 +62,7 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
                 className="input"
                 value={log.totalVolumes || ""}
                 min={1}
+                max={MAX_VOLUME}
                 step={1}
                 onChange={e => onUpdate('totalVolumes', parseTotalVolumes(e.target.value))}
                 placeholder="ระบุเล่มรวม"
@@ -102,6 +103,7 @@ export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }:
                   className="input"
                   value={log.totalVolumes || ""}
                   min={1}
+                  max={MAX_VOLUME}
                   step={1}
                   onChange={e => onUpdate('totalVolumes', parseTotalVolumes(e.target.value))}
                   placeholder="เช่น 23"

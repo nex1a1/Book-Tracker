@@ -85,6 +85,15 @@ test('RangeEditor: rejects reversed, fractional and negative volumes', async () 
   ]);
 });
 
+test('RangeEditor: a volume number past 9999 is refused (the app loops over every volume of a range)', async () => {
+  const r = await rangeEditor([]);
+  await r.add('1', '10000');
+  assert.deepEqual(r.onChange.calls, []);
+  assert.deepEqual(await toastMessages(React), ['error:เลขเล่มต้องไม่เกิน 9999']);
+  await r.add('1', '9999');
+  assert.deepEqual(r.onChange.calls, [[[1, 9999]]]);
+});
+
 test('RangeEditor: lists ranges and removes one', async () => {
   const r = await rangeEditor([[1, 3], [5, 5]]);
   assert.deepEqual([...r.container.querySelectorAll('.range-tag .badge')].map(text), ['1-3', '5']);

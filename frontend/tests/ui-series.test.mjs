@@ -151,9 +151,10 @@ test('LogEditorBox: a total that is not a whole number above 0 is stored as "unk
   for (const kind of ['reading', 'collection']) {
     const e = await editor(kind === 'reading' ? reading('Main', 10, []) : owned(10, []), kind);
     const total = [...e.container.querySelectorAll('input[type="number"]')].find(i => i.closest('.field-row') && !i.closest('.range-inputs'));
-    assert.equal(total.getAttribute('min'), '1');
-    for (const raw of ['7', '2.5', '-3', '0', '']) await type(React, total, raw);
-    assert.deepEqual(e.onUpdate.calls.map(c => c[1]), [7, null, null, null, null], kind);
+    assert.deepEqual([total.getAttribute('min'), total.getAttribute('max')], ['1', '9999']);
+    // 10000 is past the cap (the app loops over every volume up to the total), 9999 is the last one accepted
+    for (const raw of ['7', '2.5', '-3', '0', '', '10000', '9999']) await type(React, total, raw);
+    assert.deepEqual(e.onUpdate.calls.map(c => c[1]), [7, null, null, null, null, null, 9999], kind);
   }
 });
 

@@ -152,6 +152,10 @@ try {
     ['fractional total', { ...good, readingLogs: [{ totalVolumes: 2.5, ranges: [] }] }, 'readingLogs.0.totalVolumes'],
     ['one-ended range', { ...good, readingLogs: [{ ranges: [[1]] }] }, 'readingLogs.0.ranges.0'],
     ['negative volume', { ...good, collectionLogs: [{ ranges: [[-1, 2]] }] }, 'collectionLogs.0.ranges.0.0'],
+    // the UI loops over every volume of every range, so an absurd number would freeze it for good
+    ['volume past the cap', { ...good, collectionLogs: [{ ranges: [[1, 10000]] }] }, 'collectionLogs.0.ranges.0.1'],
+    ['total past the cap', { ...good, readingLogs: [{ totalVolumes: 10000, ranges: [] }] }, 'readingLogs.0.totalVolumes'],
+    ['end year before start year', { ...good, status: 'completed', publishYear: 2000, endYear: 1999 }, 'endYear'],
   ]) {
     r = await call('POST', '/series', body);
     assert.equal(r.status, 400, name);
@@ -159,9 +163,10 @@ try {
   }
   const valid = await call('POST', '/series', good);
   assert.equal(valid.status, 201);
-  for (const body of [{ title: '  ' }, { publisher: '' }, { rating: -1 }]) {
+  for (const body of [{ title: '  ' }, { publisher: '' }, { rating: -1 }, { publishYear: 2000, endYear: 1999 }, { readingLogs: [{ ranges: [[1, 10000]] }] }]) {
     assert.equal((await call('PATCH', `/series/${valid.body.id}`, body)).status, 400, JSON.stringify(body));
   }
+  assert.equal((await call('POST', '/series', { ...good, title: 'Edge', collectionLogs: [{ totalVolumes: 9999, ranges: [[1, 9999]] }] })).status, 201);
   // defaults for an omitted field
   assert.deepEqual([valid.body.type, valid.body.status, valid.body.isCollecting, valid.body.rating, valid.body.imageUrl],
     ['manga', 'ongoing', true, 0, '']);
@@ -234,6 +239,19 @@ try {
   assert.deepEqual(authors.filter(n => n === 'Kishimoto'), ['Kishimoto']);
   assert.deepEqual(authors, [...authors].sort());
   assert.ok((await names('/publishers')).includes('Zeta Books'));
+
+  // a name only appears while some series uses it: deleting the series, or moving it to another name, drops the old one
+  const ghost = await call('POST', '/series', { title: 'Ghost', author: 'Ghost A', publisher: 'Ghost P' });
+  assert.ok((await names('/authors')).includes('Ghost A') && (await names('/publishers')).includes('Ghost P'));
+  await call('PATCH', `/series/${ghost.body.id}`, { author: 'Ghost B' });
+  assert.ok(!(await names('/authors')).includes('Ghost A') && (await names('/authors')).includes('Ghost B'));
+  await call('DELETE', `/series/${ghost.body.id}`);
+  assert.ok(!(await names('/authors')).includes('Ghost B') && !(await names('/publishers')).includes('Ghost P'));
+
+  // no CORS: the app only talks to /api through its own origin (Vite proxy), so a page on another site must not
+  // be allowed to preflight a PATCH/DELETE against the local database
+  const preflight = await fetch(`${base}/series/1`, { method: 'OPTIONS', headers: { Origin: 'http://evil.example', 'Access-Control-Request-Method': 'DELETE' } });
+  assert.equal(preflight.headers.get('access-control-allow-origin'), null);
 
   // ── MAL proxy ────────────────────────────────────────────────────────────
   r = await call('GET', '/mal/search');

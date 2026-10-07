@@ -199,8 +199,13 @@ export const CSV_COLUMNS: CsvColumnOption[] = [
  * Surrounds with double quotes if field contains commas, double quotes, or newlines.
  * Escapes internal double quotes by doubling them ("").
  */
+// Text a spreadsheet would run as a formula (=, +, @, tab, CR, or "-" followed by anything; a lone "-" is the
+// "no value" placeholder) gets a leading ' so Excel/Sheets keep it as text. Titles can come from MAL.
+const FORMULA_START = /^([=+@\t\r]|-[\s\S])/;
+
 function escapeCsvValue(val: string | number): string {
-  const stringVal = String(val ?? '');
+  let stringVal = String(val ?? '');
+  if (FORMULA_START.test(stringVal)) stringVal = `'${stringVal}`;
   if (stringVal.includes('"') || stringVal.includes(',') || stringVal.includes('\n') || stringVal.includes('\r')) {
     return `"${stringVal.replace(/"/g, '""')}"`;
   }

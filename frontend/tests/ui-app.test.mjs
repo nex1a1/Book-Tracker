@@ -217,6 +217,7 @@ test('SeriesInfoModal: picking a MAL result fills the form; a running series dro
     node(2, { status: 'on_hiatus' }),
     node(3, { status: 'discontinued' }),
     node(4, { status: 'currently_publishing' }),
+    { node: { id: 5, title: 'M5', status: 'currently_publishing' } }, // no picture
   ] }) });
   await openModal();
   await click(React, byText(document, 'ค้นหาจาก MyAnimeList'));
@@ -234,6 +235,8 @@ test('SeriesInfoModal: picking a MAL result fills the form; a running series dro
   assert.equal(text(statusTrigger()), 'โดนตัดจบ (Cancelled)');
   await choose(4);
   assert.equal(text(statusTrigger()), 'ยังไม่จบ (Ongoing)');
+  await choose(5); // MAL has no cover for this one: the cover already in the form stays
+  assert.equal($('.modal input[placeholder^="วาง URL"]').value, 'https://l/4.jpg');
   await choose(1);
   assert.equal(field('author').value, 'Kanehito Yamada, Abe');
 

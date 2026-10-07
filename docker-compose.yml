@@ -11,7 +11,7 @@ services:
     environment:
       NODE_ENV: development
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001" # this machine only: the API has no login
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -30,7 +30,7 @@ services:
     environment:
       VITE_BACKEND_TARGET: http://backend:3001
     ports:
-      - "5174:5174"
+      - "127.0.0.1:5174:5174"
     volumes:
       - ./frontend:/app
       - /app/node_modules

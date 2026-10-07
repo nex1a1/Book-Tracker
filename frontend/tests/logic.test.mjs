@@ -204,6 +204,18 @@ test('generateCsvData: column order follows the selection, values are escaped, B
   assert.equal(csv.generateCsvData([], ['id']).csvString, 'ID');
 });
 
+test('generateCsvData: text that spreadsheets would run as a formula is kept as text', () => {
+  const cell = title => csv.generateCsvData([{ ...rich(), title }], ['title']).csvString.split('\n')[1];
+  assert.equal(cell('=HYPERLINK("http://x","go")'), `"'=HYPERLINK(""http://x"",""go"")"`);
+  assert.equal(cell('+1+1'), "'+1+1");
+  assert.equal(cell('-2+3'), "'-2+3");
+  assert.equal(cell('@SUM(1)'), "'@SUM(1)");
+  // ordinary text, the lone "-" placeholder and a dash inside a title are left alone
+  assert.deepEqual(['Naruto', '-', 'Re-Zero', '1-20'].map(cell), ['Naruto', '-', 'Re-Zero', '1-20']);
+  // the on-screen preview rows keep the real value; only the CSV text is guarded
+  assert.equal(csv.generateCsvData([{ ...rich(), title: '=1' }], ['title']).rows[0][0], '=1');
+});
+
 const splitRows = (s, columns) => csv.generateCsvData([s], columns, false, 'split_logs').rows;
 
 test('split_logs: a single-log series is one clean row, counted inside its total', () => {
