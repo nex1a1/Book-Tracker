@@ -1,11 +1,11 @@
-import React from "react";
 import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
 import { CollectionLogSummary } from "../../../components/CollectionLogSummary";
 import { coverSrc } from "../../../api/seriesApi";
+import { useSeriesStore } from "../../../store/useSeriesStore";
 import { TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
-import { Series, BookLog, SeriesType, SeriesStatus } from "../../../types";
+import { BookLog, SeriesType, SeriesStatus } from "../../../types";
 
 interface LiveCardPreviewProps {
   form: {
@@ -32,6 +32,7 @@ interface LiveCardPreviewProps {
 export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
   const displayType = (form.type || 'manga') as SeriesType;
   const displayStatus = (form.status || 'ongoing') as SeriesStatus;
+  const cardLayout = useSeriesStore(s => s.cardLayout);
 
   return (
     <div className="live-preview-section">
@@ -42,7 +43,7 @@ export function LiveCardPreview({ form, stats }: LiveCardPreviewProps) {
         <span style={{ fontSize: '0.62rem', color: 'var(--muted)', fontWeight: 600 }}>ตัวอย่างแสดงผล</span>
       </div>
       
-      <div className="live-preview-card-wrap">
+      <div className={`live-preview-card-wrap card-layout--${cardLayout}`}>
         <div className="card" style={{ margin: 0, border: '1px solid rgba(255, 123, 0, 0.25)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
           <div className="card__top">
             <div className="card__cover-wrapper">

@@ -295,39 +295,6 @@
   background: rgba(186, 12, 12, 0.12);
 }
 
-/* Sleek Select Dropdown */
-.filter-select {
-  width: 100%;
-  background: rgba(38, 38, 38, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius);
-  color: var(--ink);
-  padding: 8px 12px;
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  font-weight: 500;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ff7b00' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-}
-.filter-select:hover {
-  border-color: rgba(255, 123, 0, 0.4);
-  background: rgba(38, 38, 38, 0.6);
-}
-.filter-select:focus {
-  border-color: var(--accent);
-}
-.filter-select option {
-  background: #171717;
-  color: #ffffff;
-}
-
 /* Year-range inputs */
 .filter-year-row {
   display: flex;

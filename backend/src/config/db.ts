@@ -95,4 +95,3 @@ db.exec(`
 `);
 
 export default db;
-export type DatabaseInstance = typeof db;

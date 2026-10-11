@@ -222,7 +222,7 @@ export function generateCsvData(
   selectedColumnKeys: string[],
   includeBom: boolean = false,
   layoutMode: ExportLayoutMode = 'series'
-): { csvString: string; headers: string[]; rows: string[][] } {
+): { csvString: string; headers: string[]; columnKeys: string[]; rows: string[][]; rowKeys: string[] } {
   // Map columns strictly according to selectedColumnKeys order!
   const colMap = new Map<string, CsvColumnOption>(CSV_COLUMNS.map(c => [c.key, c]));
   const activeCols = selectedColumnKeys
@@ -231,6 +231,9 @@ export function generateCsvData(
 
   const headers = activeCols.map(col => col.label);
   const rows: string[][] = [];
+  // One stable key per row for the preview table (a series' first row keeps the series id in
+  // both layouts, so the preview can tell a row that moved from one that is new).
+  const rowKeys: string[] = [];
 
   if (layoutMode === 'split_logs') {
     seriesList.forEach(series => {
@@ -262,6 +265,7 @@ export function generateCsvData(
           return String(col.getValue(series));
         });
         rows.push(row);
+        rowKeys.push(series._id);
       } else {
         // Multi-log series -> generate 1 row per sub-log cleanly!
         const maxLogsCount = Math.max(readingLogs.length, collectionLogs.length, 1);
@@ -320,6 +324,7 @@ export function generateCsvData(
           });
 
           rows.push(row);
+          rowKeys.push(i === 0 ? series._id : `${series._id}:${i}`);
         }
       }
     });
@@ -328,6 +333,7 @@ export function generateCsvData(
     seriesList.forEach(series => {
       const row = activeCols.map(col => String(col.getValue(series)));
       rows.push(row);
+      rowKeys.push(series._id);
     });
   }
 
@@ -337,7 +343,7 @@ export function generateCsvData(
   const rawCsv = [headerLine, ...rowLines].join('\n');
   const csvString = includeBom ? `\uFEFF${rawCsv}` : rawCsv;
 
-  return { csvString, headers, rows };
+  return { csvString, headers, columnKeys: activeCols.map(col => col.key), rows, rowKeys };
 }
 
 /**

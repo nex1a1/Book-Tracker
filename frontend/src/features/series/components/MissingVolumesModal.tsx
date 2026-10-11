@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
+import { closeModal, morphRows } from "../../../utils/viewTransition";
 import '../Series.css';
 import { SeriesInfoModal } from "./SeriesInfoModal";
 
 // Sub-components & hooks
-import { useMissingVolumes, MissingSeriesItem } from "../hooks/useMissingVolumes";
+import { useMissingVolumes, MissingSeriesItem, ChecklistSortKey } from "../hooks/useMissingVolumes";
 import { MissingVolumeRow } from "./MissingVolumeRow";
-import { PublisherDropdown } from "./PublisherDropdown";
+import { SortableCol } from "./SortableCol";
+import { CHECKLIST_COLUMNS, DEFAULT_CHECKLIST_COLUMNS, ChecklistColumnPicker, checklistGridTemplate } from "./ChecklistColumns";
+import { PublisherDropdown } from "../../../components/PublisherDropdown";
 import { Series } from "../../../types";
 
 interface MissingVolumesModalProps {
@@ -17,6 +20,8 @@ interface MissingVolumesModalProps {
 
 export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
   const [editingSeries, setEditingSeries] = useState<Series | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState(DEFAULT_CHECKLIST_COLUMNS);
+  const columns = CHECKLIST_COLUMNS.filter(c => visibleColumns.includes(c.key));
 
   const {
     searchQuery,
@@ -25,6 +30,9 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     setSelectedPublisher,
     viewMode,
     setViewMode,
+    sortBy,
+    sortOrder,
+    setSort,
     checkedItems,
     toggleCheckItem,
     clearCheckedItems,
@@ -36,6 +44,9 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     stats
   } = useMissingVolumes();
   const isFiltering = searchQuery !== "" || selectedPublisher.length > 0;
+  // Keys come from the SortableCol headers below. Rows slide to their new order.
+  const sortRows = (by: string, order: 'ASC' | 'DESC') =>
+    morphRows('.checklist-body', () => setSort(by as ChecklistSortKey, order));
 
   // Copy items to clipboard (excluding checked ones)
   const handleCopy = async () => {
@@ -142,12 +153,14 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                 multiSelect
               />
 
+              <ChecklistColumnPicker visible={visibleColumns} onChange={setVisibleColumns} />
+
               {/* View Toggle */}
               <div className="checklist-view-toggle">
                 <button 
                   type="button"
                   className={`checklist-view-btn ${viewMode === 'grouped' ? 'active' : ''}`}
-                  onClick={() => setViewMode('grouped')}
+                  onClick={() => viewMode !== 'grouped' && morphRows('.checklist-body', () => setViewMode('grouped'))}
                   title="แยกกลุ่มตามสำนักพิมพ์"
                 >
                   <Icons.Filter /> แยก สนพ.
@@ -155,7 +168,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                 <button 
                   type="button"
                   className={`checklist-view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
+                  onClick={() => viewMode !== 'list' && morphRows('.checklist-body', () => setViewMode('list'))}
                   title="แสดงรายการยาวทั้งหมด"
                 >
                   <Icons.List /> รายการยาว
@@ -165,7 +178,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
           </div>
 
           {/* Checklist Main Body */}
-          <div className="checklist-body">
+          <div className="checklist-body" style={{ '--checklist-cols': checklistGridTemplate(columns) }}>
             {filteredList.length === 0 ? (
               <div className="empty-state" style={{ padding: '40px 20px' }}>
                 <div className="empty-state__icon">
@@ -183,10 +196,13 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                 {/* Table Grid Headers */}
                 <div className="checklist-table-header">
                   <div className="checklist-header-col"></div>
-                  <div className="checklist-header-col">ชื่อเรื่อง</div>
-                  <div className="checklist-header-col">ผู้แต่ง</div>
-                  <div className="checklist-header-col">สำนักพิมพ์</div>
-                  <div className="checklist-header-col" style={{ textAlign: 'right', paddingRight: '8px' }}>เล่มที่ขาด</div>
+                  <SortableCol label="ชื่อเรื่อง" sortKey="title" defaultOrder="ASC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={sortRows} />
+                  {columns.map(c => c.sortKey ? (
+                    <SortableCol key={c.key} label={c.label} sortKey={c.sortKey} defaultOrder={c.defaultOrder ?? 'ASC'} sortBy={sortBy} sortOrder={sortOrder} onSortChange={sortRows} />
+                  ) : (
+                    <div key={c.key} className="checklist-header-col">{c.label}</div>
+                  ))}
+                  <SortableCol label="เล่มที่ขาด" sortKey="missing" defaultOrder="DESC" sortBy={sortBy} sortOrder={sortOrder} onSortChange={sortRows} className="list-header-col--right" />
                   <div className="checklist-header-col" style={{ textAlign: 'center' }}>จัดการ</div>
                 </div>
 
@@ -232,6 +248,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                                     onToggleCheck={() => toggleCheckItem(itemKey)}
                                     onEdit={() => setEditingSeries(item.rawSeries)}
                                     onCopySingle={() => handleCopySingle(item)}
+                                    columns={columns}
                                   />
                                 );
                               })
@@ -257,6 +274,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                               onToggleCheck={() => toggleCheckItem(itemKey)}
                               onEdit={() => setEditingSeries(item.rawSeries)}
                               onCopySingle={() => handleCopySingle(item)}
+                              columns={columns}
                             />
                           );
                         })
@@ -288,7 +306,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
       {editingSeries && (
         <SeriesInfoModal 
           series={editingSeries} 
-          onClose={() => setEditingSeries(null)} 
+          onClose={() => closeModal(() => setEditingSeries(null))} 
         />
       )}
     </div>, document.body

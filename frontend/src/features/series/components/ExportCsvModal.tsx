@@ -6,6 +6,7 @@ import { Series, FilterState } from '../../../types';
 import { CSV_COLUMNS, generateCsvData, downloadCsvFile, ExportLayoutMode } from '../../../utils/csvHelper';
 import { useFilteredSeries } from '../hooks/useFilteredSeries';
 import { ExportFilterPopover } from './ExportFilterPopover';
+import { useFlipTable } from '../hooks/useFlipTable';
 import { ExportColumnPopover } from './ExportColumnPopover';
 import '../Series.css';
 
@@ -49,6 +50,8 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
   );
 
   const [previewTab, setPreviewTab] = useState<'table' | 'raw'>('table');
+  const previewTableRef = useRef<HTMLTableElement>(null);
+  useFlipTable(previewTableRef);
   
   // Popover Visibility States
   const [showColumnPopover, setShowColumnPopover] = useState(false);
@@ -121,7 +124,7 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
   const filteredScopeList = localFilterCount > 0 ? modalFilteredSeries : initialFilteredSeries;
   const targetSeriesList = scope === 'all' ? allSeries : filteredScopeList;
 
-  const { csvString, headers, rows } = useMemo(() => {
+  const { csvString, headers, columnKeys, rows, rowKeys } = useMemo(() => {
     return generateCsvData(targetSeriesList, selectedKeys, false, layoutMode);
   }, [targetSeriesList, selectedKeys, layoutMode]);
 
@@ -364,21 +367,23 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
               </div>
             ) : previewTab === 'table' ? (
               <div className="preview-table-wrapper">
-                <table className="preview-table">
+                <table className="preview-table" ref={previewTableRef}>
                   <thead>
                     <tr>
                       <th className="row-num-col">#</th>
                       {headers.map((h, idx) => (
-                        <th key={idx}>{h}</th>
+                        <th key={columnKeys[idx]} data-col={columnKeys[idx]}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Keyed by series/log and column, so a filter or column change moves the rows and
+                        cells that stay (useFlipTable) and fades in only the new ones (CSS). */}
                     {rows.map((row, rIdx) => (
-                      <tr key={rIdx}>
+                      <tr key={rowKeys[rIdx]} data-row={rowKeys[rIdx]}>
                         <td className="row-num-col">{rIdx + 1}</td>
                         {row.map((cell, cIdx) => (
-                          <td key={cIdx} title={cell}>
+                          <td key={columnKeys[cIdx]} data-col={columnKeys[cIdx]} title={cell}>
                             {cell || <span className="text-muted">-</span>}
                           </td>
                         ))}

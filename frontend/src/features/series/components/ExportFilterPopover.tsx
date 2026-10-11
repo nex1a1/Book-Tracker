@@ -2,7 +2,7 @@ import React from 'react';
 import { Icons } from '../../../components/Icons';
 import { FilterState, SeriesType, SeriesStatus, LogLanguage } from '../../../types';
 import { LANGUAGE_LABEL } from '../../../utils/constants';
-import { PublisherDropdown } from './PublisherDropdown';
+import { PublisherDropdown } from '../../../components/PublisherDropdown';
 
 interface ExportFilterPopoverProps {
   popoverRef: React.RefObject<HTMLDivElement>;

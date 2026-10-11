@@ -1,7 +1,19 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { seriesApi } from "../api/seriesApi";
-import { SeriesStore, FilterState } from "../types";
+import { SeriesStore, FilterState, CardLayout } from "../types";
+import { CARD_LAYOUT_LABEL } from "../utils/constants";
+
+const CARD_LAYOUT_STORAGE_KEY = 'cardLayout';
+
+// The grid card layout is a per-browser preference; storage may be unavailable (private mode).
+const loadCardLayout = (): CardLayout => {
+  try {
+    const saved = localStorage.getItem(CARD_LAYOUT_STORAGE_KEY);
+    if (saved && saved in CARD_LAYOUT_LABEL) return saved as CardLayout;
+  } catch { /* fall through to the default */ }
+  return 'cover';
+};
 
 export const EMPTY_FILTER: FilterState = {
   search: '',
@@ -25,11 +37,16 @@ export const useSeriesStore = create<SeriesStore>((set, get) => ({
   stats: null,
   loading: false,
   viewMode: 'grid',
+  cardLayout: loadCardLayout(),
   authors: [],
   publishers: [],
   filter: { ...EMPTY_FILTER, limit: 1000 },
   
   setViewMode: (mode) => set({ viewMode: mode }),
+  setCardLayout: (layout) => {
+    set({ cardLayout: layout });
+    try { localStorage.setItem(CARD_LAYOUT_STORAGE_KEY, layout); } catch { /* not persisted */ }
+  },
   
   fetchSeries: async () => {
     set({ loading: true });
@@ -65,7 +82,7 @@ export const useSeriesStore = create<SeriesStore>((set, get) => ({
   },
   
   setFilter: (f) => set((s) => ({ filter: { ...s.filter, ...f } })),
-  resetFilter: () => set((s) => ({ filter: { ...EMPTY_FILTER, limit: 1000 } })),
+  resetFilter: () => set(({ filter: { ...EMPTY_FILTER, limit: 1000 } })),
   
   updateSeriesRating: async (id, rating) => {
     try {

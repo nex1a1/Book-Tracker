@@ -321,21 +321,6 @@
   color: var(--accent);
 }
 
-.select-input {
-  width: 100%;
-  padding: 7px 10px;
-  background: var(--paper);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--ink);
-  font-size: 0.8rem;
-  outline: none;
-}
-
-.select-input:focus {
-  border-color: var(--accent);
-}
-
 
 @keyframes popoverFadeIn {
   from { opacity: 0; transform: translateY(-8px); }
@@ -359,61 +344,6 @@
   align-items: center;
   gap: 6px;
   text-transform: uppercase;
-}
-
-.popover-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.column-checkbox-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--paper);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.15s ease;
-}
-
-.column-checkbox-card:hover {
-  border-color: var(--accent);
-  background: rgba(255, 123, 0, 0.04);
-}
-
-.column-checkbox-card.checked {
-  background: rgba(255, 123, 0, 0.08);
-  border-color: rgba(255, 123, 0, 0.5);
-}
-
-.column-checkbox-card input[type="checkbox"] {
-  display: none !important;
-}
-
-.checkbox-custom {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--accent);
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-
-.column-checkbox-card.checked .checkbox-custom {
-  border-color: var(--accent);
-  background: rgba(255, 123, 0, 0.2);
 }
 
 .column-label {
@@ -659,6 +589,17 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Preview changes (filters, scope, layout, tab): rows are keyed, so only new rows mount and fade
+   in here; rows that stay slide, and new columns fade in, from hooks/useFlipTable.ts. */
+.preview-table tbody tr,
+.preview-table-wrapper,
+.preview-raw-wrapper,
+.preview-empty { animation: previewFadeIn 0.24s ease-out backwards; }
+@keyframes previewFadeIn { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .preview-table tbody tr, .preview-table-wrapper, .preview-raw-wrapper, .preview-empty { animation: none; }
+}
+
 .row-num-col {
   width: 40px;
   text-align: center;
@@ -712,9 +653,6 @@
   .export-toolbar {
     flex-direction: column;
     align-items: stretch;
-  }
-  .popover-grid {
-    grid-template-columns: 1fr;
   }
 }
 

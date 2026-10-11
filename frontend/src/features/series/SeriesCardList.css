@@ -18,7 +18,8 @@
   border-radius: 0px;
   padding: 16px;
   box-shadow: var(--shadow);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: box-shadow, border-color; /* never size: it would fight the layout switch */
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -39,7 +40,8 @@
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: var(--paper);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: box-shadow, border-color;
 }
 .card:hover .card__cover-wrapper {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -160,6 +162,14 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/* Cover layout (.card-layout--cover on the grid or the preview wrap): badges row, cover centered and larger, then title/meta/rating at
+   full width. .card__info is flattened (display: contents) so its header can sit above the
+   cover without changing the markup shared with LiveCardPreview. */
+.card-layout--cover .card__top { flex-direction: column; gap: 6px; }
+.card-layout--cover .card__info { display: contents; }
+.card-layout--cover .card__header { order: -1; }
+.card-layout--cover .card__cover-wrapper { width: 150px; height: 215px; align-self: center; margin: 4px 0 8px; }
 
 .card__header {
   display: flex;

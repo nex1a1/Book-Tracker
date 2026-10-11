@@ -216,6 +216,14 @@ test('generateCsvData: text that spreadsheets would run as a formula is kept as 
   assert.equal(csv.generateCsvData([{ ...rich(), title: '=1' }], ['title']).rows[0][0], '=1');
 });
 
+test('generateCsvData: stable row and column keys for the preview (a series keeps its first row key in both layouts)', () => {
+  const jjk = series([owned(30, [[1, 25]])], [reading('Main', 30, [[1, 30]]), reading('Zero', 1, [[1, 1]])], { _id: 'J' });
+  const one = series([], [], { _id: 'O' });
+  assert.deepEqual(csv.generateCsvData([jjk, one], ['title']).rowKeys, ['J', 'O']);
+  assert.deepEqual(csv.generateCsvData([jjk, one], ['title'], false, 'split_logs').rowKeys, ['J', 'J:1', 'O']);
+  assert.deepEqual(csv.generateCsvData([one], ['title', 'nope', 'status']).columnKeys, ['title', 'status']);
+});
+
 const splitRows = (s, columns) => csv.generateCsvData([s], columns, false, 'split_logs').rows;
 
 test('split_logs: a single-log series is one clean row, counted inside its total', () => {

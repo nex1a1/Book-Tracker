@@ -38,7 +38,7 @@ beforeEach(() => {
   api.getStats = async () => ({ data: store.getState().stats });
   api.getAuthors = async () => ({ data: [{ id: 1, name: 'Oda' }] });
   api.getPublishers = async () => ({ data: [{ id: 1, name: 'Siam' }] });
-  store.setState({ series: [], stats: null, loading: false, viewMode: 'grid', authors: [{ id: 1, name: 'Oda' }], publishers: [{ id: 1, name: 'Siam' }], filter: { ...EMPTY, limit: 1000 } });
+  store.setState({ series: [], stats: null, loading: false, viewMode: 'grid', cardLayout: 'cover', authors: [{ id: 1, name: 'Oda' }], publishers: [{ id: 1, name: 'Siam' }], filter: { ...EMPTY, limit: 1000 } });
   localStorage.clear();
 });
 afterEach(async () => { await cleanup(); toast.remove(); globalThis.fetch = realFetch; });
@@ -260,17 +260,42 @@ const openChecklist = async () => {
 };
 const pill = () => text($('.checklist-stats-bar__pills'));
 
-test('MissingVolumesModal: grouped by publisher with totals; groups collapse; flat list view', async () => {
+test('MissingVolumesModal: column picker adds/removes columns; reopening shows the defaults', async () => {
+  store.setState({ series: [MA] });
+  await openChecklist();
+  const headers = () => $$('.checklist-table-header > *').map(el => text(el).replace('↕', '')).filter(Boolean);
+  assert.deepEqual(headers(), ['ชื่อเรื่อง', 'ผู้แต่ง', 'สำนักพิมพ์', 'เล่มที่ขาด', 'จัดการ']);
+  await click(React, $('.col-picker__trigger'));
+  const option = label => $$('.col-picker__item').find(el => text(el.querySelector('.col-picker__label')) === label);
+  await click(React, option('ทั้งหมด'));
+  await click(React, option('มีแล้ว'));
+  await click(React, option('ผู้แต่ง'));
+  assert.deepEqual(headers(), ['ชื่อเรื่อง', 'สำนักพิมพ์', 'ทั้งหมด', 'มีแล้ว', 'เล่มที่ขาด', 'จัดการ']);
+  assert.deepEqual(['total', 'owned'].map(k => text($(`.checklist-item-${k}-col`))), ['10 เล่ม', '5 เล่ม']);
+  assert.ok(!$('.checklist-item-author-col'));
+  await cleanup();
+  await openChecklist();
+  assert.deepEqual(headers(), ['ชื่อเรื่อง', 'ผู้แต่ง', 'สำนักพิมพ์', 'เล่มที่ขาด', 'จัดการ']);
+});
+
+test('MissingVolumesModal: grouped by publisher with totals; groups collapse; flat list view; column sort', async () => {
   store.setState({ series: [MA, MB, DONE] });
   await openChecklist();
   assert.match(pill(), /ขาดทั้งหมด 2 เรื่อง \(9 เล่ม\)/);
   assert.deepEqual($$('.checklist-publisher-header').map(el => [text(el.querySelector('.checklist-publisher-title')), text(el.querySelector('.checklist-publisher-count'))]),
     [['P1', '1 เรื่อง (5 เล่ม)'], ['P2', '1 เรื่อง (4 เล่ม)']]);
-  assert.deepEqual($$('.checklist-item-missing-col').map(text), ['เล่ม 6-10', 'เล่ม 2-3', 'JP · Boxเล่ม 1-2']);
+  assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 6-10', 'เล่ม 2-3', 'เล่ม 1-2']);
+  assert.deepEqual($$('.checklist-item-missing-count').map(text), ['5 เล่ม', '2 เล่ม', '2 เล่ม']);
+  assert.equal(text($('.checklist-item-format')), 'JP · Box');
   await click(React, $$('.checklist-publisher-header')[0]);
   assert.equal($$('.checklist-item-row').length, 2);
   await click(React, byText(document, 'รายการยาว'));
   assert.equal($$('.checklist-item-row').length, 3);
+  // Column sort: most missing first, a second click flips it.
+  await click(React, byText(document, 'เล่มที่ขาด', '.list-header-col--sortable'));
+  assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 6-10', 'เล่ม 2-3', 'เล่ม 1-2']);
+  await click(React, byText(document, 'เล่มที่ขาด', '.list-header-col--sortable'));
+  assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 2-3', 'เล่ม 1-2', 'เล่ม 6-10']);
 });
 
 test('MissingVolumesModal: ticking, copying what is left, copying one series', async () => {
@@ -454,7 +479,7 @@ const LIB = [
   series([owned(10, [[1, 5], [11, 15]])], [], { _id: 'b', title: 'Beta', publisher: 'Siam' }), // owns 11-15 of a 10-volume log
   series([owned(2, [[1, 2]])], [], { _id: 'c', title: 'Gamma', publisher: 'Other' }),
 ];
-const STATS = { byType: [], byStatus: [], totals: { totalSeries: 3, collecting: 3, totalRead: 10 } };
+const STATS = { totals: { totalSeries: 3, collecting: 3, totalRead: 10 } };
 
 const openApp = async () => {
   store.setState({ series: LIB, stats: STATS });
@@ -488,6 +513,16 @@ test('App: grid/list toggle, sorting, sidebar filter and its reset', async () =>
   assert.match(meta(), /แสดง 3 จากทั้งหมด 3 เรื่อง/);
   await click(React, byText(document, 'ตาราง', '.view-toggle__btn'));
   assert.equal($$('.card').length, 3);
+});
+
+test('App: card layout toggle switches the grid and is remembered; hidden in list view', async () => {
+  await openApp();
+  assert.ok($('.card-grid.card-layout--cover'));
+  await click(React, byText($('.content-meta'), 'ปกซ้าย', '.view-toggle__btn'));
+  assert.ok($('.card-grid.card-layout--classic'));
+  assert.equal(localStorage.getItem('cardLayout'), 'classic');
+  await click(React, byText(document, 'รายการ', '.view-toggle__btn'));
+  assert.ok(!byText($('.content-meta'), 'ปกซ้าย', '.view-toggle__btn'));
 });
 
 test('App: the add, checklist and export dialogs open and close', async () => {

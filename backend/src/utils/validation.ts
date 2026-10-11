@@ -48,4 +48,3 @@ export const updateSeriesSchema = baseSeriesSchema.partial().extend({
 
 export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;
 export type UpdateSeriesInput = z.infer<typeof updateSeriesSchema>;
-export type BookLogInput = z.infer<typeof logSchema>;

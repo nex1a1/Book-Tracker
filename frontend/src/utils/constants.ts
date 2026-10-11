@@ -1,7 +1,13 @@
-import { SeriesType, SeriesStatus, LogLanguage } from "../types";
+import { SeriesType, SeriesStatus, LogLanguage, CardLayout } from "../types";
 
 // Highest volume number / volume count the app takes (it loops over every volume). Keep in step with backend validation.ts.
 export const MAX_VOLUME = 9999;
+
+// Grid card layouts, in toggle order. Add a layout here + `.card-layout--<key>` rules in SeriesCardList.css.
+export const CARD_LAYOUT_LABEL: Record<CardLayout, string> = {
+  classic: "ปกซ้าย",
+  cover: "ปกบน"
+};
 
 export const TYPE_LABEL: Record<SeriesType, string> = {
   manga: "Manga",

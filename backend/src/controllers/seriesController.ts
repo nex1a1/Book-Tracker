@@ -96,21 +96,7 @@ export const getStats = (req: Request, res: Response) => {
     const totalSeries = totals?.totalSeries || 0;
     const collecting = totals?.collecting || 0;
 
-    // 2. Aggregate type count via SQL
-    const byTypeRows = db.prepare(`
-      SELECT type as _id, COUNT(*) as count 
-      FROM series 
-      GROUP BY type
-    `).all();
-
-    // 3. Aggregate status count via SQL
-    const byStatusRows = db.prepare(`
-      SELECT status as _id, COUNT(*) as count 
-      FROM series 
-      GROUP BY status
-    `).all();
-
-    // 4. Calculate total read volumes: with a known total only volumes 1..total count (same rule as the UI)
+    // 2. Calculate total read volumes: with a known total only volumes 1..total count (same rule as the UI)
     const readStats = db.prepare(`
       SELECT SUM(MAX(0, CASE WHEN g.totalVolumes > 0
         THEN MIN(r.endVol, g.totalVolumes) - MAX(r.startVol, 1) + 1
@@ -120,8 +106,6 @@ export const getStats = (req: Request, res: Response) => {
     const totalRead = readStats?.total || 0;
 
     res.json({ 
-      byType: byTypeRows, 
-      byStatus: byStatusRows, 
       totals: { totalSeries, collecting, totalRead } 
     });
   } catch (error) {

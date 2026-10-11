@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
@@ -6,6 +6,7 @@ import { SeriesInfoModal } from "./SeriesInfoModal";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { coverSrc } from "../../../api/seriesApi";
+import { closeModal } from "../../../utils/viewTransition";
 import { getSeriesDerivedStats, getLogState, getMissingVolumesText, getCollectionLogLabel, formatVolumeRangesString } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
 import { Series } from "../../../types";
@@ -68,7 +69,7 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
   };
 
   return (
-    <div className={`list-row list-row--${stats.n.status}`}>
+    <div className={`list-row list-row--${stats.n.status}`} data-flip={series._id}>
 
       {/* Column 1: cover wrapper */}
       <div className="list-row__cover-wrapper">
@@ -132,11 +133,11 @@ export function SeriesListItem({ series }: SeriesListItemProps) {
         </button>
       </div>
 
-      {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
+      {showEdit && <SeriesInfoModal series={stats.n} onClose={() => closeModal(() => setShowEdit(false))} />}
       {showDeleteConfirm && (
         <ConfirmDeleteModal
           series={stats.n}
-          onClose={() => setShowDeleteConfirm(false)}
+          onClose={() => closeModal(() => setShowDeleteConfirm(false))}
           onConfirm={() => { deleteSeries(stats.n._id); setShowDeleteConfirm(false); }}
         />
       )}

@@ -1,6 +1,8 @@
-import React from "react";
 import { Icons } from "../../../components/Icons";
 import { MissingSeriesItem, MissingLogItem } from "../hooks/useMissingVolumes";
+import { CHECKLIST_COLUMNS, ChecklistColumn, DEFAULT_CHECKLIST_COLUMNS } from "./ChecklistColumns";
+
+const DEFAULT_COLUMNS = CHECKLIST_COLUMNS.filter(c => DEFAULT_CHECKLIST_COLUMNS.includes(c.key));
 
 interface MissingVolumeRowProps {
   item: MissingSeriesItem;
@@ -9,11 +11,12 @@ interface MissingVolumeRowProps {
   onToggleCheck: () => void;
   onEdit: () => void;
   onCopySingle: () => void;
+  columns?: ChecklistColumn[];
 }
 
-export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle }: MissingVolumeRowProps) {
+export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle, columns = DEFAULT_COLUMNS }: MissingVolumeRowProps) {
   return (
-    <div className={`checklist-item-row ${isChecked ? "is-checked" : ""}`}>
+    <div className={`checklist-item-row ${isChecked ? "is-checked" : ""}`} data-vt-key={`${item._id}-${f.id}`}>
       <div className="checklist-item-checkbox-wrapper">
         <button
           type="button"
@@ -34,23 +37,16 @@ export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, on
         <span className={`badge checklist-item-badge badge--${item.rawType}`}>{item.typeStr}</span>
       </div>
 
-      <div className="checklist-item-author-col" title={item.author || "ไม่ระบุ"}>
-        {item.author || <span className="checklist-empty-field">-</span>}
-      </div>
-
-      <div className="checklist-item-publisher-col" title={item.publisher}>
-        {item.publisher && item.publisher !== "ไม่ระบุสำนักพิมพ์" ? (
-          item.publisher
-        ) : (
-          <span className="checklist-empty-field">-</span>
-        )}
-      </div>
+      {columns.map(c => (
+        <div key={c.key} className={`checklist-item-col checklist-item-${c.key}-col`}>{c.render(item, f)}</div>
+      ))}
 
       <div className="checklist-item-missing-col">
         {f.title && f.title !== "เล่มปกติ" && (
-          <span className="checklist-item-format">{f.title}</span>
+          <span className="checklist-item-format" title={f.title}>{f.title}</span>
         )}
         <span className="checklist-item-missing-volumes">เล่ม {f.missingText}</span>
+        <span className="checklist-item-missing-count">{f.missingCount} เล่ม</span>
       </div>
 
       <div className="checklist-item-actions">

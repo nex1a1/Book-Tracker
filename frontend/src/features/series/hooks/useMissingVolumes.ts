@@ -10,6 +10,7 @@ export interface MissingLogItem {
   title: string;
   missingText: string;
   missingCount: number;
+  totalVolumes: number;
 }
 
 export interface MissingSeriesItem {
@@ -22,6 +23,28 @@ export interface MissingSeriesItem {
   formats: MissingLogItem[];
   rawSeries: Series;
 }
+
+const sumFormats = (item: MissingSeriesItem, pick: (f: MissingLogItem) => number) =>
+  item.formats.reduce((sum, f) => sum + pick(f), 0);
+
+// Sortable checklist columns. A series with several missing logs sorts by their sum.
+const SORT_VALUE = {
+  title: (i: MissingSeriesItem) => i.title,
+  author: (i: MissingSeriesItem) => i.author || '',
+  publisher: (i: MissingSeriesItem) => i.publisher || '',
+  publishYear: (i: MissingSeriesItem) => i.rawSeries.publishYear ?? 0,
+  total: (i: MissingSeriesItem) => sumFormats(i, f => f.totalVolumes),
+  owned: (i: MissingSeriesItem) => sumFormats(i, f => f.totalVolumes - f.missingCount),
+  missing: (i: MissingSeriesItem) => sumFormats(i, f => f.missingCount),
+};
+export type ChecklistSortKey = keyof typeof SORT_VALUE;
+
+// Column sort for the checklist; '' keeps the store's order. Ties fall back to the title.
+const compareItems = (key: ChecklistSortKey, a: MissingSeriesItem, b: MissingSeriesItem) => {
+  const x = SORT_VALUE[key](a), y = SORT_VALUE[key](b);
+  const byKey = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'th');
+  return byKey || a.title.localeCompare(b.title, 'th');
+};
 
 const CHECKED_ITEMS_STORAGE_KEY = "manga-tracker:missing-checklist-checked";
 
@@ -53,7 +76,9 @@ export function useMissingList(): MissingSeriesItem[] {
               format: log.format,
               title: getCollectionLogLabel(log), 
               missingText,
-              missingCount: countMissingVolumes(log)
+              missingCount: countMissingVolumes(log),
+              // A missing log always has a known total (unknown-total logs are never "missing").
+              totalVolumes: log.totalVolumes ?? 0
             });
           }
         });
@@ -79,6 +104,8 @@ export function useMissingVolumes() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPublisher, setSelectedPublisher] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
+  const [sortBy, setSortBy] = useState<ChecklistSortKey | ''>('');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
   // Persisted across closing/reopening the modal — a shopping trip is rarely one
   // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
   const [checkedItems, setCheckedItems] = useState<Set<string>>(loadCheckedItems);
@@ -87,9 +114,9 @@ export function useMissingVolumes() {
   // 1. Gather all series that have missing volumes
   const missingList = useMissingList();
 
-  // 2. Filter list based on search and selected publisher
+  // 2. Filter list based on search and selected publisher, then apply the column sort
   const filteredList = useMemo(() => {
-    return missingList.filter(item => {
+    const list = missingList.filter(item => {
       const matchSearch = 
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.author && item.author.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -99,7 +126,10 @@ export function useMissingVolumes() {
       
       return matchSearch && matchPublisher;
     });
-  }, [missingList, searchQuery, selectedPublisher]);
+    if (!sortBy) return list;
+    const dir = sortOrder === 'ASC' ? 1 : -1;
+    return list.sort((a, b) => dir * compareItems(sortBy, a, b));
+  }, [missingList, searchQuery, selectedPublisher, sortBy, sortOrder]);
 
   // 3. Unique publisher options for filter dropdown
   const publisherOptions = useMemo(() => {
@@ -202,6 +232,9 @@ export function useMissingVolumes() {
     setSelectedPublisher,
     viewMode,
     setViewMode,
+    sortBy,
+    sortOrder,
+    setSort: (by: ChecklistSortKey, order: 'ASC' | 'DESC') => { setSortBy(by); setSortOrder(order); },
     checkedItems,
     toggleCheckItem,
     clearCheckedItems,

@@ -1,6 +1,8 @@
-import React from "react";
+import { useRef } from "react";
 import { SeriesListItem } from "./SeriesListItem";
+import { useFlipList } from "../hooks/useFlipList";
 import { Series } from "../../../types";
+import { SortableCol } from "./SortableCol";
 
 interface SeriesListViewProps {
   displaySeries: Series[];
@@ -11,36 +13,11 @@ interface SeriesListViewProps {
   onSortChange: (sortBy: string, sortOrder: 'ASC' | 'DESC') => void;
 }
 
-interface SortableColProps {
-  label: string;
-  sortKey: string;
-  defaultOrder: 'ASC' | 'DESC';
-  sortBy: string;
-  sortOrder: 'ASC' | 'DESC';
-  onSortChange: (sortBy: string, sortOrder: 'ASC' | 'DESC') => void;
-  className?: string;
-}
-
-function SortableCol({ label, sortKey, defaultOrder, sortBy, sortOrder, onSortChange, className }: SortableColProps) {
-  const isActive = sortBy === sortKey;
-  return (
-    <button
-      type="button"
-      className={`list-header-col list-header-col--sortable ${isActive ? 'list-header-col--active' : ''} ${className || ''}`}
-      onClick={() => onSortChange(sortKey, isActive ? (sortOrder === 'ASC' ? 'DESC' : 'ASC') : defaultOrder)}
-      aria-pressed={isActive}
-    >
-      {label}
-      <span className="list-header-col__sort-icon" aria-hidden="true">
-        {isActive ? (sortOrder === 'ASC' ? '▲' : '▼') : '↕'}
-      </span>
-    </button>
-  );
-}
-
 export function SeriesListView({ displaySeries, activeFilterCount, onResetFilter, sortBy, sortOrder, onSortChange }: SeriesListViewProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlipList(listRef);
   return (
-    <div className="list-container">
+    <div className="list-container" ref={listRef}>
       {displaySeries.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">{activeFilterCount > 0 ? "🔍" : "📚"}</div>

@@ -1,10 +1,10 @@
 services:
-  # 1. Backend (Node.js + SQLite)
-  backend:
+  # 1. DEV backend (tsx watch, :3001)
+  dev-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: manga_tracker_backend
+    container_name: manga_tracker_dev_backend
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -18,17 +18,17 @@ services:
     networks:
       - manga_net
 
-  # 2. Frontend (React/Vite)
-  frontend:
+  # 2. DEV frontend (Vite dev server + HMR, :5174)
+  dev-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: manga_tracker_frontend
+    container_name: manga_tracker_dev_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      - dev-backend
     environment:
-      VITE_BACKEND_TARGET: http://backend:3001
+      VITE_BACKEND_TARGET: http://dev-backend:3001
     ports:
       - "127.0.0.1:5174:5174"
     volumes:
@@ -36,6 +36,22 @@ services:
       - /app/node_modules
     networks:
       - manga_net
+
+  # 3. PROD: production build on :5175 (API + built frontend in one container, same data folder as dev).
+  #    Start: docker compose --profile prod up -d --build prod
+  prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: manga_tracker_prod
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "127.0.0.1:5175:3001" # this machine only: the API has no login
+    volumes:
+      - ./backend/data:/app/data
 
 networks:
   manga_net:

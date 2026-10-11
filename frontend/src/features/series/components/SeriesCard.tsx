@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { memo, useState } from "react";
 import { Icons } from "../../../components/Icons";
 import { StarRating } from "../../../components/StarRating";
 import { AggregatedVolumeBar } from "./AggregatedVolumeBar";
@@ -6,6 +6,7 @@ import { SeriesInfoModal } from "./SeriesInfoModal";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { useSeriesStore } from "../../../store/useSeriesStore";
 import { coverSrc } from "../../../api/seriesApi";
+import { closeModal } from "../../../utils/viewTransition";
 import { CollectionLogSummary } from "../../../components/CollectionLogSummary";
 import { getSeriesDerivedStats } from "../../../utils/helpers";
 import { TYPE_LABEL, STATUS_LABEL } from "../../../utils/constants";
@@ -16,7 +17,9 @@ interface SeriesCardProps {
   series: Series;
 }
 
-export function SeriesCard({ series }: SeriesCardProps) {
+// Memoized: the store re-renders App (and the grid) on every change, e.g. a card layout switch,
+// which only needs the grid's class to change — not 100+ cards re-rendered.
+export const SeriesCard = memo(function SeriesCard({ series }: SeriesCardProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteSeries = useSeriesStore(s => s.deleteSeries);
@@ -30,7 +33,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
   };
 
   return (
-    <div className="card">
+    <div className="card" data-flip={series._id}>
       
       {/* 🔴 ส่วนบน: รูปปก (ซ้าย) + ข้อมูลหลัก (ขวา) */}
       <div className="card__top">
@@ -116,14 +119,14 @@ export function SeriesCard({ series }: SeriesCardProps) {
         </div>
       )}
 
-      {showEdit && <SeriesInfoModal series={stats.n} onClose={() => setShowEdit(false)} />}
+      {showEdit && <SeriesInfoModal series={stats.n} onClose={() => closeModal(() => setShowEdit(false))} />}
       {showDeleteConfirm && (
         <ConfirmDeleteModal
           series={stats.n}
-          onClose={() => setShowDeleteConfirm(false)}
+          onClose={() => closeModal(() => setShowDeleteConfirm(false))}
           onConfirm={() => { deleteSeries(stats.n._id); setShowDeleteConfirm(false); }}
         />
       )}
     </div>
   );
-}
+});

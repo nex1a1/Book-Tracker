@@ -1,0 +1,26 @@
+# Production image: Express serves the API and the built frontend from one port (no Vite, no tsx watch).
+FROM node:24-alpine AS web
+WORKDIR /web
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend ./
+RUN npm run build
+
+FROM node:24-alpine AS api
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+COPY backend/package*.json ./
+RUN npm ci
+COPY backend/tsconfig.json ./
+COPY backend/src ./src
+RUN npm run build && npm prune --omit=dev
+
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production PUBLIC_DIR=/app/public
+COPY --from=api /app/node_modules ./node_modules
+COPY --from=api /app/dist ./dist
+COPY backend/package.json ./
+COPY --from=web /web/dist ./public
+EXPOSE 3001
+CMD ["node", "dist/index.js"]

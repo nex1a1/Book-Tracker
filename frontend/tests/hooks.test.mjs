@@ -57,7 +57,7 @@ test('store: a failed fetch keeps the old list, clears loading and says so', asy
 });
 
 test('store: fetchStats and fetchMetadata', async () => {
-  const stats = { byType: [], byStatus: [], totals: { totalSeries: 1, collecting: 1, totalRead: 3 } };
+  const stats = { totals: { totalSeries: 1, collecting: 1, totalRead: 3 } };
   api.getStats = async () => ({ data: stats });
   api.getAuthors = async () => ({ data: [{ id: 1, name: 'A' }] });
   api.getPublishers = async () => ({ data: [{ id: 2, name: 'P' }] });
@@ -235,6 +235,13 @@ test('useMissingVolumes: search, publisher filter, grouping and totals', async (
   assert.equal(result.current.collapsedPubs.size, 0);
   await React.act(async () => result.current.setViewMode('list'));
   assert.equal(result.current.viewMode, 'list');
+
+  await React.act(async () => result.current.setSort('missing', 'DESC'));
+  assert.deepEqual(result.current.filteredList.map(i => i._id), ['E', 'A', 'F']);
+  await React.act(async () => result.current.setSort('publisher', 'ASC'));
+  assert.deepEqual(result.current.filteredList.map(i => i.publisher), ['ไม่ระบุสำนักพิมพ์', 'P1', 'P2']); // Thai locale: Thai before Latin
+  await React.act(async () => result.current.setSort('publisher', 'DESC'));
+  assert.deepEqual(result.current.filteredList.map(i => i.publisher), ['P2', 'P1', 'ไม่ระบุสำนักพิมพ์']);
   await unmount();
 });
 

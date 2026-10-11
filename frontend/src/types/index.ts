@@ -44,8 +44,6 @@ export interface Series {
 }
 
 export interface SeriesStats {
-  byType: { _id: string; count: number }[];
-  byStatus: { _id: string; count: number }[];
   totals: {
     totalSeries: number;
     collecting: number;
@@ -91,15 +89,19 @@ export interface MetadataItem {
   name: string;
 }
 
+export type CardLayout = 'classic' | 'cover';
+
 export interface SeriesStore {
   series: Series[];
   stats: SeriesStats | null;
   loading: boolean;
   viewMode: 'grid' | 'list';
+  cardLayout: CardLayout;
   authors: MetadataItem[];
   publishers: MetadataItem[];
   filter: FilterState;
   setViewMode: (mode: 'grid' | 'list') => void;
+  setCardLayout: (layout: CardLayout) => void;
   fetchSeries: () => Promise<void>;
   fetchStats: () => Promise<void>;
   fetchMetadata: () => Promise<void>;

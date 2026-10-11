@@ -1,4 +1,3 @@
-import React from "react";
 import { Icons } from "../../../components/Icons";
 import { RangeEditor } from "../../../components/RangeEditor";
 import { Dropdown } from "../../../components/Dropdown";
@@ -16,14 +15,13 @@ function parseTotalVolumes(raw: string): number | null {
 
 interface LogEditorBoxProps {
   log: BookLog;
-  idx: number;
   type: "reading" | "collection";
   showRemove: boolean;
   onRemove: () => void;
   onUpdate: (field: keyof BookLog, value: BookLog[keyof BookLog]) => void;
 }
 
-export function LogEditorBox({ log, idx, type, showRemove, onRemove, onUpdate }: LogEditorBoxProps) {
+export function LogEditorBox({ log, type, showRemove, onRemove, onUpdate }: LogEditorBoxProps) {
   const isReading = type === "reading";
 
   return (

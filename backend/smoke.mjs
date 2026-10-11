@@ -227,9 +227,6 @@ try {
   const stats = (await call('GET', '/series/stats')).body;
   // collecting = collecting and not stopped; read volumes stay inside each known total (it counted 0 and 11-15 too)
   assert.deepEqual(stats.totals, { totalSeries: 3, collecting: 1, totalRead: 8 });
-  const counts = rows => Object.fromEntries(rows.map(x => [x._id, x.count]));
-  assert.deepEqual(counts(stats.byType), { manga: 1, novel: 1, light_novel: 1 });
-  assert.deepEqual(counts(stats.byStatus), { ongoing: 1, completed: 1, hiatus: 1 });
 
   // ── authors / publishers ─────────────────────────────────────────────────
   await call('PATCH', `/series/${naruto.body.id}`, { author: 'Kishimoto' }); // existing name: no duplicate row

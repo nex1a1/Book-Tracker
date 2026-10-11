@@ -13,12 +13,15 @@ import {
   useMissingList
 } from "./features/series";
 import { SortDropdown } from "./components/SortDropdown";
+import { CARD_LAYOUT_LABEL } from "./utils/constants";
+import { CardLayout } from "./types";
+import { morphSwitch, closeModal } from "./utils/viewTransition";
 
 export default function App() {
   const {
     series, loading, fetchSeries, fetchStats, fetchMetadata,
     stats, publishers, filter, setFilter, resetFilter,
-    viewMode, setViewMode
+    viewMode, setViewMode, cardLayout, setCardLayout
   } = useSeriesStore();
 
   const [showAdd, setShowAdd] = useState(false);
@@ -125,7 +128,7 @@ export default function App() {
             <button
               type="button"
               className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
+              onClick={() => viewMode !== 'grid' && morphSwitch(() => setViewMode('grid'))}
               aria-pressed={viewMode === 'grid'}
               title="มุมมองตาราง"
             >
@@ -135,7 +138,7 @@ export default function App() {
             <button
               type="button"
               className={`view-toggle__btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
+              onClick={() => viewMode !== 'list' && morphSwitch(() => setViewMode('list'))}
               aria-pressed={viewMode === 'list'}
               title="มุมมองรายการ"
             >
@@ -183,6 +186,21 @@ export default function App() {
                 <Icons.X /> ล้างตัวกรอง ({activeFilterCount})
               </button>
             )}
+            {viewMode === 'grid' && (
+              <div className="view-toggle content-meta__layout" role="group" aria-label="รูปแบบการ์ด">
+                {(Object.keys(CARD_LAYOUT_LABEL) as CardLayout[]).map(layout => (
+                  <button
+                    key={layout}
+                    type="button"
+                    className={`view-toggle__btn ${cardLayout === layout ? 'active' : ''}`}
+                    onClick={() => layout !== cardLayout && morphSwitch(() => setCardLayout(layout))}
+                    aria-pressed={cardLayout === layout}
+                  >
+                    {CARD_LAYOUT_LABEL[layout]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Spinner only for the first load: a refetch (after a save or delete) updates the list in place,
@@ -210,11 +228,11 @@ export default function App() {
         </main>
       </div>
 
-      {showAdd && <SeriesInfoModal onClose={() => setShowAdd(false)} />}
-      {showMissing && <MissingVolumesModal onClose={() => setShowMissing(false)} />}
+      {showAdd && <SeriesInfoModal onClose={() => closeModal(() => setShowAdd(false))} />}
+      {showMissing && <MissingVolumesModal onClose={() => closeModal(() => setShowMissing(false))} />}
       {showExport && (
         <ExportCsvModal
-          onClose={() => setShowExport(false)}
+          onClose={() => closeModal(() => setShowExport(false))}
           allSeries={series}
           filteredSeries={displaySeries}
           hasActiveFilter={activeFilterCount > 0}

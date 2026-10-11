@@ -1,4 +1,3 @@
-import React from "react";
 import { Icons } from "../../../components/Icons";
 import { BookLog } from "../../../types";
 import { LogEditorBox } from "./LogEditorBox";
@@ -47,12 +46,11 @@ export function SeriesLogsSection({ type, logs, isOpen, onToggleOpen, onAdd, onR
       </div>
 
       {isOpen && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="section-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {logs.map((log, idx) => (
             <LogEditorBox
               key={log.id}
               log={log}
-              idx={idx}
               type={type}
               showRemove={logs.length > 1}
               onRemove={() => onRemove(idx)}

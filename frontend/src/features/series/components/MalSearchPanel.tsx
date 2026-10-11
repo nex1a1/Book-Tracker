@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
 
@@ -73,7 +73,7 @@ export function MalSearchPanel({ title, imageUrl, onSelectMalItem }: MalSearchPa
   };
 
   return (
-    <div className="sidebar-mal-panel">
+    <div className="sidebar-mal-panel section-reveal">
       <span className="sidebar-mal-title">ค้นปกและข้อมูลจาก MAL</span>
       <div style={{ display: 'flex', gap: '6px' }}>
         <button 

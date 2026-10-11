@@ -1,4 +1,3 @@
-import React from "react";
 import { Series } from "../../../types";
 import { getSeriesDerivedStats, getSetFromRanges } from "../../../utils/helpers";
 

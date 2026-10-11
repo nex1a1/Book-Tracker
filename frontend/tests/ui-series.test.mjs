@@ -449,7 +449,8 @@ test('MissingVolumeRow: shows the gap, hides the default format name and empty f
     onToggleCheck: spy(), onEdit: spy(), onCopySingle: spy(),
   };
   const { container, rerender } = await render(React, h(C.MissingVolumeRow, props));
-  assert.equal(text(container.querySelector('.checklist-item-missing-col')), 'เล่ม 3-4');
+  assert.equal(text(container.querySelector('.checklist-item-missing-volumes')), 'เล่ม 3-4');
+  assert.equal(text(container.querySelector('.checklist-item-missing-count')), '2 เล่ม');
   assert.equal(text(container.querySelector('.checklist-item-author-col')), '-');
   assert.equal(text(container.querySelector('.checklist-item-publisher-col')), '-');
   await click(React, container.querySelector('[role="checkbox"]'));
