@@ -296,6 +296,10 @@ test('MissingVolumesModal: grouped by publisher with totals; groups collapse; fl
   assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 6-10', 'เล่ม 2-3', 'เล่ม 1-2']);
   await click(React, byText(document, 'เล่มที่ขาด', '.list-header-col--sortable'));
   assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 2-3', 'เล่ม 1-2', 'เล่ม 6-10']);
+  // Reset goes back to the store's order and hides itself.
+  await click(React, byText(document, 'ล้างการเรียงลำดับ'));
+  assert.deepEqual($$('.checklist-item-missing-volumes').map(text), ['เล่ม 6-10', 'เล่ม 2-3', 'เล่ม 1-2']);
+  assert.ok(!$$('.btn-link').some(el => text(el) === 'ล้างการเรียงลำดับ'));
 });
 
 test('MissingVolumesModal: ticking, copying what is left, copying one series', async () => {
@@ -303,8 +307,8 @@ test('MissingVolumesModal: ticking, copying what is left, copying one series', a
   await openChecklist();
   assert.match(text(byText(document, 'คัดลอกข้อความ')), /\(9 เล่มที่เหลือ\)/);
   await click(React, byText(document, 'คัดลอกข้อความ'));
-  assert.equal(copied[0], '📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n1. Alpha\n   (แต่ง: Au | สนพ: P1)\n   👉 ขาด (เล่มปกติ): เล่ม 6-10\n\n'
-    + '2. Beta\n   (สนพ: P2)\n   👉 ขาด (เล่มปกติ): เล่ม 2-3\n   👉 ขาด (JP · Box): เล่ม 1-2');
+  assert.equal(copied[0], '📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n1. Alpha\n   (ผู้แต่ง: Au | สำนักพิมพ์: P1)\n   👉 ขาด (เล่มปกติ): เล่ม 6-10\n\n'
+    + '2. Beta\n   (สำนักพิมพ์: P2)\n   👉 ขาด (เล่มปกติ): เล่ม 2-3\n   👉 ขาด (JP · Box): เล่ม 1-2');
 
   await click(React, $('.checklist-item-row [role="checkbox"]'));
   assert.match(pill(), /หยิบแล้ว 5 เล่ม \(1 รายการ\)/);
@@ -312,11 +316,19 @@ test('MissingVolumesModal: ticking, copying what is left, copying one series', a
   assert.match(copied[1], /^📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n1\. Beta\n/);
 
   await click(React, $$('.checklist-row-btn--copy')[1]);
-  assert.equal(copied[2], '📚 Beta\n(สนพ: P2)\n👉 ขาด (เล่มปกติ): เล่ม 2-3\n👉 ขาด (JP · Box): เล่ม 1-2');
+  assert.equal(copied[2], '📚 Beta\n(สำนักพิมพ์: P2)\n👉 ขาด (เล่มปกติ): เล่ม 2-3\n👉 ขาด (JP · Box): เล่ม 1-2');
+
+  // The copy follows the column picker: hidden columns drop out, per-log ones go on the log's line.
+  await click(React, $('.col-picker__trigger'));
+  const option = label => $$('.col-picker__item').find(el => text(el.querySelector('.col-picker__label')) === label);
+  await click(React, option('สำนักพิมพ์'));
+  await click(React, option('มีแล้ว'));
+  await click(React, $$('.checklist-row-btn--copy')[1]);
+  assert.equal(copied[3], '📚 Beta\n👉 ขาด (เล่มปกติ): เล่ม 2-3 (มีแล้ว: 1 เล่ม)\n👉 ขาด (JP · Box): เล่ม 1-2 (มีแล้ว: 0 เล่ม)');
 
   for (const box of $$('.checklist-item-row [role="checkbox"]').slice(1)) await click(React, box);
   await click(React, byText(document, 'คัดลอกข้อความ'));
-  assert.equal(copied.length, 3);
+  assert.equal(copied.length, 4);
   await click(React, byText(document, 'ล้างรายการที่หยิบ'));
   assert.doesNotMatch(pill(), /หยิบแล้ว/);
   assert.deepEqual((await toastMessages(React)).slice(0, 2), ['error:ไม่มีรายการที่ยังไม่เช็กเหลืออยู่ให้คัดลอก', 'success:คัดลอก "Beta" แล้ว!']);

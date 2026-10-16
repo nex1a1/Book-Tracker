@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icons } from '../../../components/Icons';
 import { FilterState, SeriesType, SeriesStatus, LogLanguage } from '../../../types';
-import { LANGUAGE_LABEL } from '../../../utils/constants';
+import { FORMAT_LABEL, LANGUAGE_LABEL } from '../../../utils/constants';
 import { PublisherDropdown } from '../../../components/PublisherDropdown';
 
 interface ExportFilterPopoverProps {
@@ -11,7 +11,7 @@ interface ExportFilterPopoverProps {
   matchedCount: number;
   localFilterCount: number;
   onUpdate: (f: Partial<FilterState>) => void;
-  onToggleArray: (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => void;
+  onToggleArray: (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language' | 'format', val: string) => void;
   onReset: () => void;
   onDone: () => void;
 }
@@ -150,6 +150,8 @@ export function ExportFilterPopover({
               { id: 'missing', label: 'ยังขาดอยู่' },
               { id: 'stopped', label: 'เลิกตามแล้ว' },
               { id: 'not_collecting', label: 'ไม่สะสม' },
+              { id: 'unknown', label: 'ยังไม่ระบุจำนวนเล่ม' },
+              { id: 'partial', label: 'เก็บบางเล่ม' },
             ].map(cs => (
               <button
                 key={cs.id}
@@ -182,6 +184,30 @@ export function ExportFilterPopover({
                 onClick={() => onToggleArray('language', lang)}
               >
                 {LANGUAGE_LABEL[lang]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Collection Format */}
+        <div className="filter-field">
+          <label className="field-label">รูปแบบเล่มที่มี:</label>
+          <div className="filter-pill-group">
+            <button
+              type="button"
+              className={`mini-pill ${filter.format.length === 0 ? 'active' : ''}`}
+              onClick={() => onUpdate({ format: [] })}
+            >
+              ทั้งหมด
+            </button>
+            {Object.entries(FORMAT_LABEL).map(([format, label]) => (
+              <button
+                key={format}
+                type="button"
+                className={`mini-pill ${filter.format.includes(format) ? 'active' : ''}`}
+                onClick={() => onToggleArray('format', format)}
+              >
+                {label}
               </button>
             ))}
           </div>

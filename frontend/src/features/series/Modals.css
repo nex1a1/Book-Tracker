@@ -535,7 +535,7 @@
 .checklist-item-row {
   display: grid;
   /* Set on .checklist-body from the visible columns (ChecklistColumns.tsx checklistGridTemplate). */
-  grid-template-columns: var(--checklist-cols, 24px 2.5fr 1.5fr 1.2fr 1.8fr 60px);
+  grid-template-columns: var(--checklist-cols, 40px 2.5fr 1.5fr 1.2fr 1.8fr 60px);
   align-items: center;
   gap: 16px;
 }
@@ -571,7 +571,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 }
+
+/* Drag-to-reorder (MissingVolumesModal): handle, the series being dragged, and the drop line */
+.checklist-drag-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: -2px;
+  opacity: 0.4;
+  user-select: none;
+}
+.checklist-item-row:hover .checklist-drag-handle { opacity: 1; }
+.checklist-item-row.is-dragging { opacity: 0.35; }
+.checklist-item-row.is-drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.checklist-item-row.is-drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
 
 .checklist-custom-checkbox {
   width: 18px;

@@ -59,8 +59,8 @@ export interface FilterState {
   readStatus: string[];
   collectStatus: string[];
   language: LogLanguage[]; // series owning at least one volume in any of these collection languages
+  format: string[]; // series owning at least one volume in a collection log of any of these formats
   minRating: number;
-  maxRating: number;
   unratedOnly?: boolean;
   yearFrom: string | number;
   yearTo: string | number;

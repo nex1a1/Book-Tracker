@@ -47,6 +47,16 @@ const compareItems = (key: ChecklistSortKey, a: MissingSeriesItem, b: MissingSer
 };
 
 const CHECKED_ITEMS_STORAGE_KEY = "manga-tracker:missing-checklist-checked";
+const ORDER_STORAGE_KEY = "manga-tracker:missing-checklist-order";
+
+function loadOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
 
 function loadCheckedItems(): Set<string> {
   try {
@@ -110,9 +120,22 @@ export function useMissingVolumes() {
   // uninterrupted sitting, so "picked up" state needs to survive being interrupted.
   const [checkedItems, setCheckedItems] = useState<Set<string>>(loadCheckedItems);
   const [collapsedPubs, setCollapsedPubs] = useState<Set<string>>(new Set());
+  // The user's own drag order (series ids). Series not in it yet (newly missing) go last, in store order.
+  const [order, setOrder] = useState<string[]>(loadOrder);
 
-  // 1. Gather all series that have missing volumes
-  const missingList = useMissingList();
+  // 1. Gather all series that have missing volumes, in the user's order
+  const storeList = useMissingList();
+  const missingList = useMemo(() => {
+    const rank = new Map(order.map((id, i) => [id, i]));
+    const at = (item: MissingSeriesItem) => rank.get(item._id) ?? Infinity;
+    return [...storeList].sort((a, b) => at(a) - at(b));
+  }, [storeList, order]);
+
+  const sortList = (list: MissingSeriesItem[]) => {
+    if (!sortBy) return list;
+    const dir = sortOrder === 'ASC' ? 1 : -1;
+    return list.sort((a, b) => dir * compareItems(sortBy, a, b));
+  };
 
   // 2. Filter list based on search and selected publisher, then apply the column sort
   const filteredList = useMemo(() => {
@@ -126,9 +149,7 @@ export function useMissingVolumes() {
       
       return matchSearch && matchPublisher;
     });
-    if (!sortBy) return list;
-    const dir = sortOrder === 'ASC' ? 1 : -1;
-    return list.sort((a, b) => dir * compareItems(sortBy, a, b));
+    return sortList(list);
   }, [missingList, searchQuery, selectedPublisher, sortBy, sortOrder]);
 
   // 3. Unique publisher options for filter dropdown
@@ -207,6 +228,27 @@ export function useMissingVolumes() {
     }
   }, [checkedItems]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+    } catch {
+      // localStorage unavailable — the order just won't persist.
+    }
+  }, [order]);
+
+  // Drag-to-reorder: puts series `id` right before/after `targetId` in the whole list, so it also
+  // works while searching/filtering (hidden series keep their places). Dropped while a column sort
+  // is on, that sorted order becomes the user's order and the column sort is cleared.
+  const moveSeries = (id: string, targetId: string, after: boolean) => {
+    if (id === targetId) return;
+    const ids = sortList([...missingList]).map(i => i._id).filter(x => x !== id);
+    const at = ids.indexOf(targetId);
+    if (at < 0) return;
+    ids.splice(after ? at + 1 : at, 0, id);
+    setOrder(ids);
+    setSortBy('');
+  };
+
   const clearCheckedItems = () => setCheckedItems(new Set());
 
   const toggleCheckItem = (key: string) => {
@@ -234,7 +276,11 @@ export function useMissingVolumes() {
     setViewMode,
     sortBy,
     sortOrder,
-    setSort: (by: ChecklistSortKey, order: 'ASC' | 'DESC') => { setSortBy(by); setSortOrder(order); },
+    setSort: (by: ChecklistSortKey | '', order: 'ASC' | 'DESC') => { setSortBy(by); setSortOrder(order); },
+    moveSeries,
+    hasCustomOrder: order.length > 0,
+    // Back to the store's order: drops both the drag order and any column sort.
+    resetOrder: () => { setOrder([]); setSortBy(''); },
     checkedItems,
     toggleCheckItem,
     clearCheckedItems,

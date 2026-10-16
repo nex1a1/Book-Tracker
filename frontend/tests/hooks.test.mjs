@@ -142,8 +142,6 @@ for (const [name, patch, expected] of [
   ['year to', { yearTo: 2012 }, 'A'],
   ['unrated only', { unratedOnly: true, minRating: 4 }, 'A'],
   ['min rating', { minRating: 3 }, 'BD'],
-  ['max rating excludes unrated', { maxRating: 3 }, 'C'],
-  ['rating range', { minRating: 2, maxRating: 4 }, 'BC'],
   ['language: JP edition owned', { language: ['jp'] }, 'D'],
   ['language: TH (a non-collected series owns nothing)', { language: ['th'] }, 'ABD'],
   ['read: finished', { readStatus: ['finished'] }, 'B'],
@@ -155,15 +153,34 @@ for (const [name, patch, expected] of [
   ['collect: missing (stopped is not missing)', { collectStatus: ['missing'] }, 'A'],
   ['collect: stopped', { collectStatus: ['stopped'] }, 'D'],
   ['collect: not collecting', { collectStatus: ['not_collecting'] }, 'C'],
+  ['collect: keeps some volumes (a partial log)', { collectStatus: ['partial'] }, 'D'],
+  ['format: only formats with owned volumes count', { format: ['normal'] }, 'ABD'],
+  ['format: no series owns a digital volume', { format: ['digital'] }, ''],
   ['filters combine with AND', { type: ['manga'], publisher: ['P1'] }, 'A'],
 ]) {
   test(`useFilteredSeries filter: ${name}`, async () => assert.equal(await ids(patch), expected));
 }
 
+test('useFilteredSeries: "unknown" finds series with a log whose total is not set yet, except stopped or not collected', async () => {
+  const list = [
+    series([owned(5, [[1, 5]]), owned(null, [[1, 2]], { format: 'digital' })], [], { _id: 'U' }),
+    series([owned(null, [[1, 1]])], [], { _id: 'S', isCollectingStopped: true }),
+    series([owned(null, [])], [], { _id: 'N', isCollecting: false }),
+    series([owned(3, [[1, 3]])], [], { _id: 'K' }),
+  ];
+  const pick = async patch => {
+    const { result, unmount } = await renderHook(React, () => filtered.useFilteredSeries(list, { ...EMPTY, ...patch }));
+    await unmount();
+    return result.current.displaySeries.map(s => s._id).sort().join('');
+  };
+  assert.equal(await pick({ collectStatus: ['unknown'] }), 'U');
+  assert.equal(await pick({ format: ['digital'] }), 'U');
+});
+
 test('useFilteredSeries: activeFilterCount counts each active filter once', async () => {
   assert.equal((await run({})).count, 0);
   assert.equal((await run({ search: 'x', type: ['manga'], status: ['ongoing'], publisher: ['P'], readStatus: ['reading'],
-    collectStatus: ['missing'], language: ['th'], minRating: 1, maxRating: 2, yearFrom: 1, yearTo: 2 })).count, 10);
+    collectStatus: ['missing'], language: ['th'], format: ['normal'], minRating: 1, yearFrom: 1, yearTo: 2 })).count, 11);
   assert.equal((await run({ unratedOnly: true })).count, 1);
 });
 
@@ -243,6 +260,39 @@ test('useMissingVolumes: search, publisher filter, grouping and totals', async (
   await React.act(async () => result.current.setSort('publisher', 'DESC'));
   assert.deepEqual(result.current.filteredList.map(i => i.publisher), ['P2', 'P1', 'ไม่ระบุสำนักพิมพ์']);
   await unmount();
+});
+
+test('useMissingVolumes: drag order is saved, works while filtering, adopts a column sort, new series go last', async () => {
+  const F = series([owned(4, [[1, 1]])], [], { _id: 'F', title: 'Fruit', author: 'Mori', publisher: 'P2' });
+  store.setState({ series: [A, E, F] });
+  let view = await mountChecklist();
+  const ids = () => view.result.current.filteredList.map(i => i._id);
+  await React.act(async () => view.result.current.moveSeries('F', 'A', false));
+  assert.deepEqual(ids(), ['F', 'A', 'E']);
+  // Filtered to A and E: E moved before A, F (hidden) keeps its place.
+  await React.act(async () => view.result.current.setSelectedPublisher(['P1', 'ไม่ระบุสำนักพิมพ์']));
+  await React.act(async () => view.result.current.moveSeries('E', 'A', false));
+  await React.act(async () => view.result.current.setSelectedPublisher([]));
+  assert.deepEqual(ids(), ['F', 'E', 'A']);
+  // A drop while sorted by column starts from that sorted order and clears the sort.
+  await React.act(async () => view.result.current.setSort('title', 'ASC')); // Thai first: เกม, Edge, Fruit
+  await React.act(async () => view.result.current.moveSeries('E', 'F', true));
+  assert.equal(view.result.current.sortBy, '');
+  assert.deepEqual(ids(), ['A', 'F', 'E']);
+  await view.unmount();
+
+  const G = series([owned(2, [])], [], { _id: 'G', title: 'Ghost', publisher: 'P2' });
+  store.setState({ series: [G, A, E, F] });
+  view = await mountChecklist();
+  assert.deepEqual(ids(), [...ids().slice(0, 3), 'G']);
+  assert.equal(ids().indexOf('E'), ids().indexOf('F') + 1);
+  assert.equal(view.result.current.hasCustomOrder, true);
+  await React.act(async () => view.result.current.setSort('title', 'ASC'));
+  await React.act(async () => view.result.current.resetOrder());
+  assert.deepEqual(ids(), ['G', 'A', 'E', 'F']);
+  assert.equal(view.result.current.sortBy, '');
+  assert.equal(view.result.current.hasCustomOrder, false);
+  await view.unmount();
 });
 
 test('useMissingVolumes: ticks are counted, saved, survive a reopen, and can be cleared', async () => {

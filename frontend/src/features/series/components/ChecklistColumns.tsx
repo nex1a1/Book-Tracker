@@ -1,11 +1,11 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icons } from "../../../components/Icons";
 import { STATUS_LABEL } from "../../../utils/constants";
 import { ChecklistSortKey, MissingLogItem, MissingSeriesItem } from "../hooks/useMissingVolumes";
 
 // Optional columns of the missing-volume checklist, in display order. Title, "เล่มที่ขาด" and
 // the action buttons are always shown. Header (MissingVolumesModal) and rows (MissingVolumeRow)
-// both read this list, so a column is added in one place.
+// both read this list, and so does the clipboard copy, so a column is added in one place.
 export interface ChecklistColumn {
   key: string;
   label: string;
@@ -13,21 +13,20 @@ export interface ChecklistColumn {
   width: string;
   sortKey?: ChecklistSortKey;
   defaultOrder?: 'ASC' | 'DESC';
-  render: (item: MissingSeriesItem, f: MissingLogItem) => ReactNode;
+  text: (item: MissingSeriesItem, f: MissingLogItem) => string; // '' = no value ("-" on screen, skipped in the copy)
+  perLog?: boolean; // differs per log: copied on the log's line instead of the series' line
 }
 
-const empty = <span className="checklist-empty-field">-</span>;
-
 export const CHECKLIST_COLUMNS: ChecklistColumn[] = [
-  { key: 'author', label: 'ผู้แต่ง', hint: 'ข้อความ', width: '1.5fr', sortKey: 'author', render: item => item.author || empty },
+  { key: 'author', label: 'ผู้แต่ง', hint: 'ข้อความ', width: '1.5fr', sortKey: 'author', text: item => item.author },
   {
     key: 'publisher', label: 'สำนักพิมพ์', hint: 'ข้อความ', width: '1.2fr', sortKey: 'publisher',
-    render: item => item.publisher && item.publisher !== "ไม่ระบุสำนักพิมพ์" ? item.publisher : empty,
+    text: item => item.publisher && item.publisher !== "ไม่ระบุสำนักพิมพ์" ? item.publisher : '',
   },
-  { key: 'publishYear', label: 'ปีที่พิมพ์', hint: 'ปี', width: '80px', sortKey: 'publishYear', render: item => item.rawSeries.publishYear || empty },
-  { key: 'status', label: 'สถานะ', hint: 'สถานะ', width: '90px', render: item => STATUS_LABEL[item.rawSeries.status] },
-  { key: 'total', label: 'ทั้งหมด', hint: 'จำนวน', width: '80px', sortKey: 'total', defaultOrder: 'DESC', render: (_, f) => `${f.totalVolumes} เล่ม` },
-  { key: 'owned', label: 'มีแล้ว', hint: 'จำนวน', width: '80px', sortKey: 'owned', defaultOrder: 'DESC', render: (_, f) => `${f.totalVolumes - f.missingCount} เล่ม` },
+  { key: 'publishYear', label: 'ปีที่พิมพ์', hint: 'ปี', width: '80px', sortKey: 'publishYear', text: item => item.rawSeries.publishYear ? String(item.rawSeries.publishYear) : '' },
+  { key: 'status', label: 'สถานะ', hint: 'สถานะ', width: '90px', text: item => STATUS_LABEL[item.rawSeries.status] },
+  { key: 'total', label: 'ทั้งหมด', hint: 'จำนวน', width: '80px', sortKey: 'total', defaultOrder: 'DESC', perLog: true, text: (_, f) => `${f.totalVolumes} เล่ม` },
+  { key: 'owned', label: 'มีแล้ว', hint: 'จำนวน', width: '80px', sortKey: 'owned', defaultOrder: 'DESC', perLog: true, text: (_, f) => `${f.totalVolumes - f.missingCount} เล่ม` },
 ];
 
 // Shown every time the checklist opens; the choice is not remembered.
@@ -35,7 +34,7 @@ export const DEFAULT_CHECKLIST_COLUMNS = ['author', 'publisher'];
 
 // checkbox | title | optional columns | missing | actions
 export const checklistGridTemplate = (columns: ChecklistColumn[]) =>
-  ['24px', '2.5fr', ...columns.map(c => c.width), 'minmax(220px, 1.8fr)', '60px'].join(' ');
+  ['40px', '2.5fr', ...columns.map(c => c.width), 'minmax(220px, 1.8fr)', '60px'].join(' ');
 
 const isDefault = (keys: string[]) =>
   keys.length === DEFAULT_CHECKLIST_COLUMNS.length && DEFAULT_CHECKLIST_COLUMNS.every(k => keys.includes(k));

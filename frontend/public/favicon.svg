@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 卍 drawn as strokes (not text) so it never depends on a CJK font; matches the header's .brand-emblem -->
+  <rect width="32" height="32" rx="6" fill="#141414"/>
+  <path d="M8 8H16V24H24M24 8V16H8V24" fill="none" stroke="#ff7b00" stroke-width="3.5" stroke-linecap="square"/>
+</svg>

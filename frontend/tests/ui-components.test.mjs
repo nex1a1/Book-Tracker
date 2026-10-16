@@ -275,16 +275,13 @@ test('Icons: every icon renders an svg; a star can be filled or half', async () 
 // ── RatingFilter ────────────────────────────────────────────────────────────
 
 test('getRatingBadgeText', () => {
-  assert.equal(C.getRatingBadgeText(4, 4, true), 'ยังไม่ให้คะแนน');
-  assert.equal(C.getRatingBadgeText(3, 3), '★ 3.0 พอดี');
-  assert.equal(C.getRatingBadgeText(3, 0), '★ 3.0+');
-  assert.equal(C.getRatingBadgeText(3, 5), '★ 3.0+');
-  assert.equal(C.getRatingBadgeText(2, 4), '★ 2.0 – 4.0');
-  assert.equal(C.getRatingBadgeText(0, 4), '★ 0.0 – 4.0');
-  assert.ok(!C.getRatingBadgeText(0, 0));
+  assert.equal(C.getRatingBadgeText(4, true), 'ยังไม่ให้คะแนน');
+  assert.equal(C.getRatingBadgeText(3), '★ 3.0+');
+  assert.equal(C.getRatingBadgeText(3.5, false), '★ 3.5+');
+  assert.ok(!C.getRatingBadgeText(0));
 });
 
-function RatingHarness({ log, initial = { minRating: 0, maxRating: 0, unratedOnly: false } }) {
+function RatingHarness({ log, initial = { minRating: 0, unratedOnly: false } }) {
   const [f, setF] = React.useState(initial);
   return h(C.RatingFilter, { ...f, onChange: p => { log.push(p); setF(p); } });
 }
@@ -295,61 +292,34 @@ const ratingFilter = async initial => {
   return {
     log, c,
     star: n => click(React, c.querySelector(`[aria-label="เลือกดาว ${n}"]`)),
-    tab: label => click(React, byText(c, label, '.rating-filter__mode-tab')),
-    slide: (label, v) => type(React, c.querySelector(`[aria-label="${label}"]`), v),
     status: () => text(c.querySelector('.rating-filter__status-text')),
   };
 };
-const p = (minRating, maxRating, unratedOnly = false) => ({ minRating, maxRating, unratedOnly });
+const p = (minRating, unratedOnly = false) => ({ minRating, unratedOnly });
 
-test('RatingFilter: "at least" stars and slider; clicking the active star clears', async () => {
+test('RatingFilter: a star sets the minimum; clicking the active star clears', async () => {
   const r = await ratingFilter();
-  assert.equal(r.status(), 'ทั้งหมด (0 - 5★)');
+  assert.equal(r.status(), 'ทั้งหมด');
   await r.star(4);
   assert.equal(r.status(), '4.0+ ดาวขึ้นไป');
   await r.star(4);
-  await r.slide('คะแนนขั้นต่ำ', '2.5');
-  assert.deepEqual(r.log, [p(4, 0), p(0, 0), p(2.5, 0)]);
+  assert.deepEqual(r.log, [p(4), p(0)]);
 });
 
-test('RatingFilter: "exact" mode; switching tabs alone never filters', async () => {
-  const r = await ratingFilter();
-  await r.tab('= พอดี');
-  assert.deepEqual(r.log, []);
-  await r.star(3);
-  assert.equal(r.status(), '3.0 ดาวพอดี');
-  await r.star(3);
-  await r.slide('คะแนนพอดี', '1.5');
-  assert.deepEqual(r.log, [p(3, 3), p(0, 0), p(1.5, 1.5)]);
-});
-
-test('RatingFilter: "range" mode sliders keep min ≤ max', async () => {
-  const r = await ratingFilter();
-  await r.tab('⇄ ช่วง');
-  await r.slide('คะแนนอย่างน้อย', '2');
-  await r.slide('คะแนนไม่เกิน', '4');
-  assert.equal(r.status(), '2.0 ★ — 4.0 ★');
-  await r.star(3);
-  await r.slide('คะแนนไม่เกิน', '1');
-  assert.deepEqual(r.log, [p(2, 0), p(2, 4), p(3, 4), p(1, 1)]);
-});
-
-test('RatingFilter: switching tabs re-applies an active rating; unrated toggle', async () => {
-  const r = await ratingFilter(p(3, 0));
-  await r.tab('= พอดี');
-  await r.tab('⇄ ช่วง');
-  await r.tab('≥ ขั้นต่ำ');
-  assert.deepEqual(r.log, [p(3, 3), p(3, 5), p(3, 0)]);
+test('RatingFilter: unrated toggle replaces the minimum, a star replaces unrated', async () => {
+  const r = await ratingFilter(p(3));
   await click(React, byText(r.c, 'ยังไม่ให้คะแนน', '.rating-filter__unrated-chip'));
   assert.equal(r.status(), 'ยังไม่ให้คะแนน');
+  await r.star(2);
   await click(React, byText(r.c, 'ยังไม่ให้คะแนน', '.rating-filter__unrated-chip'));
-  assert.deepEqual(r.log.slice(3), [p(0, 0, true), p(0, 0)]);
+  await click(React, byText(r.c, 'ยังไม่ให้คะแนน', '.rating-filter__unrated-chip'));
+  assert.deepEqual(r.log, [p(0, true), p(2), p(0, true), p(0)]);
 });
 
 test('RatingFilter: hovering a star previews it', async () => {
   const r = await ratingFilter();
   await React.act(async () => r.c.querySelector('[aria-label="เลือกดาว 2"]').dispatchEvent(new window.MouseEvent('mousemove', { bubbles: true })));
-  assert.equal(r.status(), '2.0 ดาว');
+  assert.equal(r.status(), '2.0 ดาวขึ้นไป');
   await React.act(async () => r.c.querySelector('[aria-label="เลือกดาว 5"]').dispatchEvent(new window.MouseEvent('mousemove', { bubbles: true })));
   assert.equal(r.status(), '5.0 ดาวเต็ม');
 });
@@ -383,10 +353,15 @@ test('FilterSidebar: chips toggle values in and out; "ทั้งหมด" cle
   await s.chip('สถานะการตีพิมพ์', 'จบแล้ว');
   await s.chip('สถานะการอ่าน', 'สายดอง');
   await s.chip('สถานะการสะสม', 'เลิกตามแล้ว');
+  await s.chip('สถานะการสะสม', 'ยังไม่ระบุจำนวนเล่ม');
+  await s.chip('สถานะการสะสม', 'เก็บบางเล่ม');
   await s.chip('ภาษาของเล่มที่มี', 'ญี่ปุ่น (JP)');
+  await s.chip('รูปแบบเล่มที่มี', 'E-Book');
   assert.deepEqual(s.log, [
     { type: ['manga'] }, { type: ['manga', 'novel'] }, { type: ['novel'] }, { type: [] },
-    { status: ['completed'] }, { readStatus: ['unread'] }, { collectStatus: ['stopped'] }, { language: ['jp'] },
+    { status: ['completed'] }, { readStatus: ['unread'] }, { collectStatus: ['stopped'] },
+    { collectStatus: ['stopped', 'unknown'] }, { collectStatus: ['stopped', 'unknown', 'partial'] },
+    { language: ['jp'] }, { format: ['digital'] },
   ]);
 });
 
@@ -416,7 +391,7 @@ test('FilterSidebar: years, publishers, rating badge with its clear button, coll
   await click(React, byText(menu(), 'P2', '.publisher-dropdown-item'));
   assert.equal(text(s.section('คะแนน').querySelector('.filter-rating-badge')), '★ 3.0+');
   await click(React, s.section('คะแนน').querySelector('.filter-section__clear-btn'));
-  assert.deepEqual(s.log, [{ yearFrom: '2010' }, { yearTo: '2020' }, { publisher: ['P2'] }, { minRating: 0, maxRating: 0, unratedOnly: false }]);
+  assert.deepEqual(s.log, [{ yearFrom: '2010' }, { yearTo: '2020' }, { publisher: ['P2'] }, { minRating: 0, unratedOnly: false }]);
   assert.ok(!s.section('คะแนน').querySelector('.filter-rating-badge'));
 
   const header = s.section('ประเภท').querySelector('.filter-section__header');

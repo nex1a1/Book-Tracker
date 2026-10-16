@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, DragEvent } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Icons } from "../../../components/Icons";
@@ -7,7 +7,7 @@ import '../Series.css';
 import { SeriesInfoModal } from "./SeriesInfoModal";
 
 // Sub-components & hooks
-import { useMissingVolumes, MissingSeriesItem, ChecklistSortKey } from "../hooks/useMissingVolumes";
+import { useMissingVolumes, MissingSeriesItem, MissingLogItem, ChecklistSortKey } from "../hooks/useMissingVolumes";
 import { MissingVolumeRow } from "./MissingVolumeRow";
 import { SortableCol } from "./SortableCol";
 import { CHECKLIST_COLUMNS, DEFAULT_CHECKLIST_COLUMNS, ChecklistColumnPicker, checklistGridTemplate } from "./ChecklistColumns";
@@ -33,6 +33,9 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     sortBy,
     sortOrder,
     setSort,
+    moveSeries,
+    hasCustomOrder,
+    resetOrder,
     checkedItems,
     toggleCheckItem,
     clearCheckedItems,
@@ -44,9 +47,76 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
     stats
   } = useMissingVolumes();
   const isFiltering = searchQuery !== "" || selectedPublisher.length > 0;
-  // Keys come from the SortableCol headers below. Rows slide to their new order.
+  // Keys come from the SortableCol headers below ('' = back to the main list's order). Rows slide to their new order.
   const sortRows = (by: string, order: 'ASC' | 'DESC') =>
-    morphRows('.checklist-body', () => setSort(by as ChecklistSortKey, order));
+    morphRows('.checklist-body', () => setSort(by as ChecklistSortKey | '', order));
+
+  // Drag-to-reorder whole series (a series with several missing logs moves as one). Works while
+  // searching/filtering; in the grouped view a series only drops inside its own publisher group.
+  const [dragged, setDragged] = useState<MissingSeriesItem | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: string; after: boolean } | null>(null);
+  const endDrag = () => { setDragged(null); setDropTarget(null); };
+  const dragProps = (item: MissingSeriesItem) => ({
+    onDragStart: (e: DragEvent<HTMLDivElement>) => {
+      e.dataTransfer?.setData('text/plain', item._id); // Firefox won't start a drag without data
+      e.dataTransfer?.setDragImage(e.currentTarget, 16, 16);
+      setDragged(item);
+    },
+    onDragOver: (e: DragEvent<HTMLDivElement>) => {
+      if (!dragged || dragged._id === item._id) return setDropTarget(null);
+      if (viewMode === 'grouped' && dragged.publisher !== item.publisher) return;
+      e.preventDefault();
+      const box = e.currentTarget.getBoundingClientRect();
+      const after = e.clientY > box.top + box.height / 2;
+      if (dropTarget?.id !== item._id || dropTarget.after !== after) setDropTarget({ id: item._id, after });
+    },
+    onDrop: (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const id = dragged?._id, target = dropTarget;
+      endDrag();
+      if (id && target) morphRows('.checklist-body', () => moveSeries(id, target.id, target.after));
+    },
+    onDragEnd: endDrag,
+  });
+
+  const renderRow = (item: MissingSeriesItem, f: MissingLogItem, i: number) => {
+    const itemKey = `${item._id}-${f.id}`;
+    // A series' drop line sits above its first row or below its last one.
+    const edge = dropTarget?.id === item._id && (dropTarget.after ? i === item.formats.length - 1 : i === 0);
+    return (
+      <MissingVolumeRow
+        key={itemKey}
+        item={item}
+        f={f}
+        isChecked={checkedItems.has(itemKey)}
+        onToggleCheck={() => toggleCheckItem(itemKey)}
+        onEdit={() => setEditingSeries(item.rawSeries)}
+        onCopySingle={() => handleCopySingle(item)}
+        columns={columns}
+        drag={dragProps(item)}
+        dropSide={edge ? (dropTarget.after ? 'after' : 'before') : undefined}
+        isDragging={dragged?._id === item._id}
+      />
+    );
+  };
+
+  // Copied text carries the same optional columns as the table: series-wide ones in the
+  // "( ... )" line, per-log ones (total/owned) after that log's missing volumes.
+  const copyText = (item: MissingSeriesItem, indent: string) => {
+    const pairs = (perLog: boolean, f: MissingLogItem) => columns
+      .filter(c => !!c.perLog === perLog)
+      .map(c => [c.label, c.text(item, f)])
+      .filter(([, v]) => v)
+      .map(([label, v]) => `${label}: ${v}`)
+      .join(' | ');
+    const details = pairs(false, item.formats[0]);
+    let text = details ? `${indent}(${details})\n` : '';
+    item.formats.forEach(f => {
+      const extra = pairs(true, f);
+      text += `${indent}👉 ขาด (${f.title}): เล่ม ${f.missingText}${extra ? ` (${extra})` : ''}\n`;
+    });
+    return text;
+  };
 
   // Copy items to clipboard (excluding checked ones)
   const handleCopy = async () => {
@@ -63,13 +133,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
 
     let textToCopy = "📚 เช็กลิสต์หนังสือที่ต้องตามเก็บ\n\n";
     itemsToCopy.forEach((item, index) => {
-      textToCopy += `${index + 1}. ${item.title}\n`;
-      const details = [];
-      if (item.author) details.push(`แต่ง: ${item.author}`);
-      if (item.publisher) details.push(`สนพ: ${item.publisher}`);
-      if (details.length > 0) textToCopy += `   (${details.join(' | ')})\n`;
-      item.formats.forEach(f => { textToCopy += `   👉 ขาด (${f.title}): เล่ม ${f.missingText}\n`; });
-      textToCopy += "\n";
+      textToCopy += `${index + 1}. ${item.title}\n${copyText(item, '   ')}\n`;
     });
     
     // try/catch (not .catch) because navigator.clipboard itself is missing on a non-HTTPS origin
@@ -82,12 +146,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
   };
 
   const handleCopySingle = async (item: MissingSeriesItem) => {
-    let textToCopy = `📚 ${item.title}\n`;
-    const details = [];
-    if (item.author) details.push(`แต่ง: ${item.author}`);
-    if (item.publisher) details.push(`สนพ: ${item.publisher}`);
-    if (details.length > 0) textToCopy += `(${details.join(' | ')})\n`;
-    item.formats.forEach(f => { textToCopy += `👉 ขาด (${f.title}): เล่ม ${f.missingText}\n`; });
+    const textToCopy = `📚 ${item.title}\n${copyText(item, '')}`;
     
     try {
       await navigator.clipboard.writeText(textToCopy.trim());
@@ -125,9 +184,14 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                     ล้างรายการที่หยิบ
                   </button>
                 )}
+                {(sortBy || hasCustomOrder) && (
+                  <button type="button" className="btn-link" onClick={() => morphRows('.checklist-body', resetOrder)}>
+                    ล้างการเรียงลำดับ
+                  </button>
+                )}
               </div>
               <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                * ติ๊กถูกวงกลมด้านซ้ายเพื่อตัดรายการออกชั่วคราวขณะเลือกซื้อ — ระบบจะจำไว้แม้ปิดหน้าต่างนี้ไปก่อน
+                * ติ๊กถูกวงกลมด้านซ้ายเพื่อตัดรายการออกชั่วคราวขณะเลือกซื้อ · ลาก ⋮⋮ เพื่อจัดลำดับเอง —ระบบจะจำไว้แม้ปิดหน้าต่างนี้ไปก่อน
               </span>
             </div>
 
@@ -236,23 +300,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
 
                         {!isCollapsed && (
                           <div className="checklist-publisher-content">
-                            {items.map(item => 
-                              item.formats.map(f => {
-                                const itemKey = `${item._id}-${f.id}`;
-                                return (
-                                  <MissingVolumeRow
-                                    key={itemKey}
-                                    item={item}
-                                    f={f}
-                                    isChecked={checkedItems.has(itemKey)}
-                                    onToggleCheck={() => toggleCheckItem(itemKey)}
-                                    onEdit={() => setEditingSeries(item.rawSeries)}
-                                    onCopySingle={() => handleCopySingle(item)}
-                                    columns={columns}
-                                  />
-                                );
-                              })
-                            )}
+                            {items.map(item => item.formats.map((f, i) => renderRow(item, f, i)))}
                           </div>
                         )}
                       </div>
@@ -262,23 +310,7 @@ export function MissingVolumesModal({ onClose }: MissingVolumesModalProps) {
                   // Flat List view
                   <div className="checklist-publisher-group" style={{ background: 'transparent', border: '1px solid var(--border)' }}>
                     <div className="checklist-publisher-content">
-                      {filteredList.map(item => 
-                        item.formats.map(f => {
-                          const itemKey = `${item._id}-${f.id}`;
-                          return (
-                            <MissingVolumeRow
-                              key={itemKey}
-                              item={item}
-                              f={f}
-                              isChecked={checkedItems.has(itemKey)}
-                              onToggleCheck={() => toggleCheckItem(itemKey)}
-                              onEdit={() => setEditingSeries(item.rawSeries)}
-                              onCopySingle={() => handleCopySingle(item)}
-                              columns={columns}
-                            />
-                          );
-                        })
-                      )}
+                      {filteredList.map(item => item.formats.map((f, i) => renderRow(item, f, i)))}
                     </div>
                   </div>
                 )}

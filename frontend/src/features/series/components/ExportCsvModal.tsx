@@ -25,8 +25,8 @@ const INITIAL_EXPORT_FILTER: FilterState = {
   readStatus: [],
   collectStatus: [],
   language: [],
+  format: [],
   minRating: 0,
-  maxRating: 0,
   yearFrom: '',
   yearTo: '',
   sortBy: 'title',
@@ -111,7 +111,7 @@ export const ExportCsvModal: React.FC<ExportCsvModalProps> = ({
     setScope('filtered');
   };
 
-  const toggleArrayFilter = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => {
+  const toggleArrayFilter = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language' | 'format', val: string) => {
     const arr = (exportFilter[key] as string[]) || [];
     const nextArr = arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
     updateFilter({ [key]: nextArr });

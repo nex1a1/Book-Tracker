@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getSeriesDerivedStats, countMissingVolumes, getLogLanguage } from "../../../utils/helpers";
+import { getSeriesDerivedStats, countMissingVolumes, getLogLanguage, getLogState } from "../../../utils/helpers";
 import { Series, FilterState } from "../../../types";
 
 // Total volumes still missing across every collection log — undefined when not collecting,
@@ -44,9 +44,8 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
 
     if (filter.unratedOnly) {
       filtered = filtered.filter(s => !s.rating || s.rating === 0);
-    } else {
-      if (filter.minRating) filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
-      if (filter.maxRating) filtered = filtered.filter(s => (s.rating || 0) <= filter.maxRating && (s.rating || 0) > 0);
+    } else if (filter.minRating) {
+      filtered = filtered.filter(s => (s.rating || 0) >= filter.minRating);
     }
 
     filtered = filtered.filter(s => {
@@ -56,6 +55,12 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
         const ownsLanguage = st.n.isCollecting && st.n.collectionLogs.some(log =>
           log.ranges.length > 0 && filter.language.includes(getLogLanguage(log)));
         if (!ownsLanguage) return false;
+      }
+
+      if (filter.format.length > 0) {
+        const ownsFormat = st.n.isCollecting && st.n.collectionLogs.some(log =>
+          log.ranges.length > 0 && filter.format.includes(log.format || 'normal'));
+        if (!ownsFormat) return false;
       }
       
       if (filter.readStatus && filter.readStatus.length > 0) {
@@ -75,6 +80,10 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
         if (cs.includes('missing') && st.isCollectMissing) matchCollect = true;
         if (cs.includes('stopped') && st.isCollectStopped) matchCollect = true;
         if (cs.includes('not_collecting') && st.isNotCollecting) matchCollect = true;
+        // Logs neither "complete" nor "missing" can judge: one with no total yet (needs filling in) or a "keep some" log.
+        const logStates = st.n.isCollecting ? st.n.collectionLogs.map(getLogState) : [];
+        if (cs.includes('unknown') && !st.isCollectStopped && logStates.includes('unknown')) matchCollect = true;
+        if (cs.includes('partial') && logStates.includes('partial')) matchCollect = true;
         if (!matchCollect) return false;
       }
 
@@ -125,7 +134,8 @@ export function useFilteredSeries(series: Series[], filter: FilterState) {
     if (filter.readStatus && filter.readStatus.length > 0) c++;
     if (filter.collectStatus && filter.collectStatus.length > 0) c++;
     if (filter.language && filter.language.length > 0) c++;
-    if (filter.unratedOnly || filter.minRating || filter.maxRating) c++;
+    if (filter.format.length > 0) c++;
+    if (filter.unratedOnly || filter.minRating) c++;
     if (filter.yearFrom) c++;
     if (filter.yearTo) c++;
     return c;

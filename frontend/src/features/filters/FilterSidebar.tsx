@@ -2,7 +2,7 @@ import React, { useState, useEffect, useId } from "react";
 import { Icons } from "../../components/Icons";
 import { PublisherDropdown } from "../../components/PublisherDropdown";
 import { FilterState, LogLanguage } from "../../types";
-import { LANGUAGE_LABEL } from "../../utils/constants";
+import { FORMAT_LABEL, LANGUAGE_LABEL } from "../../utils/constants";
 import { RatingFilter, getRatingBadgeText } from "./RatingFilter";
 import './FilterSidebar.css';
 
@@ -83,7 +83,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ filter, setFilter, resetFilter, publishers, activeCount }: FilterSidebarProps) {
-  const toggleArr = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language', val: string) => {
+  const toggleArr = (key: 'type' | 'status' | 'readStatus' | 'collectStatus' | 'language' | 'format', val: string) => {
     const arr = (filter[key] as string[]) || [];
     if (arr.includes(val)) {
       setFilter({ [key]: arr.filter(v => v !== val) });
@@ -108,6 +108,8 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
     setLocalSearch("");
     setFilter({ search: "" });
   };
+
+  const ratingBadge = getRatingBadgeText(filter.minRating, filter.unratedOnly);
 
   return (
     <aside className="filter-sidebar">
@@ -186,6 +188,8 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
             <FilterChip icon={<Icons.Cart />} label="ยังขาดอยู่" active={filter.collectStatus.includes('missing')} onClick={() => toggleArr('collectStatus', 'missing')} />
             <FilterChip icon={<Icons.Pause />} label="เลิกตามแล้ว" active={filter.collectStatus.includes('stopped')} onClick={() => toggleArr('collectStatus', 'stopped')} />
             <FilterChip icon={<Icons.Ban />} label="ไม่สะสม" active={filter.collectStatus.includes('not_collecting')} onClick={() => toggleArr('collectStatus', 'not_collecting')} />
+            <FilterChip icon={<Icons.Info />} label="ยังไม่ระบุจำนวนเล่ม" active={filter.collectStatus.includes('unknown')} onClick={() => toggleArr('collectStatus', 'unknown')} />
+            <FilterChip icon={<Icons.Book />} label="เก็บบางเล่ม" active={filter.collectStatus.includes('partial')} onClick={() => toggleArr('collectStatus', 'partial')} />
           </div>
         </FilterSection>
 
@@ -198,24 +202,22 @@ export function FilterSidebar({ filter, setFilter, resetFilter, publishers, acti
           </div>
         </FilterSection>
 
+        <FilterSection title="รูปแบบเล่มที่มี">
+          <div className="filter-chip-group">
+            <FilterChip label="ทั้งหมด" active={filter.format.length === 0} onClick={() => setFilter({ format: [] })} />
+            {Object.entries(FORMAT_LABEL).map(([format, label]) => (
+              <FilterChip key={format} label={label} active={filter.format.includes(format)} onClick={() => toggleArr('format', format)} />
+            ))}
+          </div>
+        </FilterSection>
+
         <FilterSection
           title="คะแนน"
-          badge={
-            getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly) ? (
-              <span className="filter-rating-badge">
-                {getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly)}
-              </span>
-            ) : undefined
-          }
-          onClear={
-            getRatingBadgeText(filter.minRating, filter.maxRating, filter.unratedOnly)
-              ? () => setFilter({ minRating: 0, maxRating: 0, unratedOnly: false })
-              : undefined
-          }
+          badge={ratingBadge ? <span className="filter-rating-badge">{ratingBadge}</span> : undefined}
+          onClear={ratingBadge ? () => setFilter({ minRating: 0, unratedOnly: false }) : undefined}
         >
           <RatingFilter
             minRating={filter.minRating}
-            maxRating={filter.maxRating}
             unratedOnly={filter.unratedOnly}
             onChange={(patch) => setFilter(patch)}
           />

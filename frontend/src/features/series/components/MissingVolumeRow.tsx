@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { Icons } from "../../../components/Icons";
 import { MissingSeriesItem, MissingLogItem } from "../hooks/useMissingVolumes";
 import { CHECKLIST_COLUMNS, ChecklistColumn, DEFAULT_CHECKLIST_COLUMNS } from "./ChecklistColumns";
@@ -12,12 +13,21 @@ interface MissingVolumeRowProps {
   onEdit: () => void;
   onCopySingle: () => void;
   columns?: ChecklistColumn[];
+  /** Drag-to-reorder handlers for the row; the drag itself starts from the ⋮⋮ handle */
+  drag?: HTMLAttributes<HTMLDivElement>;
+  dropSide?: 'before' | 'after';
+  isDragging?: boolean;
 }
 
-export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle, columns = DEFAULT_COLUMNS }: MissingVolumeRowProps) {
+export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, onCopySingle, columns = DEFAULT_COLUMNS, drag, dropSide, isDragging }: MissingVolumeRowProps) {
   return (
-    <div className={`checklist-item-row ${isChecked ? "is-checked" : ""}`} data-vt-key={`${item._id}-${f.id}`}>
+    <div
+      className={`checklist-item-row ${isChecked ? "is-checked" : ""} ${dropSide ? `is-drop-${dropSide}` : ""} ${isDragging ? "is-dragging" : ""}`}
+      data-vt-key={`${item._id}-${f.id}`}
+      {...drag}
+    >
       <div className="checklist-item-checkbox-wrapper">
+        {drag && <span className="checklist-drag-handle" draggable title="ลากเพื่อจัดลำดับ">⋮⋮</span>}
         <button
           type="button"
           role="checkbox"
@@ -38,7 +48,7 @@ export function MissingVolumeRow({ item, f, isChecked, onToggleCheck, onEdit, on
       </div>
 
       {columns.map(c => (
-        <div key={c.key} className={`checklist-item-col checklist-item-${c.key}-col`}>{c.render(item, f)}</div>
+        <div key={c.key} className={`checklist-item-col checklist-item-${c.key}-col`}>{c.text(item, f) || <span className="checklist-empty-field">-</span>}</div>
       ))}
 
       <div className="checklist-item-missing-col">
